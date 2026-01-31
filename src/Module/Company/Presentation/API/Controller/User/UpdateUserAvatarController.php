@@ -35,8 +35,8 @@ final class UpdateUserAvatarController extends AbstractController
         try {
             $dto = new UpdateUserAvatarDTO();
             $dto->type = $request->request->get('type', 'default');
-            $dto->uploadedFile = $request->files->get('uploadedFile');
             $dto->defaultAvatar = $request->request->get('defaultAvatar');
+            $dto->uploadedFile = $request->files->get('uploadedFile');
 
             $errors = $this->validator->validate($dto);
             if (count($errors) > 0) {

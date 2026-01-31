@@ -7,6 +7,7 @@ namespace App\Module\Company\Application\ReadModel\Employee;
 use App\Module\Company\Application\ReadModel\Address\AddressView;
 use App\Module\Company\Application\ReadModel\Avatar\AvatarView;
 use App\Module\Company\Application\ReadModel\Contact\ContactView;
+use App\Module\Company\Application\ReadModel\EmploymentView\EmploymentView;
 use App\Module\Company\Domain\Entity\Contact;
 use App\Module\Company\Domain\Entity\Employee;
 
@@ -16,9 +17,7 @@ final readonly class EmployeeView
         public string $uuid,
         public string $firstName,
         public string $lastName,
-        public string $position,
-        public string $role,
-        public string $contractType,
+        public EmploymentView $employment,
         public ?AddressView $address,
         public array $contacts,
         public ?AvatarView $avatar = null,
@@ -30,15 +29,12 @@ final readonly class EmployeeView
         string $avatarType = 'default',
         ?string $defaultAvatar = null,
         ?string $avatarPath = null
-    ): self
-    {
+    ): self {
         return new self(
             uuid: $employee->getUUID()->toString(),
             firstName: $employee->getFirstName(),
             lastName: $employee->getLastName(),
-            position: $employee->getPosition()->getName(),
-            role: $employee->getRole()->getName(),
-            contractType: $employee->getContractType()->getName(),
+            employment: EmploymentView::fromEmployee($employee),
             address: $employee->getAddress()
                 ? AddressView::fromAddress($employee->getAddress())
                 : null,
