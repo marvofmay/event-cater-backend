@@ -20,10 +20,13 @@ use App\Module\Company\Domain\Aggregate\Employee\ValueObject\RoleUUID;
 use App\Module\Company\Domain\Aggregate\ValueObject\Address;
 use App\Module\Company\Domain\Aggregate\ValueObject\Emails;
 use App\Module\Company\Domain\Aggregate\ValueObject\Phones;
+use App\Module\Company\Domain\Event\Employee\EmployeeChangedAddressEvent;
+use App\Module\Company\Domain\Event\Employee\EmployeeChangedContactEvent;
+use App\Module\Company\Domain\Event\Employee\EmployeeChangedPersonalDataEvent;
 use App\Module\Company\Domain\Event\Employee\EmployeeCreatedEvent;
 use App\Module\Company\Domain\Event\Employee\EmployeeDeletedEvent;
 use App\Module\Company\Domain\Event\Employee\EmployeeRestoredEvent;
-use App\Module\Company\Domain\Event\Employee\EmployeeUpdatedAvatarEvent;
+use App\Module\Company\Domain\Event\Employee\EmployeeChangedAvatarEvent;
 use App\Module\Company\Domain\Event\Employee\EmployeeUpdatedEvent;
 use App\Module\System\Domain\ValueObject\UserUUID;
 
@@ -192,17 +195,77 @@ class EmployeeAggregate extends AggregateRootAbstract
         }
 
         $this->record(
-            new EmployeeUpdatedAvatarEvent(
-                $this->uuid,
-                $avatarType,
-                $defaultAvatar,
-                $avatarPath,
-                $loggedUserUUID
+            new EmployeeChangedAvatarEvent(
+                uuid: $this->uuid,
+                avatarType: $avatarType,
+                userUUID:  $loggedUserUUID,
+                defaultAvatar:  $defaultAvatar,
+                avatarPath: $avatarPath,
             )
         );
 
         return $this;
     }
+
+    public function changePersonalData(
+        FirstName $firstName,
+        LastName $lastName,
+        UserUUID $loggedUserUUID
+    ): self {
+        if ($this->deleted) {
+            throw new \DomainException('Cannot change personal data of deleted employee.');
+        }
+
+        $this->record(
+            new EmployeeChangedPersonalDataEvent(
+                uuid: $this->uuid,
+                firstName: $firstName,
+                lastName: $lastName,
+                userUUID:  $loggedUserUUID
+            )
+        );
+
+        return $this;
+    }
+
+    public function changeAddress(Address $address, UserUUID $loggedUserUUID): self
+    {
+        if ($this->deleted) {
+            throw new \DomainException('Cannot change address a deleted employee.');
+        }
+
+        $this->record(
+            new EmployeeChangedAddressEvent(
+                uuid: $this->uuid,
+                address: $address,
+                userUUID:  $loggedUserUUID
+            )
+        );
+
+        return $this;
+    }
+
+    public function changeContact(
+        UserUUID $loggedUserUUID,
+        Emails $emails,
+        ?Phones $phones = null
+    ): self {
+        if ($this->deleted) {
+            throw new \DomainException('Cannot update a deleted employee.');
+        }
+
+        $this->record(
+            new EmployeeChangedContactEvent(
+                uuid: $this->uuid,
+                userUUID: $loggedUserUUID,
+                emails: $emails,
+                phones: $phones
+            )
+        );
+
+        return $this;
+    }
+
 
     protected function apply(DomainEventInterface $event): void
     {
@@ -236,10 +299,27 @@ class EmployeeAggregate extends AggregateRootAbstract
             $this->deleted = false;
         }
 
-        if ($event instanceof EmployeeUpdatedAvatarEvent) {
+        if ($event instanceof EmployeeChangedAvatarEvent) {
             $this->avatarType = $event->avatarType;
             $this->defaultAvatar = $event->defaultAvatar;
             $this->avatarPath = $event->avatarPath;
+        }
+
+        if ($event instanceof EmployeeChangedPersonalDataEvent) {
+            $this->uuid = $event->uuid;
+            $this->firstName = $event->firstName;
+            $this->lastName = $event->lastName;
+        }
+
+        if ($event instanceof EmployeeChangedAddressEvent) {
+            $this->uuid = $event->uuid;
+            $this->address = $event->address;
+        }
+
+        if ($event instanceof EmployeeChangedContactEvent) {
+            $this->uuid = $event->uuid;
+            $this->emails = $event->emails;
+            $this->phones = $event->phones;
         }
     }
 

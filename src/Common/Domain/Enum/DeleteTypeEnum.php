@@ -5,19 +5,12 @@ declare(strict_types=1);
 namespace App\Common\Domain\Enum;
 
 use App\Common\Domain\Interface\EnumInterface;
+use App\Common\Domain\Trait\StringEnumTrait;
 
 enum DeleteTypeEnum: string implements EnumInterface
 {
+    use StringEnumTrait;
+
     case HARD_DELETE = 'hard';
     case SOFT_DELETE = 'soft';
-
-    public function label(): string
-    {
-        return $this->value;
-    }
-
-    public static function values(): array
-    {
-        return array_column(self::cases(), 'value');
-    }
 }

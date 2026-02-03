@@ -38,6 +38,7 @@ final class UpdateEmployeeController extends AbstractController
             $this->commandBus->dispatch(
                 new UpdateEmployeeCommand(
                     $uuid,
+                    $updateDTO->companyUUID,
                     $updateDTO->departmentUUID,
                     $updateDTO->positionUUID,
                     $updateDTO->contractTypeUUID,

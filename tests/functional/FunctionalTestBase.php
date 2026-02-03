@@ -48,7 +48,7 @@ abstract class FunctionalTestBase extends WebTestCase
         $commandTester->execute([]);
     }
 
-    protected function getAuthenticatedClient(string $email = 'admin.hrapp@gmail.com', string $password = 'Admin123!'): KernelBrowser
+    protected function getAuthenticatedClient(string $email = 'admin.ec@gmail.com', string $password = 'Admin123!'): KernelBrowser
     {
         $this->client->request('POST', '/api/login', [], [], [
             'CONTENT_TYPE' => 'application/json',

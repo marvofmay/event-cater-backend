@@ -10,7 +10,7 @@ use App\Common\Domain\Enum\FileKindEnum;
 use App\Common\Domain\Service\EventStore\EventStoreCreator;
 use App\Common\Domain\Service\UploadFile\UploadFile;
 use App\Common\Domain\Trait\HandleEventStoreTrait;
-use App\Module\Company\Application\Command\Employee\UpdateEmployeeAvatarCommand;
+use App\Module\Company\Application\Command\Employee\ChangeEmployeeAvatarCommand;
 use App\Module\Company\Domain\Aggregate\Employee\EmployeeAggregate;
 use App\Module\Company\Domain\Aggregate\Employee\ValueObject\EmployeeUUID;
 use App\Module\Company\Domain\Interface\Employee\EmployeeAggregateReaderInterface;
@@ -26,7 +26,7 @@ use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 #[AsMessageHandler(bus: 'command.bus')]
-final class UpdateEmployeeAvatarCommandHandler extends CommandHandlerAbstract
+final class ChangeEmployeeAvatarCommandHandler extends CommandHandlerAbstract
 {
     use HandleEventStoreTrait;
 
@@ -42,7 +42,7 @@ final class UpdateEmployeeAvatarCommandHandler extends CommandHandlerAbstract
     ) {
     }
 
-    public function __invoke(UpdateEmployeeAvatarCommand $command): void
+    public function __invoke(ChangeEmployeeAvatarCommand $command): void
     {
         $filePath = null;
         $user = $this->security->getUser();

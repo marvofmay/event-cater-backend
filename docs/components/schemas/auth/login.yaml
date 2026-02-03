@@ -6,7 +6,7 @@ loginPayload:
   properties:
     email:
       type: string
-      example: "admin.hrapp@gmail.com"
+      example: "admin.ec@gmail.com"
     password:
       type: string
       example: "Admin123!"

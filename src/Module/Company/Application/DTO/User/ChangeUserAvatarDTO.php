@@ -9,7 +9,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Constraints\Choice;
 use Symfony\Component\Validator\Constraints\File;
 
-final class UpdateUserAvatarDTO
+final class ChangeUserAvatarDTO
 {
     #[NotBlank(message: [
         'text' => 'user.avatar.type.required',

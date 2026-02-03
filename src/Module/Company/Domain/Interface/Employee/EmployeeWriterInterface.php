@@ -9,7 +9,7 @@ use Doctrine\Common\Collections\Collection;
 
 interface EmployeeWriterInterface
 {
-    public function saveEmployeeInDB(Employee $employee): void;
+    public function saveEmployee(Employee $employee): void;
 
     public function saveEmployeesInDB(Collection $employees): void;
 

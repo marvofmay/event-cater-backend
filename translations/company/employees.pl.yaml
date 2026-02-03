@@ -24,8 +24,12 @@ employee:
     required: "Email pracownika jest wymagany."
   firstName:
     required: "Imię pracownika jest wymagane."
+    minimumLength: "Minimalna liczba znaków to :qty"
+    maximumLength: "Maksymalna liczba znaków to :qty"
   lastName:
     required: "Nazwisko pracownika jest wymagane."
+    minimumLength: "Minimalna liczba znaków to :qty"
+    maximumLength: "Maksymalna liczba znaków to :qty"
   departmentUUID:
     required: "UUID departamentu pracownika jest wymagane."
   positionUUID:

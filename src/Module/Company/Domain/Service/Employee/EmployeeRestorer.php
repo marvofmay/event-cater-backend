@@ -37,6 +37,6 @@ final readonly class EmployeeRestorer
             $user->deletedAt = null;
         }
 
-        $this->employeeWriterRepository->saveEmployeeInDB($employee);
+        $this->employeeWriterRepository->saveEmployee($employee);
     }
 }

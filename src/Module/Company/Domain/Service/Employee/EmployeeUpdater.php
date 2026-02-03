@@ -97,9 +97,10 @@ final readonly class EmployeeUpdater
             )
             : null;
 
+        // ToDo:: add $company parameter as like EmployeeCreator
         $this->setEmployeeRelations($employee, $department, $role, $position, $contractType, $parentEmployee, $address, $contacts, $user);
 
-        $this->employeeWriterRepository->saveEmployeeInDB($employee);
+        $this->employeeWriterRepository->saveEmployee($employee);
     }
 
     private function deleteAddress(?Address $address): void

@@ -37,7 +37,7 @@ class Access
     public const string RELATION_MODULE = 'module';
 
     #[ORM\ManyToOne(targetEntity: Module::class, inversedBy: 'accesses')]
-    #[ORM\JoinColumn(name: 'module_uuid', referencedColumnName: 'uuid')]
+    #[ORM\JoinColumn(name: 'module_uuid', referencedColumnName: 'uuid', nullable: false, onDelete: 'CASCADE')]
     private Module $module;
 
     #[ORM\Id]

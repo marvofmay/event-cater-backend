@@ -94,7 +94,7 @@ final readonly class EmployeeCreator
 
         $this->setEmployeeRelations($employee, $company, $department, $role, $position, $contractType, $parentEmployee, $address, $contacts, $user);
 
-        $this->employeeWriterRepository->saveEmployeeInDB($employee);
+        $this->employeeWriterRepository->saveEmployee($employee);
     }
 
     private function setEmployeeRelations(

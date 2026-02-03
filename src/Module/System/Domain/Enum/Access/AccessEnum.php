@@ -28,7 +28,8 @@ enum AccessEnum: string implements EnumInterface
     case ACCESSES = ModuleEnum::SYSTEM->value . '.accesses';
     case PERMISSIONS = ModuleEnum::SYSTEM->value . '.permissions';
     case NOTES = ModuleEnum::NOTES->value . '.notes';
-    case DOCUMENTS = ModuleEnum::DOCUMENTS->value . '.documents';
+    //case DOCUMENTS = ModuleEnum::DOCUMENTS->value . '.documents';
+    case FILE_MANAGER = ModuleEnum::DOCUMENTS->value . '.file_manager';
 
     public function label(): string
     {
@@ -46,6 +47,8 @@ enum AccessEnum: string implements EnumInterface
             self::ACCESSES => 'Accesses',
             self::PERMISSIONS => 'Permissions',
             self::NOTES => 'Notes',
+            //self::DOCUMENTS => 'Documents',
+            self::FILE_MANAGER => 'File Manager',
         };
     }
 

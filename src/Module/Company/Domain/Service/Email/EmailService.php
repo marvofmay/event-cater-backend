@@ -35,7 +35,7 @@ final readonly class EmailService
 
         $templateBody = null;
         if (null !== $templateName) {
-            $logoPath = $this->projectDir . '/public/assets/images/hr-app-logo.png';
+            $logoPath = $this->projectDir . '/public/assets/images/event-cater-logo.png';
             if (file_exists($logoPath)) {
                 $base64Logo = 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath));
                 $context['logoCid'] = $base64Logo;

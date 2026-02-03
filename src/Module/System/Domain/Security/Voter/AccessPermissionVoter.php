@@ -80,7 +80,7 @@ abstract class AccessPermissionVoter extends Voter
             return false;
         }
 
-        if ('admin.hrapp@gmail.com' === $user->getEmail()) {
+        if ('admin.ec@gmail.com' === $user->getEmail()) {
             return true;
         }
 
