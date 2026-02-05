@@ -32,10 +32,7 @@ final class ChangeUserContactDataController extends AbstractController
     {
         try {
             $this->commandBus->dispatch(
-                new ChangeEmployeeContactCommand(
-                    $changeUserContactDTO->email,
-                    $changeUserContactDTO->phones
-                )
+                new ChangeEmployeeContactCommand($changeUserContactDTO->phones)
             );
         } catch (HandlerFailedException $exception) {
             throw $exception->getPrevious();

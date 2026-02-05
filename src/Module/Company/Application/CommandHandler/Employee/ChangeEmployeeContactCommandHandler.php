@@ -10,7 +10,6 @@ use App\Common\Domain\Trait\HandleEventStoreTrait;
 use App\Module\Company\Application\Command\Employee\ChangeEmployeeContactCommand;
 use App\Module\Company\Domain\Aggregate\Employee\EmployeeAggregate;
 use App\Module\Company\Domain\Aggregate\Employee\ValueObject\EmployeeUUID;
-use App\Module\Company\Domain\Aggregate\ValueObject\Emails;
 use App\Module\Company\Domain\Aggregate\ValueObject\Phones;
 use App\Module\Company\Domain\Interface\Employee\EmployeeAggregateReaderInterface;
 use App\Module\System\Domain\ValueObject\UserUUID;
@@ -48,7 +47,6 @@ final class ChangeEmployeeContactCommandHandler extends CommandHandlerAbstract
 
         $employeeAggregate->changeContact(
             loggedUserUUID: UserUUID::fromString($loggedUserUUID),
-            emails:  Emails::fromArray([$command->email]),
             phones: Phones::fromArray($command->phones)
         );
 

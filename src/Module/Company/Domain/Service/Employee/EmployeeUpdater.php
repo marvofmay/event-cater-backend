@@ -112,7 +112,7 @@ final readonly class EmployeeUpdater
 
     private function deleteContacts(Collection $contacts): void
     {
-        $this->contactWriterRepository->deleteContactsInDB($contacts, Contact::HARD_DELETED_AT);
+        $this->contactWriterRepository->deleteContacts($contacts, Contact::HARD_DELETED_AT);
     }
 
     private function setEmployeeRelations(

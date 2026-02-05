@@ -7,6 +7,7 @@ namespace App\Module\Company\Domain\Service\Employee;
 use App\Common\Domain\Interface\DomainEventInterface;
 use App\Module\Company\Domain\Entity\Contact;
 use App\Module\Company\Domain\Entity\Employee;
+use App\Module\Company\Domain\Enum\Contact\ContactTypeEnum;
 use App\Module\Company\Domain\Interface\Contact\ContactWriterInterface;
 use App\Module\Company\Domain\Interface\Employee\EmployeeReaderInterface;
 use App\Module\Company\Domain\Interface\Employee\EmployeeWriterInterface;
@@ -26,16 +27,10 @@ final readonly class EmployeeChangerContact
     public function change(DomainEventInterface $event): void
     {
         $employee = $this->employeeReaderRepository->getEmployeeByUUID($event->uuid->toString());
-        $user = $employee->getUser();
-        $contacts = $employee->getContacts();
-        $email = $event->emails->toArray()[0];
+        $contacts = $employee->getContacts(ContactTypeEnum::PHONE);
 
         $this->deleteContacts($contacts);
-        $contacts = $this->contactFactory->create($event->phones, $event->emails);
-
-        if ($user->getEmail() !== $email) {
-            $user->setEmail($email);
-        }
+        $contacts = $this->contactFactory->create($event->phones);
 
         $this->setEmployeeContactRelation($employee, $contacts);
 
@@ -44,7 +39,7 @@ final readonly class EmployeeChangerContact
 
     private function deleteContacts(Collection $contacts): void
     {
-        $this->contactWriterRepository->deleteContactsInDB($contacts, Contact::HARD_DELETED_AT);
+        $this->contactWriterRepository->deleteContacts($contacts, Contact::HARD_DELETED_AT);
     }
 
     private function setEmployeeContactRelation(Employee $employee, array $contacts): void

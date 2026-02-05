@@ -6,6 +6,7 @@ namespace App\Module\Company\Domain\Aggregate\Employee;
 
 use App\Common\Domain\Abstract\AggregateRootAbstract;
 use App\Common\Domain\Interface\DomainEventInterface;
+use App\Common\Domain\Trait\ClassNameExtractorTrait;
 use App\Module\Company\Domain\Aggregate\Company\ValueObject\CompanyUUID;
 use App\Module\Company\Domain\Aggregate\Department\ValueObject\DepartmentUUID;
 use App\Module\Company\Domain\Aggregate\Employee\ValueObject\ContractTypeUUID;
@@ -32,6 +33,8 @@ use App\Module\System\Domain\ValueObject\UserUUID;
 
 class EmployeeAggregate extends AggregateRootAbstract
 {
+    use ClassNameExtractorTrait;
+
     private EmployeeUUID   $uuid;
     private ?EmployeeUUID  $parentEmployeeUUID = null;
     private FirstName      $firstName;
@@ -247,7 +250,6 @@ class EmployeeAggregate extends AggregateRootAbstract
 
     public function changeContact(
         UserUUID $loggedUserUUID,
-        Emails $emails,
         ?Phones $phones = null
     ): self {
         if ($this->deleted) {
@@ -258,7 +260,6 @@ class EmployeeAggregate extends AggregateRootAbstract
             new EmployeeChangedContactEvent(
                 uuid: $this->uuid,
                 userUUID: $loggedUserUUID,
-                emails: $emails,
                 phones: $phones
             )
         );
@@ -269,58 +270,79 @@ class EmployeeAggregate extends AggregateRootAbstract
 
     protected function apply(DomainEventInterface $event): void
     {
-        if ($event instanceof EmployeeCreatedEvent || $event instanceof EmployeeUpdatedEvent) {
-            $this->uuid = $event->uuid;
-            $this->firstName = $event->firstName;
-            $this->lastName = $event->lastName;
-            $this->pesel = $event->pesel;
-            $this->employmentFrom = $event->employmentFrom;
-            $this->companyUUID= $event->companyUUID;
-            $this->departmentUUID = $event->departmentUUID;
-            $this->positionUUID = $event->positionUUID;
-            $this->contractTypeUUID = $event->contractTypeUUID;
-            $this->roleUUID = $event->roleUUID;
-            $this->emails = $event->emails;
-            $this->address = $event->address;
-            $this->loggedUserUUID = $event->loggedUserUUID;
-            $this->active = $event->active;
-            $this->externalCode = $event->externalCode;
-            $this->internalCode = $event->internalCode;
-            $this->phones = $event->phones;
-            $this->parentEmployeeUUID = $event->parentEmployeeUUID;
-            $this->employmentTo = $event->employmentTo;
-        }
+        $method = 'apply' . $this->getShortClassName($event::class);
 
-        if ($event instanceof EmployeeDeletedEvent) {
-            $this->deleted = true;
+        if (method_exists($this, $method)) {
+            $this->$method($event);
         }
+    }
 
-        if ($event instanceof EmployeeRestoredEvent) {
-            $this->deleted = false;
-        }
+    private function applyEmployeeCreatedEvent(EmployeeCreatedEvent $event): void
+    {
+        $this->applyFullState($event);
+    }
 
-        if ($event instanceof EmployeeChangedAvatarEvent) {
-            $this->avatarType = $event->avatarType;
-            $this->defaultAvatar = $event->defaultAvatar;
-            $this->avatarPath = $event->avatarPath;
-        }
+    private function applyFullState(EmployeeCreatedEvent | EmployeeUpdatedEvent $event): void
+    {
+        $this->uuid = $event->uuid;
+        $this->firstName = $event->firstName;
+        $this->lastName = $event->lastName;
+        $this->pesel = $event->pesel;
+        $this->employmentFrom = $event->employmentFrom;
+        $this->companyUUID= $event->companyUUID;
+        $this->departmentUUID = $event->departmentUUID;
+        $this->positionUUID = $event->positionUUID;
+        $this->contractTypeUUID = $event->contractTypeUUID;
+        $this->roleUUID = $event->roleUUID;
+        $this->emails = $event->emails;
+        $this->address = $event->address;
+        $this->loggedUserUUID = $event->loggedUserUUID;
+        $this->active = $event->active;
+        $this->externalCode = $event->externalCode;
+        $this->internalCode = $event->internalCode;
+        $this->phones = $event->phones;
+        $this->parentEmployeeUUID = $event->parentEmployeeUUID;
+        $this->employmentTo = $event->employmentTo;
+    }
 
-        if ($event instanceof EmployeeChangedPersonalDataEvent) {
-            $this->uuid = $event->uuid;
-            $this->firstName = $event->firstName;
-            $this->lastName = $event->lastName;
-        }
+    private function applyEmployeeUpdatedEvent(EmployeeUpdatedEvent $event): void
+    {
+        $this->applyFullState($event);
+    }
 
-        if ($event instanceof EmployeeChangedAddressEvent) {
-            $this->uuid = $event->uuid;
-            $this->address = $event->address;
-        }
+    public function applyEmployeeDeletedEvent(EmployeeDeletedEvent $event): void
+    {
+        $this->deleted = true;
+    }
 
-        if ($event instanceof EmployeeChangedContactEvent) {
-            $this->uuid = $event->uuid;
-            $this->emails = $event->emails;
-            $this->phones = $event->phones;
-        }
+    public function applyEmployeeRestoredEvent(EmployeeRestoredEvent $event): void
+    {
+        $this->deleted = false;
+    }
+
+    public function applyEmployeeChangedAvatarEvent(EmployeeChangedAvatarEvent $event): void
+    {
+        $this->avatarType = $event->avatarType;
+        $this->defaultAvatar = $event->defaultAvatar;
+        $this->avatarPath = $event->avatarPath;
+    }
+
+    public function applyEmployeeChangedPersonalDataEvent(EmployeeChangedPersonalDataEvent $event): void
+    {
+        $this->uuid = $event->uuid;
+        $this->firstName = $event->firstName;
+        $this->lastName = $event->lastName;
+    }
+    public function applyEmployeeChangedAddressEvent(EmployeeChangedAddressEvent $event):void
+    {
+        $this->uuid = $event->uuid;
+        $this->address = $event->address;
+    }
+
+    public function applyEmployeeChangedContactEvent(EmployeeChangedContactEvent $event): void
+    {
+        $this->uuid = $event->uuid;
+        $this->phones = $event->phones;
     }
 
     public function getUUID(): EmployeeUUID
