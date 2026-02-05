@@ -14,10 +14,12 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\Exception\ValidationFailedException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 #[ErrorChannel(MonologChanelEnum::EVENT_STORE)]
 final class ChangeUserAvatarController extends AbstractController
@@ -40,10 +42,11 @@ final class ChangeUserAvatarController extends AbstractController
 
             $errors = $this->validator->validate($dto);
             if (count($errors) > 0) {
-                // ToDo::
-                // obsługa błędów
+                throw new UnprocessableEntityHttpException(
+                    'Validation failed',
+                    new ValidationFailedException($dto, $errors)
+                );
             }
-
             $this->commandBus->dispatch(
                 new ChangeEmployeeAvatarCommand(
                     avatarType: $dto->type,
