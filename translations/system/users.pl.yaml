@@ -14,3 +14,7 @@ user:
       update:
         success: "Dane adresowe użytkownika zostały pomyślnie zaktualizowane."
         error:  "Wystąpił nieoczekiwany błąd podczas aktualizacji danych adresowych użytkownika."
+    avatar:
+      update:
+        success: "Avatar użytkownika został pomyślnie zaktualizowany."
+        error:  "Wystąpił nieoczekiwany błąd podczas aktualizacji avatara użytkownika."

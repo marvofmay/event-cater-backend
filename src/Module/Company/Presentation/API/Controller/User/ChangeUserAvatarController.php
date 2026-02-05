@@ -40,6 +40,7 @@ final class ChangeUserAvatarController extends AbstractController
 
             $errors = $this->validator->validate($dto);
             if (count($errors) > 0) {
+                // ToDo::
                 // obsługa błędów
             }
 
@@ -55,6 +56,6 @@ final class ChangeUserAvatarController extends AbstractController
             throw $exception->getPrevious();
         }
 
-        return new JsonResponse(['message' => $this->messageService->get('user.avatar.update.success', [], 'users')], Response::HTTP_OK);
+        return new JsonResponse(['message' => $this->messageService->get('user.data.avatar.update.success', [], 'users')], Response::HTTP_OK);
     }
 }
