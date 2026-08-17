@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Common\Infrastructure\Cache;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Module\System\Application\Event\LogFileEvent;
 use Psr\Log\LogLevel;
 use Symfony\Component\Messenger\MessageBusInterface;
@@ -46,7 +46,7 @@ final class EntityReferenceCache
             new LogFileEvent(
                 $className.':'.$uuid.' not exists in cache - '.$additionalInfo,
                 LogLevel::INFO,
-                MonologChanelEnum::LOCAL_CACHE
+                MonologChannelEnum::LOCAL_CACHE
             )
         );
     }

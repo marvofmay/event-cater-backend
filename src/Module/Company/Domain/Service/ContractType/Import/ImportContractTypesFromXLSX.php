@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Domain\Service\ContractType\Import;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Infrastructure\Cache\EntityReferenceCache;
 use App\Common\XLSX\XLSXIterator;
@@ -80,7 +80,7 @@ class ImportContractTypesFromXLSX extends XLSXIterator
                     new LogFileEvent(
                         $this->messageService->get('contractType.import.error', [], 'contract_types').': '.$error,
                         LogLevel::ERROR,
-                        MonologChanelEnum::IMPORT
+                        MonologChannelEnum::IMPORT
                     )
                 );
             }

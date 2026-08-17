@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Common\Infrastructure\Http;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Infrastructure\Http\Attribute\ErrorChannel;
 use App\Module\System\Application\Event\LogFileEvent;
 use Psr\Log\LogLevel;
@@ -82,29 +82,29 @@ final readonly class UnifiedApiExceptionListener
         $event->setResponse(new JsonResponse(['message' => $message], $exception->getCode()));
     }
 
-    private function getControllerErrorChannel(ExceptionEvent $event): MonologChanelEnum
+    private function getControllerErrorChannel(ExceptionEvent $event): MonologChannelEnum
     {
         $controller = $event->getRequest()->attributes->get('_controller');
         if (!$controller || !is_string($controller)) {
-            return MonologChanelEnum::MAIN;
+            return MonologChannelEnum::MAIN;
         }
 
         $controllerClass = explode('::', $controller)[0];
         if (!class_exists($controllerClass)) {
-            return MonologChanelEnum::MAIN;
+            return MonologChannelEnum::MAIN;
         }
 
         $reflection = new ReflectionClass($controllerClass);
         $attribute = $reflection->getAttributes(ErrorChannel::class)[0] ?? null;
         if ($attribute === null) {
-            return MonologChanelEnum::MAIN;
+            return MonologChannelEnum::MAIN;
         }
         $instance = $attribute->newInstance();
 
         return $instance->channel;
     }
 
-    private function logError(MonologChanelEnum $channel, string $message): void
+    private function logError(MonologChannelEnum $channel, string $message): void
     {
         $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::ERROR, $channel));
     }

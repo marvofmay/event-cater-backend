@@ -8,7 +8,7 @@ use App\Common\Application\Command\UploadFileCommand;
 use App\Common\Application\DTO\UploadFileDTO;
 use App\Common\Domain\Enum\FileExtensionEnum;
 use App\Common\Domain\Enum\FileKindEnum;
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Domain\Service\UploadFile\UploadFile;
 use App\Module\System\Application\Command\File\CreateFileCommand;
@@ -136,7 +136,7 @@ abstract readonly class AbstractImportFacade
             $this->eventBus->dispatch(new LogFileEvent(
                 sprintf('%s %s', $errorMessage, $this->messageService->get($error->getMessage())),
                 LogLevel::ERROR,
-                MonologChanelEnum::IMPORT
+                MonologChannelEnum::IMPORT
             ));
 
             return [

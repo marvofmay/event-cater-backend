@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Presentation\API\Controller\Position;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Infrastructure\Http\Attribute\ErrorChannel;
 use App\Module\Company\Application\Facade\ImportPositionsFacade;
@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[ErrorChannel(MonologChanelEnum::EVENT_LOG)]
+#[ErrorChannel(MonologChannelEnum::EVENT_LOG)]
 final class ImportPositionsController extends AbstractController
 {
     public function __construct(
@@ -26,10 +26,14 @@ final class ImportPositionsController extends AbstractController
     ) {
     }
 
-    #[Route('/api/positions/import', name: 'api.positions.import', methods: ['POST'])]
+    #[Route(path: '/api/positions/import', name: 'api.positions.import', methods: ['POST'])]
     public function __invoke(#[MapUploadedFile] ?UploadedFile $file): JsonResponse
     {
-        $this->denyAccessUnlessGranted(PermissionEnum::IMPORT, AccessEnum::POSITIONS, $this->messageService->get('accessDenied'));
+        $this->denyAccessUnlessGranted(
+            PermissionEnum::IMPORT,
+            AccessEnum::POSITIONS,
+            $this->messageService->get('accessDenied')
+        );
 
         if (!$file) {
             return new JsonResponse(
@@ -45,6 +49,9 @@ final class ImportPositionsController extends AbstractController
             $responseData['errors'] = $result['errors'];
         }
 
-        return new JsonResponse($responseData, $result['success'] ? Response::HTTP_CREATED : Response::HTTP_UNPROCESSABLE_ENTITY);
+        return new JsonResponse(
+            $responseData,
+            $result['success'] ? Response::HTTP_CREATED : Response::HTTP_UNPROCESSABLE_ENTITY
+        );
     }
 }

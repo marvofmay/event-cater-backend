@@ -7,7 +7,7 @@ namespace App\Common\Domain\Enum;
 use App\Common\Domain\Interface\EnumInterface;
 use App\Common\Domain\Trait\StringEnumTrait;
 
-enum MonologChanelEnum: string implements EnumInterface
+enum MonologChannelEnum: string implements EnumInterface
 {
     use StringEnumTrait;
 

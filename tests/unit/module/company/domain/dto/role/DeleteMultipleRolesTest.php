@@ -57,7 +57,7 @@ class DeleteMultipleRolesTest extends KernelTestCase
         $this->assertGreaterThan(0, count($violations));
 
         foreach ($violations as $violation) {
-            $this->assertSame($this->messageService->get('role.delete.invalidUUID', [], 'roles'), $violation->getMessage());
+            $this->assertSame($this->messageService->get('uuid.invalid', [], 'validators'), $violation->getMessage());
         }
     }
 }

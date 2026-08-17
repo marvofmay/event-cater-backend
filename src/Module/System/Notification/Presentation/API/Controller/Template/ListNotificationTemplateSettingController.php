@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\System\Notification\Presentation\API\Controller\Template;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Module\System\Application\Event\LogFileEvent;
 use App\Module\System\Domain\Enum\Access\AccessEnum;
@@ -73,7 +73,7 @@ final class ListNotificationTemplateSettingController extends AbstractController
             $exception->getMessage()
         );
 
-        $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::ERROR, MonologChanelEnum::EVENT_LOG));
+        $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::ERROR, MonologChannelEnum::EVENT_LOG));
 
         $code = $exception->getCode() ?: Response::HTTP_BAD_REQUEST;
 
