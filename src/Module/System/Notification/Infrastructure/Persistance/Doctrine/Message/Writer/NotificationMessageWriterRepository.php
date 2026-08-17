@@ -25,4 +25,9 @@ class NotificationMessageWriterRepository extends ServiceEntityRepository implem
         $this->getEntityManager()->flush();
     }
 
+    public function delete(NotificationMessage $notificationMessage): void
+    {
+        $this->getEntityManager()->remove($notificationMessage);
+        $this->getEntityManager()->flush();
+    }
 }

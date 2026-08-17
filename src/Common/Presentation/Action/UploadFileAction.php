@@ -9,6 +9,7 @@ use App\Common\Application\DTO\UploadFileDTO;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\MessageBusInterface;
 
+// Todo:: Check if is unnecessary class - remove
 readonly class UploadFileAction
 {
     public function __construct(#[Autowire(service: 'command.bus')] private MessageBusInterface $commandBus)

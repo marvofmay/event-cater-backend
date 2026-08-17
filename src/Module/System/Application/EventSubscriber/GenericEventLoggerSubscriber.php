@@ -2,7 +2,7 @@
 
 namespace App\Module\System\Application\EventSubscriber;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Module\System\Domain\Interface\EventLog\EventLogCreatorInterface;
 use App\Module\System\Domain\Interface\EventLog\LoggableEventInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -47,9 +47,9 @@ final readonly class GenericEventLoggerSubscriber
 
     private function logToFile(string $eventClass, string $entityClass, string $jsonData, ?UserInterface $user): void
     {
-        $logger = $this->loggers->has(MonologChanelEnum::EVENT_LOG->value)
-            ? $this->loggers->get(MonologChanelEnum::EVENT_LOG->value)
-            : $this->loggers->get(MonologChanelEnum::MAIN->value);
+        $logger = $this->loggers->has(MonologChannelEnum::EVENT_LOG->value)
+            ? $this->loggers->get(MonologChannelEnum::EVENT_LOG->value)
+            : $this->loggers->get(MonologChannelEnum::MAIN->value);
 
         $logger->info('----------------- EVENT LOG -----------------');
         $logger->info("event: $eventClass");

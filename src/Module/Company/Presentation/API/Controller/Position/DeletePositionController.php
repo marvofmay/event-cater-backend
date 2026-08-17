@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Presentation\API\Controller\Position;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Infrastructure\Http\Attribute\ErrorChannel;
 use App\Module\Company\Application\Command\Position\DeletePositionCommand;
@@ -14,11 +14,13 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Throwable;
 
-#[ErrorChannel(MonologChanelEnum::EVENT_LOG)]
+#[ErrorChannel(MonologChannelEnum::EVENT_LOG)]
 final class DeletePositionController extends AbstractController
 {
     public function __construct(
@@ -27,17 +29,33 @@ final class DeletePositionController extends AbstractController
     ) {
     }
 
-    #[Route('/api/positions/{uuid}', name: 'api.positions.delete', requirements: ['uuid' => '[0-9a-fA-F-]{36}'], methods: ['DELETE'])]
+    /**
+     * @throws Throwable
+     * @throws ExceptionInterface
+     */
+    #[Route(
+        path: '/api/positions/{uuid}',
+        name: 'api.positions.delete',
+        requirements: ['uuid' => '[0-9a-fA-F-]{36}'],
+        methods: ['DELETE']
+    )]
     public function __invoke(string $uuid): JsonResponse
     {
-        $this->denyAccessUnlessGranted(PermissionEnum::DELETE, AccessEnum::POSITIONS, $this->messageService->get('accessDenied'));
+        $this->denyAccessUnlessGranted(
+            PermissionEnum::DELETE,
+            AccessEnum::POSITIONS,
+            $this->messageService->get('accessDenied')
+        );
 
         try {
             $this->commandBus->dispatch(new DeletePositionCommand($uuid));
         } catch (HandlerFailedException $e) {
-            throw $e->getPrevious();
+            throw $e->getPrevious() ?? $e;
         }
 
-        return new JsonResponse(['message' => $this->messageService->get('position.delete.success', [], 'positions')], Response::HTTP_OK);
+        return new JsonResponse(
+            ['message' => $this->messageService->get('position.delete.success', [], 'positions')],
+            Response::HTTP_OK
+        );
     }
 }

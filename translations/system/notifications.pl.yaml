@@ -20,3 +20,14 @@ notification:
       success: "Aktualizacja zdarzeń wywołujących powiadomienia zakończona sukcesem."
     list:
       error: "Błąd przy pobieraniu listy zdarzeń wywołujących powiadomienia."
+  unread:
+    notExists: "Nie istnieje nieprzeczytane powiadomienie o uuid :uuid"
+    multiple:
+      notExists: "Nie istnieją nieprzeczytane powiadomienia o uuid: :uuids"
+  recipient:
+    notExists: "Nie istnieje odbiorca powiadomienia o uuid :uuid"
+    multiple:
+      notExists: "Nie istnieją odbiorcy powiadomień o uuid: :uuids"
+  markAsRead:
+    success: "Powiadomienie zostało oznaczone jako przeczytane."
+    error: "Wystąpił błąd podczas oznaczania powiadomienia jako przeczytane."

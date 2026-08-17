@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Presentation\API\Controller\Position;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Infrastructure\Http\Attribute\ErrorChannel;
 use App\Module\Company\Application\Command\Position\DeleteMultiplePositionsCommand;
@@ -16,11 +16,13 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Throwable;
 
-#[ErrorChannel(MonologChanelEnum::EVENT_LOG)]
+#[ErrorChannel(MonologChannelEnum::EVENT_LOG)]
 final class DeleteMultiplePositionsController extends AbstractController
 {
     public function __construct(
@@ -29,17 +31,28 @@ final class DeleteMultiplePositionsController extends AbstractController
     ) {
     }
 
-    #[Route('/api/positions/multiple', name: 'api.positions.delete_multiple', methods: ['DELETE'])]
+    /**
+     * @throws Throwable
+     * @throws ExceptionInterface
+     */
+    #[Route(path: '/api/positions/multiple', name: 'api.positions.delete_multiple', methods: ['DELETE'])]
     public function __invoke(#[MapRequestPayload] DeleteMultipleDTO $deleteMultipleDTO): JsonResponse
     {
-        $this->denyAccessUnlessGranted(PermissionEnum::DELETE, AccessEnum::POSITIONS, $this->messageService->get('accessDenied'));
+        $this->denyAccessUnlessGranted(
+            PermissionEnum::DELETE,
+            AccessEnum::POSITIONS,
+            $this->messageService->get('accessDenied')
+        );
 
         try {
             $this->commandBus->dispatch(new DeleteMultiplePositionsCommand($deleteMultipleDTO->positionsUUIDs));
         } catch (HandlerFailedException $exception) {
-            throw $exception->getPrevious();
+            throw $exception->getPrevious() ?? $exception;
         }
 
-        return new JsonResponse(['message' => $this->messageService->get('position.delete.multiple.success', [], 'positions')], Response::HTTP_OK);
+        return new JsonResponse(
+            ['message' => $this->messageService->get('position.delete.multiple.success', [], 'positions')],
+            Response::HTTP_OK
+        );
     }
 }

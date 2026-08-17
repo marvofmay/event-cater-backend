@@ -10,7 +10,7 @@ final class DeleteMultipleDTO
 {
     #[Assert\NotBlank(message: 'role.delete.multiple.selectedUUIDsRequired')]
     #[Assert\All([
-        new Assert\Uuid(message: 'role.delete.invalidUUID'),
+        new Assert\Uuid(message: 'uuid.invalid'),
     ])]
     public array $rolesUUIDs = [] {
         get {

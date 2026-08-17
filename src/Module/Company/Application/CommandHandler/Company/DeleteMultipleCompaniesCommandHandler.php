@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Module\Company\Application\CommandHandler\Company;
 
 use App\Common\Domain\Abstract\CommandHandlerAbstract;
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\EventStore\EventStoreCreator;
 use App\Common\Domain\Trait\ClassNameExtractorTrait;
 use App\Common\Domain\Trait\HandleEventStoreTrait;
@@ -72,6 +72,6 @@ final class DeleteMultipleCompaniesCommandHandler extends CommandHandlerAbstract
             $userUUID
         );
 
-        $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::INFO, MonologChanelEnum::EVENT_STORE));
+        $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::INFO, MonologChannelEnum::EVENT_STORE));
     }
 }

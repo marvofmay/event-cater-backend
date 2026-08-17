@@ -20,6 +20,50 @@ final class NotificationRecipientReaderRepository extends ServiceEntityRepositor
         parent::__construct($registry, NotificationRecipient::class);
     }
 
+    public function getUnreadNotificationRecipientByUUID(string $uuid): NotificationRecipient
+    {
+        return $this->createQueryBuilder(NotificationRecipient::ALIAS)
+            ->innerJoin(
+                NotificationRecipient::ALIAS . '.message',
+                'nm'
+            )
+            ->innerJoin(
+                'nm.channel',
+                'ncs'
+            )
+            ->andWhere(NotificationRecipient::ALIAS . '.uuid = :uuid')
+            ->andWhere(NotificationRecipient::ALIAS . '.readAt IS NULL')
+            ->andWhere('ncs.channelCode = :channelCode')
+            ->setParameter('uuid', $uuid)
+            ->setParameter('channelCode', InternalNotificationChannel::getChanelCode())
+            ->getQuery()
+            ->getSingleResult();
+    }
+
+    public function getUnreadNotificationRecipientsByUUIDs(array $uuids): array
+    {
+        if (empty($uuids)) {
+            return [];
+        }
+
+        return $this->createQueryBuilder(NotificationRecipient::ALIAS)
+            ->innerJoin(
+                NotificationRecipient::ALIAS . '.message',
+                'nm'
+            )
+            ->innerJoin(
+                'nm.channel',
+                'ncs'
+            )
+            ->andWhere(NotificationRecipient::ALIAS . '.uuid IN (:uuids)')
+            ->andWhere(NotificationRecipient::ALIAS . '.readAt IS NULL')
+            ->andWhere('ncs.channelCode = :channelCode')
+            ->setParameter('uuids', $uuids)
+            ->setParameter('channelCode', InternalNotificationChannel::getChanelCode())
+            ->getQuery()
+            ->getResult();
+    }
+
     public function countUnreadNotificationMessagesForUser(string $userUUID): int
     {
         return (int) $this->createQueryBuilder(NotificationRecipient::ALIAS)

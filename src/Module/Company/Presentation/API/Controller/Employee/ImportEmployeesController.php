@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Presentation\API\Controller\Employee;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Infrastructure\Http\Attribute\ErrorChannel;
 use App\Module\Company\Application\Facade\ImportEmployeesFacade;
@@ -17,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapUploadedFile;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[ErrorChannel(MonologChanelEnum::IMPORT)]
+#[ErrorChannel(MonologChannelEnum::IMPORT)]
 class ImportEmployeesController extends AbstractController
 {
     public function __construct(
@@ -26,7 +26,7 @@ class ImportEmployeesController extends AbstractController
     ) {
     }
 
-    #[Route('/api/employees/import', name: 'api.employees.import', methods: ['POST'])]
+    #[Route(path: '/api/employees/import', name: 'api.employees.import', methods: ['POST'])]
     public function __invoke(#[MapUploadedFile] ?UploadedFile $file): JsonResponse
     {
         $this->denyAccessUnlessGranted(
