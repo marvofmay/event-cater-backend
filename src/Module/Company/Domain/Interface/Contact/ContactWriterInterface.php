@@ -8,5 +8,5 @@ use Doctrine\Common\Collections\Collection;
 
 interface ContactWriterInterface
 {
-    public function deleteContactsInDB(Collection $contacts): void;
+    public function deleteContacts(Collection $contacts): void;
 }

@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 interface UploadFileInterface
 {
-    public function uploadFile(UploadedFile $file): bool;
+    public function uploadFile(UploadedFile $file): void;
 
     public function getUploadedFile(): ?UploadedFile;
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\System\Application\CommandHandler\Email;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Module\Company\Domain\Interface\Email\EmailSenderInterface;
 use App\Module\System\Application\Command\Email\SendEmailCommand;
@@ -34,7 +34,7 @@ final readonly class SendEmailCommandHandler
 
         if (null === $email) {
             $message = $this->messageService->get('email.uuid.notFound', [':uuid' => $command->emailUUID->toString()], 'emails');
-            $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::ERROR, MonologChanelEnum::EVENT_LOG));
+            $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::ERROR, MonologChannelEnum::EVENT_LOG));
 
             return;
         }
@@ -43,11 +43,11 @@ final readonly class SendEmailCommandHandler
             $this->emailSender->send($email, $email->getTemplateName());
             $email->markAsSent();
             $message = $this->messageService->get('email.send.success', [':uuid' => $command->emailUUID->toString()], 'emails');
-            $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::INFO, MonologChanelEnum::EVENT_LOG));
+            $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::INFO, MonologChannelEnum::EVENT_LOG));
         } catch (\Throwable $error) {
             $email->markAsFailed($error->getMessage());
             $message = $this->messageService->get('email.send.failed', [':uuid' => $command->emailUUID->toString(), ':errorMessage' => $error->getMessage()], 'emails');
-            $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::ERROR, MonologChanelEnum::EVENT_LOG));
+            $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::ERROR, MonologChannelEnum::EVENT_LOG));
         }
 
         $this->emailWriterRepository->saveEmailInDB($email);

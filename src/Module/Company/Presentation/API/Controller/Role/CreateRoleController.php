@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Presentation\API\Controller\Role;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Infrastructure\Http\Attribute\ErrorChannel;
 use App\Module\Company\Application\Command\Role\CreateRoleCommand;
@@ -16,11 +16,13 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Throwable;
 
-#[ErrorChannel(MonologChanelEnum::EVENT_LOG)]
+#[ErrorChannel(MonologChannelEnum::EVENT_LOG)]
 final class CreateRoleController extends AbstractController
 {
     public function __construct(
@@ -29,17 +31,28 @@ final class CreateRoleController extends AbstractController
     ) {
     }
 
-    #[Route('/api/roles', name: 'api.roles.create', methods: ['POST'])]
+    /**
+     * @throws Throwable
+     * @throws ExceptionInterface
+     */
+    #[Route(path: '/api/roles', name: 'api.roles.create', methods: ['POST'])]
     public function __invoke(#[MapRequestPayload] CreateDTO $dto): JsonResponse
     {
-        $this->denyAccessUnlessGranted(PermissionEnum::CREATE, AccessEnum::ROLES, $this->messageService->get('accessDenied'));
+        $this->denyAccessUnlessGranted(
+            PermissionEnum::CREATE,
+            AccessEnum::ROLES,
+            $this->messageService->get('accessDenied')
+        );
 
         try {
             $this->commandBus->dispatch(new CreateRoleCommand(name: $dto->name, description: $dto->description));
         } catch (HandlerFailedException $e) {
-            throw $e->getPrevious();
+            throw $e->getPrevious() ?? $e;
         }
 
-        return new JsonResponse(['message' => $this->messageService->get('role.add.success', [], 'roles')], Response::HTTP_CREATED);
+        return new JsonResponse(
+            ['message' => $this->messageService->get('role.add.success', [], 'roles')],
+            Response::HTTP_CREATED
+        );
     }
 }

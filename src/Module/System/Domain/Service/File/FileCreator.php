@@ -15,6 +15,6 @@ readonly class FileCreator
 
     public function create(File $file): void
     {
-        $this->fileWriterRepository->saveFileInDB($file);
+        $this->fileWriterRepository->saveFile($file);
     }
 }

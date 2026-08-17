@@ -91,7 +91,7 @@ class NotificationRecipient
     {
         return $this->receivedAt;
     }
-    
+
     public function getMessage(): NotificationMessage
     {
         return $this->message;

@@ -3,7 +3,7 @@
 namespace App\tests\unit\module\company\domain\dto\role;
 
 use App\Common\Domain\Service\MessageTranslator\MessageService;
-use  App\Module\Company\Application\DTO\Role\AssignPermissionsDTO;
+use App\Module\Company\Application\DTO\Role\AssignPermissionsDTO;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 

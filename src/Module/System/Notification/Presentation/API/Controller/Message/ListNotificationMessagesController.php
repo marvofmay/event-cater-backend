@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\System\Notification\Presentation\API\Controller\Message;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Infrastructure\Http\Attribute\ErrorChannel;
 use App\Module\System\Domain\Enum\Access\AccessEnum;
@@ -21,7 +21,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\HandledStamp;
 use Symfony\Component\Routing\Attribute\Route;
 
-#[ErrorChannel(MonologChanelEnum::EVENT_LOG)]
+#[ErrorChannel(MonologChannelEnum::EVENT_LOG)]
 final class ListNotificationMessagesController extends AbstractController
 {
     public function __construct(

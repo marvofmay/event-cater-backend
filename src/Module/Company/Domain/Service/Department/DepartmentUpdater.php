@@ -74,7 +74,7 @@ final readonly class DepartmentUpdater
 
     private function deleteContacts(Collection $contacts): void
     {
-        $this->contactWriterRepository->deleteContactsInDB($contacts, Contact::HARD_DELETED_AT);
+        $this->contactWriterRepository->deleteContacts($contacts, Contact::HARD_DELETED_AT);
     }
 
     private function setDepartmentRelations(Department $department, Company $company, ?Department $parentDepartment, Address $address, array $contacts): void

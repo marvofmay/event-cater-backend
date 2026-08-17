@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Presentation\API\Controller\Employee;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Infrastructure\Http\Attribute\ErrorChannel;
 use App\Module\Company\Application\Command\Employee\RestoreEmployeeCommand;
@@ -14,11 +14,13 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Throwable;
 
-#[ErrorChannel(MonologChanelEnum::EVENT_LOG)]
+#[ErrorChannel(MonologChannelEnum::EVENT_LOG)]
 final class RestoreEmployeeController extends AbstractController
 {
     public function __construct(
@@ -27,15 +29,28 @@ final class RestoreEmployeeController extends AbstractController
     ) {
     }
 
-    #[Route('/api/employees/{uuid}/restore', name: 'api.employees.restore', requirements: ['uuid' => '[0-9a-fA-F-]{36}'], methods: ['PATCH'])]
+    /**
+     * @throws Throwable
+     * @throws ExceptionInterface
+     */
+    #[Route(
+        path: '/api/employees/{uuid}/restore',
+        name: 'api.employees.restore',
+        requirements: ['uuid' => '[0-9a-fA-F-]{36}'],
+        methods: ['PATCH']
+    )]
     public function __invoke(string $uuid): JsonResponse
     {
-        $this->denyAccessUnlessGranted(PermissionEnum::RESTORE, AccessEnum::EMPLOYEES, $this->messageService->get('accessDenied'));
+        $this->denyAccessUnlessGranted(
+            PermissionEnum::RESTORE,
+            AccessEnum::EMPLOYEES,
+            $this->messageService->get('accessDenied')
+        );
 
         try {
             $this->commandBus->dispatch(new RestoreEmployeeCommand($uuid));
         } catch (HandlerFailedException $exception) {
-            throw $exception->getPrevious();
+            throw $exception->getPrevious() ?? $exception;
         }
 
         return new JsonResponse(

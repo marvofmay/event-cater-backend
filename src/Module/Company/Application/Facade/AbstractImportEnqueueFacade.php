@@ -38,9 +38,9 @@ readonly class AbstractImportEnqueueFacade
     protected function handle(UploadedFile $file, string $folder, ImportKindEnum $importKind, callable $importCommand): void
     {
         $user = $this->security->getUser();
-        $uploadFilePath = sprintf('%s/%s', $this->params->get('upload_file_path'), $folder);
+        $uploadFilePath = sprintf('%s/%s', $this->params->get('upload_import_file_path'), $folder);
 
-        $fileName = UploadFile::generateUniqueFileName(FileExtensionEnum::XLSX);
+        $fileName = UploadFile::generateUniqueFileName(FileExtensionEnum::XLSX->value);
         $uploadFileDTO = new UploadFileDTO($file, $uploadFilePath, $fileName);
 
         $errors = $this->validator->validate($uploadFileDTO);
@@ -58,8 +58,8 @@ readonly class AbstractImportEnqueueFacade
             File::create(
                 fileName: $fileName,
                 filePath: $uploadFilePath,
-                fileExtension: FileExtensionEnum::XLSX,
-                fileKind: FileKindEnum::IMPORT_XLSX,
+                fileExtension: FileExtensionEnum::XLSX->value,
+                fileKind: FileKindEnum::IMPORT_XLSX->value,
                 user: $user
             )
         ));

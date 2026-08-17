@@ -1,3 +1,20 @@
 user:
   uuid:
     notExists: "Nie użytkownika o uuid :uuid"
+  data:
+    personal:
+      update:
+        success: "Dane personalne użytkownika zostały pomyślnie zaktualizowane."
+        error:  "Wystąpił nieoczekiwany błąd podczas aktualizacji danych personlanych użytkownika."
+    contact:
+      update:
+        success: "Dane kontaktowe użytkownika zostały pomyślnie zaktualizowane."
+        error:  "Wystąpił nieoczekiwany błąd podczas aktualizacji danych kontaktowych użytkownika."
+    address:
+      update:
+        success: "Dane adresowe użytkownika zostały pomyślnie zaktualizowane."
+        error:  "Wystąpił nieoczekiwany błąd podczas aktualizacji danych adresowych użytkownika."
+    avatar:
+      update:
+        success: "Avatar użytkownika został pomyślnie zaktualizowany."
+        error:  "Wystąpił nieoczekiwany błąd podczas aktualizacji avatara użytkownika."

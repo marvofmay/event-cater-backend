@@ -17,7 +17,7 @@ final class ContactWriterRepository extends ServiceEntityRepository implements C
         parent::__construct($registry, Contact::class);
     }
 
-    public function deleteContactsInDB(Collection $contacts, string $type = Contact::SOFT_DELETED_AT): void
+    public function deleteContacts(Collection $contacts, string $type = Contact::SOFT_DELETED_AT): void
     {
         foreach ($contacts as $contact) {
             if (Contact::HARD_DELETED_AT === $type) {

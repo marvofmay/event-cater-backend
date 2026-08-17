@@ -1,6 +1,7 @@
 /var/
 /vendor/
 /storage/
+/public/upload/
 
 /config/reference.php
 

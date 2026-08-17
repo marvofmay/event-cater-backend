@@ -16,10 +16,10 @@ use App\Module\System\Notification\Domain\Entity\NotificationMessage;
 use App\Module\System\Notification\Domain\Entity\NotificationRecipient;
 use App\Module\System\Notification\Domain\Enum\NotificationMessageEntityFieldEnum;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Doctrine\ORM\QueryBuilder;
 
 #[AsMessageHandler(bus: 'query.bus')]
 final class ListNotificationMessagesQueryHandler extends ListQueryHandlerAbstract

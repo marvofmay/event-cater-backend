@@ -8,5 +8,5 @@ use App\Module\System\Domain\Entity\File;
 
 interface FileWriterInterface
 {
-    public function saveFileInDB(File $file): void;
+    public function saveFile(File $file): void;
 }

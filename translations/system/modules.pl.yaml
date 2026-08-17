@@ -6,4 +6,6 @@ module:
   notes:
     description: "Moduł notatek pracownika."
   documents:
-    description: "Moduł dokumentów pracownika."
+    description: "Moduł dokumentów."
+  file_manager:
+    description: "Moduł zarządzania plikami i folderami."

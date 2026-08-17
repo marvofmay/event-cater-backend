@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Common\Domain\Trait;
 
 use App\Common\Domain\Entity\EventStore;
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\EventStore\EventStoreCreator;
 use App\Module\System\Application\Event\LogFileEvent;
 use Psr\Log\LogLevel;
@@ -48,6 +48,6 @@ trait HandleEventStoreTrait
         );
 
         $this->eventDispatcher->dispatch($event);
-        $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::INFO, MonologChanelEnum::EVENT_STORE));
+        $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::INFO, MonologChannelEnum::EVENT_STORE));
     }
 }

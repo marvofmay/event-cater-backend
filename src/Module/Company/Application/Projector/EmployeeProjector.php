@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Application\Projector;
 
+use App\Module\Company\Domain\Event\Employee\EmployeeChangedAddressEvent;
+use App\Module\Company\Domain\Event\Employee\EmployeeChangedContactEvent;
+use App\Module\Company\Domain\Event\Employee\EmployeeChangedPersonalDataEvent;
 use App\Module\Company\Domain\Event\Employee\EmployeeCreatedEvent;
 use App\Module\Company\Domain\Event\Employee\EmployeeDeletedEvent;
 use App\Module\Company\Domain\Event\Employee\EmployeeRestoredEvent;
 use App\Module\Company\Domain\Event\Employee\EmployeeUpdatedEvent;
 use App\Module\Company\Domain\Service\Email\EmailService;
+use App\Module\Company\Domain\Service\Employee\EmployeeChangerAddress;
+use App\Module\Company\Domain\Service\Employee\EmployeeChangerContact;
+use App\Module\Company\Domain\Service\Employee\EmployeeChangerPersonalData;
 use App\Module\Company\Domain\Service\Employee\EmployeeCreator;
 use App\Module\Company\Domain\Service\Employee\EmployeeDeleter;
 use App\Module\Company\Domain\Service\Employee\EmployeeRestorer;
@@ -23,6 +29,9 @@ final readonly class EmployeeProjector
         private EmployeeUpdater $employeeUpdater,
         private EmployeeDeleter $employeeDeleter,
         private EmployeeRestorer $employeeRestorer,
+        private EmployeeChangerPersonalData $employeeChangerPersonalData,
+        private EmployeeChangerAddress $employeeChangerAddress,
+        private EmployeeChangerContact $employeeChangerContact,
         private EmailService $emailService,
         private Security $security,
     ) {
@@ -61,5 +70,23 @@ final readonly class EmployeeProjector
     public function onEmployeeRestored(EmployeeRestoredEvent $event): void
     {
         $this->employeeRestorer->restore($event);
+    }
+
+    #[AsEventListener(event: EmployeeChangedPersonalDataEvent::class)]
+    public function onEmployeeChangedPersonalData(EmployeeChangedPersonalDataEvent $event): void
+    {
+        $this->employeeChangerPersonalData->change($event);
+    }
+
+    #[AsEventListener(event: EmployeeChangedAddressEvent::class)]
+    public function onEmployeeChangedAddress(EmployeeChangedAddressEvent $event): void
+    {
+        $this->employeeChangerAddress->change($event);
+    }
+
+    #[AsEventListener(event: EmployeeChangedContactEvent::class)]
+    public function onEmployeeChangedContact(EmployeeChangedContactEvent $event): void
+    {
+        $this->employeeChangerContact->change($event);
     }
 }

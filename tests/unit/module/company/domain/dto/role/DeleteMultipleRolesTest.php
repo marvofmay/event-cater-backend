@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\tests\unit\module\company\domain\dto\role;
 
 use App\Common\Domain\Service\MessageTranslator\MessageService;
-use  App\Module\Company\Application\DTO\Role\DeleteMultipleDTO;
+use App\Module\Company\Application\DTO\Role\DeleteMultipleDTO;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -57,7 +57,7 @@ class DeleteMultipleRolesTest extends KernelTestCase
         $this->assertGreaterThan(0, count($violations));
 
         foreach ($violations as $violation) {
-            $this->assertSame($this->messageService->get('role.delete.invalidUUID', [], 'roles'), $violation->getMessage());
+            $this->assertSame($this->messageService->get('uuid.invalid', [], 'validators'), $violation->getMessage());
         }
     }
 }

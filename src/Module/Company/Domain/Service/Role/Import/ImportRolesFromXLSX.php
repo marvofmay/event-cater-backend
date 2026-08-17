@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Domain\Service\Role\Import;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Infrastructure\Cache\EntityReferenceCache;
 use App\Common\XLSX\XLSXIterator;
@@ -74,7 +74,7 @@ class ImportRolesFromXLSX extends XLSXIterator
                     new LogFileEvent(
                         message: $this->messageService->get('role.import.error', [], 'positions').': '.$error,
                         level: LogLevel::ERROR,
-                        channel: MonologChanelEnum::IMPORT
+                        channel: MonologChannelEnum::IMPORT
                     )
                 );
             }

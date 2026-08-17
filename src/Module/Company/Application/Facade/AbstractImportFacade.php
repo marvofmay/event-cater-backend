@@ -8,7 +8,7 @@ use App\Common\Application\Command\UploadFileCommand;
 use App\Common\Application\DTO\UploadFileDTO;
 use App\Common\Domain\Enum\FileExtensionEnum;
 use App\Common\Domain\Enum\FileKindEnum;
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Domain\Service\UploadFile\UploadFile;
 use App\Module\System\Application\Command\File\CreateFileCommand;
@@ -59,8 +59,8 @@ abstract readonly class AbstractImportFacade
 
         try {
             $user = $this->security->getUser();
-            $uploadFilePath = sprintf('%s/%s', $this->params->get('upload_file_path'), $folder);
-            $fileName = UploadFile::generateUniqueFileName(FileExtensionEnum::XLSX);
+            $uploadFilePath = sprintf('%s/%s', $this->params->get('upload_import_file_path'), $folder);
+            $fileName = UploadFile::generateUniqueFileName(FileExtensionEnum::XLSX->value);
 
             $uploadFileDTO = new UploadFileDTO($file, $uploadFilePath, $fileName);
 
@@ -84,8 +84,8 @@ abstract readonly class AbstractImportFacade
                     File::create(
                         fileName: $fileName,
                         filePath: $uploadFilePath,
-                        fileExtension: FileExtensionEnum::XLSX,
-                        fileKind: FileKindEnum::IMPORT_XLSX,
+                        fileExtension: FileExtensionEnum::XLSX->value,
+                        fileKind: FileKindEnum::IMPORT_XLSX->value,
                         user: $user
                     )
                 ));
@@ -136,7 +136,7 @@ abstract readonly class AbstractImportFacade
             $this->eventBus->dispatch(new LogFileEvent(
                 sprintf('%s %s', $errorMessage, $this->messageService->get($error->getMessage())),
                 LogLevel::ERROR,
-                MonologChanelEnum::IMPORT
+                MonologChannelEnum::IMPORT
             ));
 
             return [

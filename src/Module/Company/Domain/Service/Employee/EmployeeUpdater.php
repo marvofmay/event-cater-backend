@@ -7,6 +7,7 @@ namespace App\Module\Company\Domain\Service\Employee;
 use App\Common\Domain\Interface\DomainEventInterface;
 use App\Common\Infrastructure\Cache\EntityReferenceCache;
 use App\Module\Company\Domain\Entity\Address;
+use App\Module\Company\Domain\Entity\Company;
 use App\Module\Company\Domain\Entity\Contact;
 use App\Module\Company\Domain\Entity\ContractType;
 use App\Module\Company\Domain\Entity\Department;
@@ -15,6 +16,7 @@ use App\Module\Company\Domain\Entity\Position;
 use App\Module\Company\Domain\Entity\Role;
 use App\Module\Company\Domain\Entity\User;
 use App\Module\Company\Domain\Interface\Address\AddressWriterInterface;
+use App\Module\Company\Domain\Interface\Company\CompanyReaderInterface;
 use App\Module\Company\Domain\Interface\Contact\ContactWriterInterface;
 use App\Module\Company\Domain\Interface\ContractType\ContractTypeReaderInterface;
 use App\Module\Company\Domain\Interface\Department\DepartmentReaderInterface;
@@ -34,6 +36,7 @@ final readonly class EmployeeUpdater
         private AddressFactory $addressFactory,
         private ContactFactory $contactFactory,
         private EmployeeWriterInterface $employeeWriterRepository,
+        private CompanyReaderInterface $companyReaderRepository,
         private DepartmentReaderInterface $departmentReaderRepository,
         private EmployeeReaderInterface $employeeReaderRepository,
         private ContractTypeReaderInterface $contractTypeReaderRepository,
@@ -64,6 +67,12 @@ final readonly class EmployeeUpdater
         if ($user->getEmail() !== $email) {
             $user->setEmail($email);
         }
+
+        $company = $this->entityReferenceCache->get(
+            Company::class,
+            $event->companyUUID->toString(),
+            fn (string $uuid) => $this->companyReaderRepository->getCompanyByUUID($uuid)
+        );
 
         $department = $this->entityReferenceCache->get(
             Department::class,
@@ -97,9 +106,9 @@ final readonly class EmployeeUpdater
             )
             : null;
 
-        $this->setEmployeeRelations($employee, $department, $role, $position, $contractType, $parentEmployee, $address, $contacts, $user);
+        $this->setEmployeeRelations($employee, $company, $department, $role, $position, $contractType, $parentEmployee, $address, $contacts, $user);
 
-        $this->employeeWriterRepository->saveEmployeeInDB($employee);
+        $this->employeeWriterRepository->saveEmployee($employee);
     }
 
     private function deleteAddress(?Address $address): void
@@ -111,11 +120,12 @@ final readonly class EmployeeUpdater
 
     private function deleteContacts(Collection $contacts): void
     {
-        $this->contactWriterRepository->deleteContactsInDB($contacts, Contact::HARD_DELETED_AT);
+        $this->contactWriterRepository->deleteContacts($contacts, Contact::HARD_DELETED_AT);
     }
 
     private function setEmployeeRelations(
         Employee $employee,
+        Company $company,
         Department $department,
         Role $role,
         Position $position,
@@ -125,6 +135,7 @@ final readonly class EmployeeUpdater
         array $contacts,
         User $user,
     ): void {
+        $employee->setCompany($company);
         $employee->setDepartment($department);
         $employee->setRole($role);
         $employee->setPosition($position);

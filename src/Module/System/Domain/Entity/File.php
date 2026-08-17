@@ -45,14 +45,14 @@ class File
     #[ORM\Column(type: Types::STRING, length: 250)]
     private string $filePath;
 
-    #[ORM\Column(type: Types::STRING, enumType: FileExtensionEnum::class)]
-    private FileExtensionEnum $extension;
+    #[ORM\Column(type: Types::STRING)]
+    private string $extension;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[ORM\Column(type: Types::STRING, enumType: FileKindEnum::class)]
-    private FileKindEnum $kind;
+    #[ORM\Column(type: Types::STRING)]
+    private string $kind;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'files')]
     #[ORM\JoinColumn(name: 'user_uuid', referencedColumnName: 'uuid', nullable: true, onDelete: 'CASCADE')]
@@ -69,7 +69,7 @@ class File
     {
     }
 
-    public static function create(string $fileName, string $filePath, $fileExtension, $fileKind, UserInterface $user): self
+    public static function create(string $fileName, string $filePath, string $fileExtension, string $fileKind, UserInterface $user): self
     {
         $self = new self();
         $self->uuid = Uuid::uuid4();
@@ -111,12 +111,12 @@ class File
         return $this;
     }
 
-    public function getExtension(): FileExtensionEnum
+    public function getExtension(): string
     {
         return $this->extension;
     }
 
-    public function setExtension(FileExtensionEnum $extension): self
+    public function setExtension(string $extension): self
     {
         $this->extension = $extension;
 
@@ -135,12 +135,12 @@ class File
         return $this;
     }
 
-    public function getKind(): FileKindEnum
+    public function getKind(): string
     {
         return $this->kind;
     }
 
-    public function setKind(FileKindEnum $kind): void
+    public function setKind(string $kind): void
     {
         $this->kind = $kind;
     }

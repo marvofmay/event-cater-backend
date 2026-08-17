@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\tests\unit\module\company\domain\dto\role;
 
 use App\Common\Domain\Service\MessageTranslator\MessageService;
-use  App\Module\Company\Application\DTO\Role\CreateDTO;
+use App\Module\Company\Application\DTO\Role\CreateDTO;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 

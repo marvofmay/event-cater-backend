@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Module\System\Domain\Factory;
+namespace App\Module\System\Infrastructure\Import;
 
 use App\Common\Domain\Interface\XLSXIteratorInterface;
 use App\Module\System\Domain\Enum\Import\ImportKindEnum;

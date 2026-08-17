@@ -1,5 +1,5 @@
 parameters:
-  upload_file_path: '%env(IMPORT_FILE_PATH)%'
+  upload_import_file_path: '%env(IMPORT_FILE_PATH)%'
 
 services:
   _defaults:

@@ -14,7 +14,7 @@ final readonly class UploadFileCommandHandler
 {
     public function __invoke(UploadFileCommand $command): void
     {
-        $uploadFileService = new UploadFile($command->uploadFilePath, FileExtensionEnum::XLSX, $command->uploadFileName);
+        $uploadFileService = new UploadFile($command->uploadFilePath, [FileExtensionEnum::XLSX->value], $command->uploadFileName);
         $uploadFileService->uploadFile($command->file);
     }
 }

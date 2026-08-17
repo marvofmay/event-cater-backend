@@ -77,7 +77,7 @@ class Contact
         return $this->{self::COLUMN_UUID};
     }
 
-    public function setUuid(UuidInterface $uuid): void
+    public function setUUID(UuidInterface $uuid): void
     {
         $this->{self::COLUMN_UUID} = $uuid;
     }
@@ -132,7 +132,7 @@ class Contact
         $this->data = $data;
     }
 
-    public function getActive(): bool
+    public function isActive(): bool
     {
         return $this->{self::COLUMN_ACTIVE};
     }

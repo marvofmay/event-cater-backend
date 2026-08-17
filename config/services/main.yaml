@@ -1,5 +1,7 @@
 parameters:
   doctrine.orm.enable_native_lazy_objects: true
+  public_upload_path: '%env(PUBLIC_UPLOAD_PATH)%'
+  upload_path: '%env(UPLOAD_PATH)%'
 
 services:
   _defaults:

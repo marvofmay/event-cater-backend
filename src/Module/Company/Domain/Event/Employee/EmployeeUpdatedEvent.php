@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Module\Company\Domain\Event\Employee;
 
 use App\Common\Domain\Interface\DomainEventInterface;
+use App\Module\Company\Domain\Aggregate\Company\ValueObject\CompanyUUID;
 use App\Module\Company\Domain\Aggregate\Department\ValueObject\DepartmentUUID;
 use App\Module\Company\Domain\Aggregate\Employee\ValueObject\ContractTypeUUID;
 use App\Module\Company\Domain\Aggregate\Employee\ValueObject\EmployeeUUID;
@@ -28,6 +29,7 @@ final readonly class EmployeeUpdatedEvent implements DomainEventInterface
         public LastName $lastName,
         public PESEL $pesel,
         public EmploymentFrom $employmentFrom,
+        public CompanyUUID $companyUUID,
         public DepartmentUUID $departmentUUID,
         public PositionUUID $positionUUID,
         public ContractTypeUUID $contractTypeUUID,

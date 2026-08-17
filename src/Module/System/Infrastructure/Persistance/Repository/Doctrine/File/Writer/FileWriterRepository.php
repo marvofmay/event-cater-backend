@@ -16,7 +16,7 @@ class FileWriterRepository extends ServiceEntityRepository implements FileWriter
         parent::__construct($registry, File::class);
     }
 
-    public function saveFileInDB(File $file): void
+    public function saveFile(File $file): void
     {
         $this->getEntityManager()->persist($file);
         $this->getEntityManager()->flush();

@@ -2,7 +2,7 @@
 
 namespace App\Module\System\Application\EventHandler;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Module\System\Application\Event\LogFileEvent;
 use Psr\Log\LogLevel;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -19,7 +19,7 @@ final readonly class LogFileEventHandler
     {
         $logger = $this->loggers->has($event->channel->value)
             ? $this->loggers->get($event->channel->value)
-            : $this->loggers->get(MonologChanelEnum::MAIN->value);
+            : $this->loggers->get(MonologChannelEnum::MAIN->value);
 
         match ($event->level) {
             LogLevel::DEBUG => $logger->debug($event->message),

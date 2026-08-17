@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Presentation\API\Controller\Company;
 
-use App\Common\Domain\Enum\MonologChanelEnum;
+use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Common\Domain\Service\MessageTranslator\MessageService;
 use App\Common\Infrastructure\Http\Attribute\ErrorChannel;
 use App\Module\Company\Application\Command\Company\CreateCompanyCommand;
@@ -16,11 +16,13 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
+use Throwable;
 
-#[ErrorChannel(MonologChanelEnum::EVENT_STORE)]
+#[ErrorChannel(MonologChannelEnum::EVENT_STORE)]
 final class CreateCompanyController extends AbstractController
 {
     public function __construct(
@@ -29,10 +31,18 @@ final class CreateCompanyController extends AbstractController
     ) {
     }
 
-    #[Route('/api/companies', name: 'api.companies.create', methods: ['POST'])]
+    /**
+     * @throws Throwable
+     * @throws ExceptionInterface
+     */
+    #[Route(path: '/api/companies', name: 'api.companies.create', methods: ['POST'])]
     public function __invoke(#[MapRequestPayload] CreateDTO $createDTO): JsonResponse
     {
-        $this->denyAccessUnlessGranted(PermissionEnum::CREATE, AccessEnum::COMPANIES, $this->messageService->get('accessDenied'));
+        $this->denyAccessUnlessGranted(
+            PermissionEnum::CREATE,
+            AccessEnum::COMPANIES,
+            $this->messageService->get('accessDenied')
+        );
 
         try {
             $this->commandBus->dispatch(new CreateCompanyCommand(
@@ -51,9 +61,12 @@ final class CreateCompanyController extends AbstractController
                 $createDTO->address
             ));
         } catch (HandlerFailedException $e) {
-            throw $e->getPrevious();
+            throw $e->getPrevious() ?? $e;
         }
 
-        return new JsonResponse(['message' => $this->messageService->get('company.add.success', [], 'companies')], Response::HTTP_CREATED);
+        return new JsonResponse(
+            ['message' => $this->messageService->get('company.add.success', [], 'companies')],
+            Response::HTTP_CREATED
+        );
     }
 }

@@ -7,8 +7,8 @@ namespace App\Module\Company\Application\CommandHandler\Industry;
 use App\Module\Company\Application\Command\Industry\ImportIndustriesCommand;
 use App\Module\Company\Application\Event\Industry\IndustryImportedEvent;
 use App\Module\System\Domain\Enum\Import\ImportKindEnum;
-use App\Module\System\Domain\Factory\ImporterFactory;
 use App\Module\System\Domain\Interface\Import\ImportReaderInterface;
+use App\Module\System\Infrastructure\Import\ImporterFactory;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 readonly class ImportIndustriesCommandHandler

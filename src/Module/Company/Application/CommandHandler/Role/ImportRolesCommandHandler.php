@@ -7,8 +7,8 @@ namespace App\Module\Company\Application\CommandHandler\Role;
 use App\Module\Company\Application\Command\Role\ImportRolesCommand;
 use App\Module\Company\Application\Event\Role\RoleImportedEvent;
 use App\Module\System\Domain\Enum\Import\ImportKindEnum;
-use App\Module\System\Domain\Factory\ImporterFactory;
 use App\Module\System\Domain\Interface\Import\ImportReaderInterface;
+use App\Module\System\Infrastructure\Import\ImporterFactory;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
