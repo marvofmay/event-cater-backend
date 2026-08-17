@@ -111,6 +111,11 @@ class Role
         return $this->getRoleAccesses()->map(fn (RoleAccess $ra) => $ra->getAccess());
     }
 
+    public function getAccessPermissions(): Collection
+    {
+        return $this->accessPermissions;
+    }
+
     public function addAccess(Access $access): void
     {
         foreach ($this->roleAccesses as $roleAccess) {

@@ -11,7 +11,7 @@ final readonly class UserPersonalInfoProvider
     public function getUserInfo(UserInterface $user): array
     {
         return [
-            'uuid'  => $user->getUUID(),
+            'uuid'  => $user->getUUID()->toString(),
             'email' => $user->getEmail(),
         ];
     }

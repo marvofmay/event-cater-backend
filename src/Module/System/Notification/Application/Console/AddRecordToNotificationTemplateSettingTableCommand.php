@@ -13,6 +13,7 @@ use App\Module\System\Notification\Domain\Interface\Channel\NotificationChannelS
 use App\Module\System\Notification\Domain\Interface\Event\NotificationEventSettingReaderInterface;
 use App\Module\System\Notification\Domain\Interface\Template\NotificationTemplateSettingReaderInterface;
 use App\Module\System\Notification\Domain\Service\Template\NotificationTemplateSettingCreator;
+use App\Module\System\Notification\Domain\Service\Template\NotificationTemplateSettingUpdater;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -35,6 +36,7 @@ final class AddRecordToNotificationTemplateSettingTableCommand extends Command
         private readonly NotificationEventSettingReaderInterface $notificationEventSettingReaderRepository,
         private readonly NotificationChannelSettingReaderInterface $notificationChannelSettingReaderRepository,
         private readonly NotificationTemplateSettingCreator $notificationTemplateSettingCreator,
+        private readonly NotificationTemplateSettingUpdater $notificationTemplateSettingUpdater,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly NotificationTemplateFactory $notificationTemplateFactory,
     ) {
@@ -125,6 +127,29 @@ final class AddRecordToNotificationTemplateSettingTableCommand extends Command
             $output->writeln(sprintf('<info>%s</info>', self::SUCCESS_MESSAGE));
         } else {
             $output->writeln(sprintf('<comment>%s</comment>', self::INFO_NO_ADDED_MESSAGE));
+        }
+
+        $defaultTemplate = $this->notificationTemplateFactory->getTemplate(true);
+        $updatedDefaults = 0;
+        if (null !== $defaultTemplate) {
+            foreach ($this->notificationTemplateSettingReaderRepository->getAll() as $setting) {
+                if (!$setting->isDefault() || 'default title' !== $setting->getTitle()) {
+                    continue;
+                }
+
+                $this->notificationTemplateSettingUpdater->update(
+                    $setting,
+                    $defaultTemplate->getTitle(),
+                    $defaultTemplate->getContent(),
+                    true,
+                    true
+                );
+                ++$updatedDefaults;
+            }
+        }
+
+        if ($updatedDefaults > 0) {
+            $output->writeln(sprintf('<info>Updated %d default notification templates</info>', $updatedDefaults));
         }
 
         return Command::SUCCESS;

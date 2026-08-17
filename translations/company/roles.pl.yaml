@@ -43,6 +43,8 @@ role:
     error: "Błąd przy tworzeniu pdf."
   access:
     notAssigned: "Dostępy o uuid :accesses nie są przypisane do roli :role"
+    permission:
+      notAllowed: "Uprawnienie \":permission\" nie może być przypisane do zasobu \":access\"."
   view:
     error: "Wystapił błąd przy pobieraniu wybranej roli."
   list:
