@@ -42,10 +42,11 @@ class ImportDepartmentsController extends AbstractController
             );
         }
 
-        $this->importDepartmentsFacade->enqueue($file);
+        $importUUID = $this->importDepartmentsFacade->enqueue($file);
 
         return new JsonResponse([
             'success' => true,
+            'importUUID' => $importUUID,
             'message' => $this->messageService->get('department.import.enqueued', [], 'departments'),
         ], Response::HTTP_ACCEPTED);
     }

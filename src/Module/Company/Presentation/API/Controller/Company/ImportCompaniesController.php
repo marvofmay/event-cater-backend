@@ -42,9 +42,11 @@ final class ImportCompaniesController extends AbstractController
             );
         }
 
-        $this->importCompaniesFacade->enqueue($file);
+        $importUUID = $this->importCompaniesFacade->enqueue($file);
 
         return new JsonResponse([
+            'success' => true,
+            'importUUID' => $importUUID,
             'message' => $this->messageService->get('company.import.enqueued', [], 'companies'),
         ], Response::HTTP_ACCEPTED);
     }
