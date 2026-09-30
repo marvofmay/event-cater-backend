@@ -13,7 +13,7 @@ final readonly class ImportContractTypesFacade extends AbstractImportFacade
         return $this->handle(
             file: $file,
             folder: 'contract_types',
-            importKind: ImportKindEnum::IMPORT_ROLES,
+            importKind: ImportKindEnum::IMPORT_CONTRACT_TYPES,
             successMessage: $this->messageService->get('contractType.import.success', [], 'contract_types'),
             errorMessage: $this->messageService->get('contractType.import.error', [], 'contract_types'),
             importCommand: fn ($import) => $this->commandBus->dispatch(new ImportContractTypesCommand($import->getUUID()->toString()))

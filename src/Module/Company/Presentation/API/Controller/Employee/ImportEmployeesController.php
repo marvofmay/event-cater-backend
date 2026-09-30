@@ -42,10 +42,11 @@ class ImportEmployeesController extends AbstractController
             );
         }
 
-        $this->importEmployeesFacade->enqueue($file);
+        $importUUID = $this->importEmployeesFacade->enqueue($file);
 
         return new JsonResponse([
             'success' => true,
+            'importUUID' => $importUUID,
             'message' => $this->messageService->get('employee.import.enqueued', [], 'employees'),
         ], Response::HTTP_ACCEPTED);
     }
