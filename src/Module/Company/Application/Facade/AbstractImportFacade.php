@@ -37,6 +37,7 @@ abstract readonly class AbstractImportFacade
 {
     public function __construct(
         protected EntityManagerInterface $entityManager,
+        protected \App\Module\Saas\Infrastructure\TenantContext $tenantContext,
         protected ValidatorInterface $validator,
         protected Security $security,
         protected ParameterBagInterface $params,
@@ -59,7 +60,9 @@ abstract readonly class AbstractImportFacade
 
         try {
             $user = $this->security->getUser();
-            $uploadFilePath = sprintf('%s/%s', $this->params->get('upload_import_file_path'), $folder);
+            $tenant = $this->tenantContext->current();
+        $tenantFolder = $tenant['slug'] === 'default' ? $folder : $tenant['uuid'].'/'.$folder;
+        $uploadFilePath = sprintf('%s/%s', $this->params->get('upload_import_file_path'), $tenantFolder);
             $fileName = UploadFile::generateUniqueFileName(FileExtensionEnum::XLSX->value);
 
             $uploadFileDTO = new UploadFileDTO($file, $uploadFilePath, $fileName);

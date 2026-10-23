@@ -44,3 +44,12 @@ access:
   uuid:
     required: "Wymagane UUID dostępu."
     notExists: "Dostęp o podanym UUID :uuid nie istnieje."
+access.events.events.description: "Wydarzenia"
+access.equipment.equipment.description: "Sprzęt"
+
+access.supplies.consumables.description: "Produkty i materiały"
+access.events.preparation_templates.description: "Szablony kompletacji cateringu"
+
+access.kitchen.orders.description: "Karty produkcyjne kuchni"
+
+access.events.venues.description: "Baza miejsc obsługi cateringu"

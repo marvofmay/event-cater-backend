@@ -10,6 +10,12 @@ use App\Module\System\Domain\Enum\Permission\PermissionEnum;
 
 enum AccessEnum: string implements EnumInterface
 {
+    case EVENT_VENUES = ModuleEnum::EVENTS->value . '.venues';
+    case KITCHEN_ORDERS = ModuleEnum::KITCHEN->value . '.orders';
+    case CONSUMABLES = ModuleEnum::SUPPLIES->value . '.consumables';
+    case PREPARATION_TEMPLATES = ModuleEnum::EVENTS->value . '.preparation_templates';
+    case EVENTS = ModuleEnum::EVENTS->value . '.events';
+    case EQUIPMENT = ModuleEnum::EQUIPMENT->value . '.equipment';
     case MANAGE = ModuleEnum::COMPANY->value . '.manage';
     case COMPANIES = ModuleEnum::COMPANY->value . '.companies';
     case DEPARTMENTS = ModuleEnum::COMPANY->value . '.departments';
@@ -104,6 +110,12 @@ enum AccessEnum: string implements EnumInterface
     public function label(): string
     {
         return match ($this) {
+            self::EVENT_VENUES => 'Event venues',
+            self::KITCHEN_ORDERS => 'Kitchen production orders',
+            self::CONSUMABLES => 'Consumables',
+            self::PREPARATION_TEMPLATES => 'Preparation templates',
+            self::EVENTS => 'Events',
+            self::EQUIPMENT => 'Equipment',
             self::MANAGE => 'Manage',
             self::COMPANIES => 'Companies',
             self::DEPARTMENTS => 'Departments',

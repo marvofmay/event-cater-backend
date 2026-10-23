@@ -1,0 +1,2 @@
+services:
+  App\Module\Supply\Domain\Repository\ConsumableRepository: '@App\Module\Supply\Infrastructure\Persistence\DoctrineConsumableRepository'

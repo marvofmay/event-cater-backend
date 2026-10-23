@@ -1,4 +1,8 @@
 imports:
+    - { resource: './services/module/kitchen.yaml' }
+    - { resource: './services/module/supply.yaml' }
+    - { resource: './services/module/event.yaml' }
+    - { resource: './services/module/equipment.yaml' }
     - { resource: './services/main.yaml' }
     - { resource: './services/module/company/company.yaml' }
     - { resource: './services/module/company/department.yaml' }

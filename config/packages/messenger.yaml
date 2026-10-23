@@ -4,13 +4,17 @@ framework:
         buses:
             command.bus:
                 middleware:
+                    - App\Module\Saas\Infrastructure\TenantMiddleware
                     - validation
                     - doctrine_transaction
             query.bus:
                 middleware:
+                    - App\Module\Saas\Infrastructure\TenantMiddleware
                     - validation
                 default_middleware: allow_no_handlers
-            event.bus: ~
+            event.bus:
+                middleware:
+                    - App\Module\Saas\Infrastructure\TenantMiddleware
         transports:
             async: '%env(MESSENGER_TRANSPORT_DSN)%'
             company_xlsx_import:

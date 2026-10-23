@@ -31,6 +31,7 @@ final class ChangeEmployeeAvatarCommandHandler extends CommandHandlerAbstract
     use HandleEventStoreTrait;
 
     public function __construct(
+        private readonly \App\Module\Saas\Infrastructure\TenantContext $tenantContext,
         private readonly Security $security,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly FileCreator $fileCreator,
@@ -50,7 +51,8 @@ final class ChangeEmployeeAvatarCommandHandler extends CommandHandlerAbstract
         $employeeUUID = $user->getEmployee()->getUUID()->toString();
 
         if ($command->avatarType === 'custom') {
-            $relativePath = sprintf('avatars/%s', $loggedUserUUID);
+            $tenant = $this->tenantContext->current();
+            $relativePath = sprintf('avatars/%s%s', $tenant['slug'] === 'default' ? '' : $tenant['uuid'].'/', $loggedUserUUID);
             $uploadFilePath = sprintf('%s/%s', $this->params->get('public_upload_path'), $relativePath);
 
             $uploadFileService = new UploadFile(

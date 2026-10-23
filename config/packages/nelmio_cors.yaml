@@ -6,7 +6,7 @@ nelmio_cors:
         origin_regex: false
         allow_origin: ['http://localhost:3000']
         allow_methods: ['GET', 'OPTIONS', 'POST', 'PUT', 'PATCH', 'DELETE']
-        allow_headers: ['Content-Type', 'Authorization']
+        allow_headers: ['Content-Type', 'Authorization', 'X-Tenant']
         expose_headers: ['Link']
         max_age: 3600
         allow_credentials: true

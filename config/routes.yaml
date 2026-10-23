@@ -13,3 +13,22 @@ app_api_company:
 app_api_note:
     resource: ../src/Module/Note/Presentation/API/Controller/
     type: attribute
+
+app_api_event:
+    resource: ../src/Module/Event/Presentation/API/Controller/
+    type: attribute
+app_api_equipment:
+    resource: ../src/Module/Equipment/Presentation/API/Controller/
+    type: attribute
+
+app_api_supply:
+    resource: ../src/Module/Supply/Presentation/API/Controller/
+    type: attribute
+
+app_api_kitchen:
+    resource: ../src/Module/Kitchen/Presentation/API/Controller/
+    type: attribute
+
+app_api_saas:
+    resource: ../src/Module/Saas/Presentation/API/Controller/
+    type: attribute

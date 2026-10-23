@@ -11,6 +11,10 @@ enum ModuleEnum: string implements EnumInterface
 {
     use StringEnumTrait;
 
+    case KITCHEN = 'kitchen';
+    case SUPPLIES = 'supplies';
+    case EVENTS = 'events';
+    case EQUIPMENT = 'equipment';
     case SYSTEM = 'system';
     case COMPANY = 'company';
     case NOTES = 'notes';

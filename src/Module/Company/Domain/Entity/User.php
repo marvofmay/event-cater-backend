@@ -131,6 +131,12 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
         return $this->{self::COLUMN_PASSWORD};
     }
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $tenantAdministrator = false;
+
+    public function isTenantAdministrator(): bool { return $this->tenantAdministrator; }
+    public function makeTenantAdministrator(): void { $this->tenantAdministrator = true; }
+
     public function getRoles(): array
     {
         if (null === $this->employee) {

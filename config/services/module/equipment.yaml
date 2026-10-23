@@ -1,0 +1,2 @@
+services:
+  App\Module\Equipment\Domain\Repository\EquipmentRepository: '@App\Module\Equipment\Infrastructure\Persistence\DoctrineEquipmentRepository'

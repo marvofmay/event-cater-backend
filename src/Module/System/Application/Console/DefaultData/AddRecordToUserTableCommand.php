@@ -25,7 +25,7 @@ class AddRecordToUserTableCommand extends Command
     private const string DEFAULT_EMAIL = 'admin.ec@gmail.com';
     private const string DEFAULT_PASSWORD = 'Admin123!';
 
-    public function __construct(private readonly EntityManagerInterface $entityManager, private readonly UserFactory $userFactory)
+    public function __construct(private readonly \App\Module\Saas\Infrastructure\ControlPlane $control, private readonly EntityManagerInterface $entityManager, private readonly UserFactory $userFactory)
     {
         parent::__construct();
     }
@@ -39,6 +39,10 @@ class AddRecordToUserTableCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        if ($this->entityManager->getConnection()->getDatabase() !== $this->control->defaultDatabase()) {
+            $output->writeln('Shared demo credentials are disabled for tenant databases.');
+            return Command::SUCCESS;
+        }
         $output->writeln(self::CHECKING_INFO);
 
         $existingUser = $this->entityManager->getRepository(User::class)
@@ -52,6 +56,7 @@ class AddRecordToUserTableCommand extends Command
 
         $user = $this->userFactory->create(self::DEFAULT_EMAIL, self::DEFAULT_PASSWORD);
 
+        $user->makeTenantAdministrator();
         $this->entityManager->persist($user);
         $this->entityManager->flush();
 
