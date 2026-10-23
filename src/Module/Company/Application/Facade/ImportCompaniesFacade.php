@@ -8,9 +8,9 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final readonly class ImportCompaniesFacade extends AbstractImportEnqueueFacade
 {
-    public function enqueue(UploadedFile $file): void
+    public function enqueue(UploadedFile $file): string
     {
-        $this->handle(
+        return $this->handle(
             file: $file,
             folder: 'companies',
             importKind: ImportKindEnum::IMPORT_COMPANIES,

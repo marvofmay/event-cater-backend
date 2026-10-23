@@ -35,7 +35,7 @@ readonly class AbstractImportEnqueueFacade
     ) {
     }
 
-    protected function handle(UploadedFile $file, string $folder, ImportKindEnum $importKind, callable $importCommand): void
+    protected function handle(UploadedFile $file, string $folder, ImportKindEnum $importKind, callable $importCommand): string
     {
         $user = $this->security->getUser();
         $uploadFilePath = sprintf('%s/%s', $this->params->get('upload_import_file_path'), $folder);
@@ -87,5 +87,7 @@ readonly class AbstractImportEnqueueFacade
                 $user->getUUID()->toString()
             )
         );
+
+        return $import->getUUID()->toString();
     }
 }
