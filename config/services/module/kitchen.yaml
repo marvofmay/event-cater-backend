@@ -1,0 +1,4 @@
+services:
+  App\Module\Kitchen\Domain\Repository\KitchenOrderRepository: '@App\Module\Kitchen\Infrastructure\Persistence\DoctrineKitchenOrderRepository'
+  App\Module\Kitchen\Application\Port\EventProductionSource: '@App\Module\Kitchen\Infrastructure\Integration\EventProductionAdapter'
+  App\Module\Kitchen\Application\Port\KitchenStaffDirectory: '@App\Module\Kitchen\Infrastructure\Integration\KitchenEmployeeDirectory'

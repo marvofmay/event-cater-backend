@@ -1,0 +1,2753 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Event Cater — Kitchen production",
+    "version": "1.0.0",
+    "description": "Production cards for off-site catering and events served at company premises. Separate bounded context; backend and PDF only. Recipes, shopping and shared production batches are future work."
+  },
+  "paths": {
+    "/api/events/{eventUuid}/kitchen-orders": {
+      "post": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Create a draft card from event menu",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            },
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "description": "Created kitchen card URL"
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "One card per event, unique across cancelled cards too. Requires kitchen view + plan_kitchen_production and events view. No automatic release.",
+        "parameters": [
+          {
+            "name": "eventUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Create"
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Read event kitchen card",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "eventUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      }
+    },
+    "/api/kitchen-orders": {
+      "get": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Daily kitchen work by production date",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires view and list. Stable order by card number. Keeps separate event cards; no implicit dish-name grouping.",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "draft",
+                "released",
+                "in_production",
+                "ready",
+                "handed_over",
+                "cancelled"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ]
+      }
+    },
+    "/api/kitchen-orders/{uuid}": {
+      "get": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Read card, production counts and current event snapshot",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Replace draft plan and refresh event snapshot",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires plan_kitchen_production. Does not automatically align lines by dish name or menu position; lines are explicit.",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Update"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kitchen-orders/{uuid}/release": {
+      "post": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "release kitchen card",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires view and release_kitchen_production.",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kitchen-orders/{uuid}/start": {
+      "post": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "start kitchen card",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires view and prepare_kitchen_meals.",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kitchen-orders/{uuid}/ready": {
+      "post": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "ready kitchen card",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires view and prepare_kitchen_meals.",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kitchen-orders/{uuid}/hand-over": {
+      "post": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "hand-over kitchen card",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires view and hand_over_kitchen_meals.",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kitchen-orders/{uuid}/cancel": {
+      "post": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "cancel kitchen card",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires view and cancel_kitchen_order.",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonCommand"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kitchen-orders/{uuid}/lines/{lineUuid}/progress": {
+      "put": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Record prepared and/or handed-over portions",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "lineUuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Progress"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kitchen-orders/{uuid}/revisions": {
+      "post": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Propose a full replacement plan for kitchen acceptance",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires plan_kitchen_production. Retain kitchen line UUIDs to preserve counts. Actual production cannot be transferred to a different dish identity.",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Propose"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kitchen-orders/{uuid}/revisions/accept": {
+      "post": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Accept proposed revision, preserving latest actual counts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires accept_kitchen_revision. Source must still match the proposal. Creates immutable revision and invalidates handover signoff.",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Version"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kitchen-orders/{uuid}/revisions/reject": {
+      "post": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Reject proposed revision with a reason",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KitchenOrder"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires accept_kitchen_revision.",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReasonCommand"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/kitchen-orders/{uuid}/revisions/{number}": {
+      "get": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Read immutable released revision with current validity flags",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Revision"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 999999999
+            }
+          }
+        ]
+      }
+    },
+    "/api/kitchen-orders/{uuid}/history": {
+      "get": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Read audit ordered by descending orderVersion",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100000
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            }
+          }
+        ]
+      }
+    },
+    "/api/kitchen-orders/{uuid}/pdf": {
+      "get": {
+        "tags": [
+          "Kitchen"
+        ],
+        "summary": "Print a released revision as PDF",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Printable card",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "private, no-store"
+              }
+            },
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid JSON",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient permissions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Stale version, pending revision or source conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Business rule or invalid payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "description": "Requires view and pdf. Defaults to current released revision. Includes warnings for superseded/cancelled/changed cards and blank production/signature fields. Local event timezone; remote resources disabled.",
+        "parameters": [
+          {
+            "name": "uuid",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "revision",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 999999999
+            }
+          }
+        ]
+      }
+    },
+    "/api/kitchen-orders/staff-options": {
+      "get": {
+        "summary": "Active employee suggestions; orders.plan_kitchen_production",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Suggestions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "maxItems": 20,
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "uuid": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "name": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "uuid",
+                          "name"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "items"
+                  ]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "JWT required"
+          },
+          "403": {
+            "description": "Permission denied"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ]
+      },
+      "LineDefinition": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "requiredPortions": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "portionSize": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500
+          },
+          "diets": {
+            "type": "array",
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "allergens": {
+            "type": "array",
+            "maxItems": 30,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "packing": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 500,
+            "description": "Optional serving/transport instructions: buffet, platters, GN containers; not individual meal packaging."
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 4000
+          },
+          "responsibleUuid": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "name",
+          "requiredPortions"
+        ]
+      },
+      "Line": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/LineDefinition"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "uuid": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "responsibleName": {
+                "type": "string",
+                "nullable": true
+              },
+              "preparedPortions": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "handedOverPortions": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "missingPreparedPortions": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "missingHandedOverPortions": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "excessPreparedPortions": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "preparedBy": {
+                "type": "string",
+                "nullable": true,
+                "format": "uuid"
+              },
+              "preparedAt": {
+                "type": "string",
+                "nullable": true,
+                "format": "date-time"
+              },
+              "handedOverBy": {
+                "type": "string",
+                "nullable": true,
+                "format": "uuid"
+              },
+              "handedOverAt": {
+                "type": "string",
+                "nullable": true,
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "uuid",
+              "preparedPortions",
+              "handedOverPortions"
+            ]
+          }
+        ]
+      },
+      "Plan": {
+        "type": "object",
+        "properties": {
+          "serviceMode": {
+            "type": "string",
+            "enum": [
+              "off_site",
+              "on_site"
+            ],
+            "default": "off_site",
+            "description": "Off-site event or event served at company premises."
+          },
+          "productionDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "dueAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "responsibleUuid": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 4000
+          },
+          "lines": {
+            "type": "array",
+            "maxItems": 300,
+            "items": {
+              "$ref": "#/components/schemas/LineDefinition"
+            }
+          }
+        },
+        "required": [
+          "productionDate",
+          "lines"
+        ]
+      },
+      "Source": {
+        "type": "object",
+        "properties": {
+          "eventUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "timezone": {
+            "type": "string"
+          },
+          "readyAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "location": {
+            "type": "object",
+            "properties": {}
+          },
+          "guestCount": {
+            "type": "integer",
+            "nullable": true
+          },
+          "menu": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string"
+                },
+                "portions": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 1000000
+                },
+                "portionSize": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "diets": {
+                  "type": "array",
+                  "maxItems": 30,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "allergens": {
+                  "type": "array",
+                  "maxItems": 30,
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  }
+                },
+                "servingStyle": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "notes": {
+                  "type": "string",
+                  "nullable": true
+                }
+              }
+            }
+          },
+          "eventVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "eventStatus": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "eventUuid",
+          "number",
+          "title",
+          "date",
+          "menu",
+          "eventVersion",
+          "eventStatus"
+        ]
+      },
+      "Snapshot": {
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "plan": {
+            "$ref": "#/components/schemas/Plan"
+          }
+        },
+        "required": [
+          "source",
+          "plan"
+        ]
+      },
+      "Proposal": {
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "plan": {
+            "$ref": "#/components/schemas/Plan"
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 2000
+          },
+          "proposedBy": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "proposedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "number",
+          "plan",
+          "source",
+          "reason",
+          "proposedBy",
+          "proposedAt"
+        ]
+      },
+      "KitchenOrder": {
+        "type": "object",
+        "properties": {
+          "serviceMode": {
+            "type": "string",
+            "enum": [
+              "off_site",
+              "on_site"
+            ],
+            "default": "off_site",
+            "description": "Off-site event or event served at company premises."
+          },
+          "productionDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "dueAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "responsibleUuid": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 4000
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Line"
+            }
+          },
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "eventUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "released",
+              "in_production",
+              "ready",
+              "handed_over",
+              "cancelled"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 1000000
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "currentSource": {
+            "$ref": "#/components/schemas/Source"
+          },
+          "sourceChanged": {
+            "type": "boolean"
+          },
+          "productionBlocked": {
+            "type": "boolean"
+          },
+          "pendingRevision": {
+            "type": "object",
+            "properties": {
+              "number": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 1000000
+              },
+              "plan": {
+                "$ref": "#/components/schemas/Plan"
+              },
+              "source": {
+                "$ref": "#/components/schemas/Source"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 2000
+              },
+              "proposedBy": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "proposedAt": {
+                "type": "string",
+                "format": "date-time"
+              }
+            },
+            "required": [
+              "number",
+              "plan",
+              "source",
+              "reason",
+              "proposedBy",
+              "proposedAt"
+            ],
+            "nullable": true
+          },
+          "revisionDiff": {
+            "type": "object",
+            "nullable": true,
+            "description": "Added, removed and changed lines by kitchen line UUID, portionsDelta, scheduleBefore and scheduleAfter."
+          },
+          "releasedBy": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "releasedAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "handedOverBy": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "handedOverAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "cancellationReason": {
+            "type": "string",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "uuid",
+          "eventUuid",
+          "number",
+          "status",
+          "version",
+          "revision",
+          "source",
+          "lines",
+          "sourceChanged",
+          "productionDate",
+          "serviceMode"
+        ]
+      },
+      "Revision": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orderUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "number": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "snapshot": {
+            "$ref": "#/components/schemas/Snapshot"
+          },
+          "actorUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "orderNumber": {
+            "type": "string"
+          },
+          "currentRevision": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "superseded": {
+            "type": "boolean"
+          },
+          "orderStatus": {
+            "type": "string"
+          },
+          "sourceChanged": {
+            "type": "boolean"
+          },
+          "eventStatus": {
+            "type": "string"
+          },
+          "pendingRevision": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "number",
+          "snapshot",
+          "superseded",
+          "currentRevision"
+        ]
+      },
+      "HistoryEntry": {
+        "type": "object",
+        "properties": {
+          "uuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orderUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orderVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 1000000
+          },
+          "action": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object",
+            "properties": {}
+          },
+          "actorUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "uuid",
+          "orderUuid",
+          "orderVersion",
+          "action",
+          "details",
+          "actorUuid",
+          "createdAt"
+        ]
+      },
+      "KitchenPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KitchenOrder"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "HistoryPage": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoryEntry"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100000
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "limit"
+        ]
+      },
+      "Version": {
+        "type": "object",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          }
+        },
+        "required": [
+          "version"
+        ]
+      },
+      "Create": {
+        "type": "object",
+        "properties": {
+          "eventVersion": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483647
+          },
+          "serviceMode": {
+            "type": "string",
+            "enum": [
+              "off_site",
+              "on_site"
+            ],
+            "default": "off_site",
+            "description": "Off-site event or event served at company premises."
+          },
+          "productionDate": {
+            "type": "string",
+            "format": "date"
+          },
+          "dueAt": {
+            "type": "string",
+            "nullable": true,
+            "format": "date-time"
+          },
+          "responsibleUuid": {
+            "type": "string",
+            "nullable": true,
+            "format": "uuid"
+          },
+          "notes": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 4000
+          }
+        },
+        "required": [
+          "eventVersion"
+        ]
+      },
+      "Update": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Plan"
+          },
+          {
+            "$ref": "#/components/schemas/Version"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "eventVersion": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 2147483647
+              }
+            },
+            "required": [
+              "eventVersion"
+            ]
+          }
+        ]
+      },
+      "Propose": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Update"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          }
+        ]
+      },
+      "ReasonCommand": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Version"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "reason": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 2000
+              }
+            },
+            "required": [
+              "reason"
+            ]
+          }
+        ]
+      },
+      "Progress": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/Version"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "preparedPortions": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "handedOverPortions": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000000
+              },
+              "correctionReason": {
+                "type": "string",
+                "minLength": 10,
+                "maxLength": 2000
+              }
+            }
+          }
+        ],
+        "description": "At least one count required. Counts are absolute. Decreases require correctionReason. Each submitted count requires its own permission. Handed over <= prepared."
+      }
+    }
+  }
+}

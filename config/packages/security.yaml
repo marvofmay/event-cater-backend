@@ -10,6 +10,9 @@ security:
                 class: App\Module\Company\Domain\Entity\User
                 property: email
     firewalls:
+        saas:
+            pattern: ^/api/saas(?:/|$)
+            security: false
         login:
             pattern: ^/api/login
             stateless: true

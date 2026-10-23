@@ -18,6 +18,30 @@ doctrine:
         enabled: true
 
     mappings:
+      kitchen:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Module/Kitchen/Domain/Entity'
+        prefix: 'App\Module\Kitchen\Domain\Entity'
+        alias: Kitchen
+      supply:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Module/Supply/Domain/Entity'
+        prefix: 'App\Module\Supply\Domain\Entity'
+        alias: Supply
+      event:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Module/Event/Domain/Entity'
+        prefix: 'App\Module\Event\Domain\Entity'
+        alias: Event
+      equipment:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Module/Equipment/Domain/Entity'
+        prefix: 'App\Module\Equipment\Domain\Entity'
+        alias: Equipment
       company:
         is_bundle: false
         type: attribute

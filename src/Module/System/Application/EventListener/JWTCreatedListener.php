@@ -18,6 +18,7 @@ use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 final readonly class JWTCreatedListener
 {
     public function __construct(
+        private \App\Module\Saas\Infrastructure\TenantContext $tenantContext,
         private AuthEventRecorder $authEventRecorder,
         private EventDispatcherInterface $eventDispatcher,
         private UserAuthorizationInfoProvider $userAuthInfoProvider,
@@ -29,6 +30,11 @@ final readonly class JWTCreatedListener
     {
         $user = $event->getUser();
         $payload = $event->getData();
+
+        $tenant = $this->tenantContext->current();
+        $payload['tenantUuid'] = $tenant['uuid'];
+        $payload['tenantSlug'] = $tenant['slug'];
+        $payload['tenantVersion'] = (int)$tenant['version'];
 
         $payload['user'] = $this->userPersonalInfoProvider->getUserInfo($user);
         $payload['employee'] = $this->userPersonalInfoProvider->getEmployeeInfo($user);

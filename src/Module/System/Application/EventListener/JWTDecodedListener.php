@@ -12,14 +12,14 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 #[AsEventListener(event: 'lexik_jwt_authentication.on_jwt_decoded', method: 'onJWTDecoded')]
 final readonly class JWTDecodedListener
 {
-    public function __construct(private BlacklistTokenService $blacklist)
+    public function __construct(private BlacklistTokenService $blacklist, private \App\Module\Saas\Infrastructure\TenantContext $tenantContext)
     {
     }
 
     public function onJWTDecoded(JWTDecodedEvent $event): void
     {
         $payload = $event->getPayload();
-        if (!isset($payload['tokenUUID'])) {
+        if (!$this->tenantContext->matches($payload) || !isset($payload['tokenUUID'])) {
             $event->markAsInvalid();
 
             return;

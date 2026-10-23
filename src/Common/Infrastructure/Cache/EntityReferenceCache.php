@@ -7,19 +7,21 @@ namespace App\Common\Infrastructure\Cache;
 use App\Common\Domain\Enum\MonologChannelEnum;
 use App\Module\System\Application\Event\LogFileEvent;
 use Psr\Log\LogLevel;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Doctrine\DBAL\Connection;
 use Symfony\Component\Messenger\MessageBusInterface;
 
-final class EntityReferenceCache
+final class EntityReferenceCache implements \Symfony\Contracts\Service\ResetInterface
 {
     private array $cache = [];
 
-    public function __construct(#[Autowire(service: 'event.bus')] private MessageBusInterface $eventBus)
+    public function __construct(#[Autowire(service: 'event.bus')] private MessageBusInterface $eventBus, private ?Connection $connection = null)
     {
     }
 
     public function get(string $className, string $identifier, callable $loader): ?object
     {
-        $key = $className.':'.$identifier;
+        $key = ($this->connection?->getDatabase() ?? 'default').':'.$className.':'.$identifier;
         if (!isset($this->cache[$key]) || empty($this->cache[$key])) {
             $this->logInFile($className, $identifier, 'method getCache');
             $this->cache[$key] = $loader($identifier);
@@ -32,7 +34,7 @@ final class EntityReferenceCache
     {
         $className = get_class($entity);
         $uuid = $entity->getUUID()->toString();
-        $key = $className.':'.$uuid;
+        $key = ($this->connection?->getDatabase() ?? 'default').':'.$className.':'.$uuid;
 
         if (!isset($this->cache[$key])) {
             $this->logInFile($className, $uuid, 'method setCache');
@@ -50,6 +52,8 @@ final class EntityReferenceCache
             )
         );
     }
+
+    public function reset(): void { $this->clear(); }
 
     public function clear(): void
     {

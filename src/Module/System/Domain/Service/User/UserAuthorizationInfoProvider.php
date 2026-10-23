@@ -22,12 +22,14 @@ final readonly class UserAuthorizationInfoProvider
     {
         $employee = $user->getEmployee();
 
-        if (null === $employee) {
+        if ($user->isTenantAdministrator()) {
             return $this->moduleReaderRepository
                 ->getModules()
                 ->map(fn ($m) => $m->getName())
                 ->toArray();
         }
+
+        if (null === $employee) { return []; }
 
         return array_unique(
             $employee->getRole()
@@ -41,12 +43,14 @@ final readonly class UserAuthorizationInfoProvider
     {
         $employee = $user->getEmployee();
 
-        if (null === $employee) {
+        if ($user->isTenantAdministrator()) {
             return $this->accessReaderRepository
                 ->getAccesses()
                 ->map(fn ($a) => $a->getName())
                 ->toArray();
         }
+
+        if (null === $employee) { return []; }
 
         return $employee->getRole()
             ->getAccesses()
@@ -58,12 +62,14 @@ final readonly class UserAuthorizationInfoProvider
     {
         $employee = $user->getEmployee();
 
-        if (null === $employee) {
+        if ($user->isTenantAdministrator()) {
             return $this->accessReaderRepository
                 ->getAccesses()
                 ->map(fn ($a) => $a->getName() . '.*')
                 ->toArray();
         }
+
+        if (null === $employee) { return []; }
 
         return $this->roleAccessPermissionReaderRepository
             ->getRoleAccessAndPermission($employee->getRole())

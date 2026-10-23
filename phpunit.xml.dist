@@ -9,6 +9,8 @@
          convertDeprecationsToExceptions="false"
 >
     <php>
+        <!-- Functional suites rebuild Doctrine metadata and the test schema. -->
+        <ini name="memory_limit" value="512M" />
         <ini name="display_errors" value="1" />
         <ini name="error_reporting" value="-1" />
         <server name="APP_ENV" value="test" force="true" />

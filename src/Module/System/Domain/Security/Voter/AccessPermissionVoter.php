@@ -80,7 +80,7 @@ abstract class AccessPermissionVoter extends Voter
             return false;
         }
 
-        if ('admin.ec@gmail.com' === $user->getEmail()) {
+        if ($user instanceof \App\Module\Company\Domain\Entity\User && $user->isTenantAdministrator()) {
             return true;
         }
 

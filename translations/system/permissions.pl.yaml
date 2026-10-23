@@ -24,3 +24,21 @@ permission:
   notExists: "Uprawnienie o podanym UUID nie istnieje :uuid"
   uuid:
     required: "Wymagane UUID uprawnienia"
+permission.confirm_event.description: "Potwierdzanie wydarzeń"
+permission.assign_event_staff.description: "Zarządzanie obsługą wydarzeń"
+permission.plan_event_menu.description: "Planowanie menu wydarzeń"
+permission.plan_event_equipment.description: "Planowanie sprzętu na wydarzenia"
+permission.manage_event_media.description: "Zarządzanie materiałami z wydarzeń"
+
+permission.plan_event_preparation.description: "Planowanie kompletacji cateringu"
+permission.prepare_event_catering.description: "Kompletowanie cateringu"
+permission.load_event_catering.description: "Załadunek cateringu"
+permission.dispatch_event_catering.description: "Potwierdzanie załadunku"
+permission.accept_preparation_shortages.description: "Akceptowanie wyjazdu z brakami"
+
+permission.plan_kitchen_production.description: Planowanie produkcji kuchennej
+permission.release_kitchen_production.description: Wydawanie kart do kuchni
+permission.prepare_kitchen_meals.description: Rejestrowanie przygotowania potraw
+permission.hand_over_kitchen_meals.description: Przekazywanie gotowych potraw
+permission.accept_kitchen_revision.description: Akceptacja i odrzucanie zmian kart kuchennych
+permission.cancel_kitchen_order.description: Anulowanie zleceń kuchennych

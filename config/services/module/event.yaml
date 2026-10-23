@@ -1,0 +1,8 @@
+services:
+  App\Module\Event\Domain\Repository\EventRepository: '@App\Module\Event\Infrastructure\Persistence\DoctrineEventRepository'
+  App\Module\Event\Application\Port\EmployeeDirectory: '@App\Module\Event\Infrastructure\Integration\CompanyEmployeeDirectory'
+  App\Module\Event\Application\Port\EquipmentCatalog: '@App\Module\Event\Infrastructure\Integration\CatalogEquipmentDirectory'
+  App\Module\Event\Domain\Repository\PreparationRepository: '@App\Module\Event\Infrastructure\Persistence\DoctrinePreparationRepository'
+  App\Module\Event\Domain\Repository\PreparationTemplateRepository: '@App\Module\Event\Infrastructure\Persistence\DoctrinePreparationTemplateRepository'
+  App\Module\Event\Application\Port\ConsumableCatalog: '@App\Module\Event\Infrastructure\Integration\SupplyConsumableCatalog'
+  App\Module\Event\Domain\Repository\VenueRepository: '@App\Module\Event\Infrastructure\Persistence\DoctrineVenueRepository'

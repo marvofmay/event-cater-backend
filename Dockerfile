@@ -52,6 +52,8 @@ RUN pecl install xdebug \
 RUN pecl install redis && docker-php-ext-enable redis
 
 
+COPY config/php/event-media.ini /usr/local/etc/php/conf.d/event-media.ini
+
 # Skopiuj pliki aplikacji do katalogu Apache
 COPY ./ /var/www/html
 
