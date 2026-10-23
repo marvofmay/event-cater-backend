@@ -12,6 +12,7 @@ use App\Module\Company\Domain\Service\Role\RoleAccessPermissionAssigner;
 use App\Module\Company\Domain\Service\Role\RoleAccessPermissionUpdater;
 use App\Module\System\Domain\Entity\Access;
 use App\Module\System\Domain\Entity\Permission;
+use App\Module\System\Domain\Entity\RoleAccessPermission;
 use App\Module\System\Domain\Interface\Permission\PermissionReaderInterface;
 use App\Module\System\Domain\Interface\RoleAccessPermission\RoleAccessPermissionWriterInterface;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -41,7 +42,21 @@ final class RoleAccessPermissionAssignerTest extends TestCase
             ->method('getPermissions')
             ->willReturn(new ArrayCollection([$perm1, $perm2, $perm3]));
 
-        $access->method('getPermissions')->willReturn(new ArrayCollection([$perm1, $perm3]));
+        $accessUuid = Uuid::fromString('00000000-0000-0000-0000-0000000000aa');
+        $access->method('getUUID')->willReturn($accessUuid);
+
+        $existingPermission1 = $this->createMock(RoleAccessPermission::class);
+        $existingPermission1->method('getAccess')->willReturn($access);
+        $existingPermission1->method('getPermission')->willReturn($perm1);
+
+        $existingPermission3 = $this->createMock(RoleAccessPermission::class);
+        $existingPermission3->method('getAccess')->willReturn($access);
+        $existingPermission3->method('getPermission')->willReturn($perm3);
+
+        $role->method('getAccessPermissions')->willReturn(new ArrayCollection([
+            $existingPermission1,
+            $existingPermission3,
+        ]));
 
         $payloadUUIDs = [
             '00000000-0000-0000-0000-000000000001',

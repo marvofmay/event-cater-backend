@@ -5,12 +5,14 @@ namespace App\Module\Company\Domain\Service\Role;
 use App\Common\Domain\Enum\DeleteTypeEnum;
 use App\Module\Company\Domain\Entity\Role;
 use App\Module\Company\Domain\Interface\Role\AccessSynchronizerInterface;
+use App\Module\Company\Domain\Interface\Role\RoleAccessPermissionDeleterInterface;
 use App\Module\System\Domain\Interface\RoleAccess\RoleAccessWriterInterface;
 
 final readonly class AccessSynchronizer implements AccessSynchronizerInterface
 {
     public function __construct(
         private RoleAccessWriterInterface $roleAccessWriterRepository,
+        private RoleAccessPermissionDeleterInterface $roleAccessPermissionDeleter,
     ) {
     }
 
@@ -26,6 +28,7 @@ final readonly class AccessSynchronizer implements AccessSynchronizerInterface
                 continue;
             }
 
+            $this->roleAccessPermissionDeleter->delete($role, $currentAccess);
             $role->removeAccess($currentAccess);
 
             $this->roleAccessWriterRepository->deleteRoleAccessInDB(

@@ -11,6 +11,7 @@ use App\Module\Company\Domain\Entity\Employee;
 use App\Module\Company\Domain\Entity\Role;
 use App\Module\Company\Domain\Enum\Role\RoleEntityFieldEnum;
 use App\Module\Company\Domain\Enum\Role\RoleEntityRelationFieldEnum;
+use App\Module\System\Domain\Entity\Access;
 use Doctrine\Common\Collections\Collection;
 
 class RoleDataTransformer implements DataTransformerInterface
@@ -38,6 +39,33 @@ class RoleDataTransformer implements DataTransformerInterface
         }
 
         return $data;
+    }
+
+    public function transformAssignedAccesses(Role $role): array
+    {
+        $permissionsByAccess = [];
+        foreach ($role->getAccessPermissions() as $roleAccessPermission) {
+            $accessUUID = $roleAccessPermission->getAccess()->getUUID()->toString();
+            $permissionsByAccess[$accessUUID][] = [
+                'uuid' => $roleAccessPermission->getPermission()->getUUID()->toString(),
+                'name' => $roleAccessPermission->getPermission()->getName(),
+            ];
+        }
+
+        return $role->getAccesses()->map(static function (Access $access) use ($permissionsByAccess) {
+            $accessUUID = $access->getUUID()->toString();
+
+            return [
+                Access::COLUMN_UUID => $accessUUID,
+                Access::COLUMN_NAME => $access->getName(),
+                Access::COLUMN_DESCRIPTION => $access->getDescription(),
+                Access::RELATION_MODULE => [
+                    'uuid' => $access->getModule()->getUUID()->toString(),
+                    'name' => $access->getModule()->getName(),
+                ],
+                'permissions' => $permissionsByAccess[$accessUUID] ?? [],
+            ];
+        })->getValues();
     }
 
     private function transformRelation(Role $role, string $relation): ?array

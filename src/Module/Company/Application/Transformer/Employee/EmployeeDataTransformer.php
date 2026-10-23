@@ -36,7 +36,7 @@ class EmployeeDataTransformer implements DataTransformerInterface
             Employee::COLUMN_INTERNAL_CODE => $employee->getInternalCode(),
             Employee::COLUMN_EXTERNAL_CODE => $employee->getExternalCode(),
             Employee::COLUMN_EMPLOYMENT_FROM => $employee->getEmploymentFrom()->format('Y-m-d'),
-            Employee::COLUMN_EMPLOYMENT_TO => $employee->getEmploymentTo(),
+            Employee::COLUMN_EMPLOYMENT_TO => $employee->getEmploymentTo()?->format('Y-m-d'),
             Employee::COLUMN_ACTIVE => $employee->getActive(),
             Employee::COLUMN_CREATED_AT => $employee->getcreatedAt()->format('Y-m-d H:i:s'),
             Employee::COLUMN_UPDATED_AT => $employee->getUpdatedAt()?->format('Y-m-d H:i:s'),

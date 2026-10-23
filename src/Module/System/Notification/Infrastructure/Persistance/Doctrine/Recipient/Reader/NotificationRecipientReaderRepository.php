@@ -76,7 +76,7 @@ final class NotificationRecipientReaderRepository extends ServiceEntityRepositor
                 'nm.channel',
                 'ncs'
             )
-            ->andWhere(NotificationRecipient::ALIAS . '.user = :userUUID')
+            ->andWhere('IDENTITY(' . NotificationRecipient::ALIAS . '.user) = :userUUID')
             ->andWhere(NotificationRecipient::ALIAS . '.readAt IS NULL')
             ->andWhere('ncs.channelCode = :channelCode')
             ->setParameter('userUUID', $userUUID)

@@ -9,7 +9,7 @@ use App\Common\Domain\Interface\NotifiableEventInterface;
 
 final readonly class EmployeeImportedEvent implements DomainEventInterface, NotifiableEventInterface
 {
-    public function __construct(public array $row, public string $importUUID)
+    public function __construct(public array $rows, public string $importUUID)
     {
     }
 }

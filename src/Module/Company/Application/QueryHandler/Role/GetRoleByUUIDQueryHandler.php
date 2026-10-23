@@ -29,10 +29,12 @@ final readonly class GetRoleByUUIDQueryHandler
 
         $role = $this->roleReaderRepository->getRoleByUUID($query->roleUUID);
         $transformer = new RoleDataTransformer();
+        $data = $transformer->transformToArray($role);
+        $data['accesses'] = $transformer->transformAssignedAccesses($role);
 
         $this->eventDispatcher->dispatch(new RoleViewedEvent([GetRoleByUUIDQuery::ROLE_UUID => $query->roleUUID]));
 
-        return $transformer->transformToArray($role);
+        return $data;
     }
 
     private function validate(QueryInterface $query): void

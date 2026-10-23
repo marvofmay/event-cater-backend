@@ -15,11 +15,11 @@ class DefaultNotificationTemplate implements NotificationTemplateInterface
 
     public function getTitle(): string
     {
-        return 'default title';
+        return 'Import {{importKind}}';
     }
 
     public function getContent(): string
     {
-        return 'default content';
+        return 'Import {{importKind}} zakończył się statusem: {{importStatus}}.';
     }
 }

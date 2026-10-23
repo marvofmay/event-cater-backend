@@ -18,6 +18,12 @@ final readonly class RoleAccessPermissionDeleter implements RoleAccessPermission
 
     public function delete(Role $role, Access $access): void
     {
+        foreach ($role->getAccessPermissions()->toArray() as $relation) {
+            if ($relation->getAccess()->getUUID()->toString() === $access->getUUID()->toString()) {
+                $role->removeAccessPermission($access, $relation->getPermission());
+            }
+        }
+
         $this->roleAccessPermissionWriterRepository->deleteRoleAccessPermissionsByRoleAndAccessInDB(
             role: $role,
             access: $access,

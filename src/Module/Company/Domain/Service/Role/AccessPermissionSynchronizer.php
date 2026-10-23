@@ -16,7 +16,14 @@ final readonly class AccessPermissionSynchronizer
     public function syncAccessPermissions(Role $role, Access $access, array $payloadPermissionsUUIDs, array $existingPermissions): void
     {
         $remainingUUIDs = $payloadPermissionsUUIDs;
-        foreach ($access->getPermissions() as $currentPermission) {
+        $accessUUID = $access->getUUID()->toString();
+
+        foreach ($role->getAccessPermissions() as $roleAccessPermission) {
+            if ($roleAccessPermission->getAccess()->getUUID()->toString() !== $accessUUID) {
+                continue;
+            }
+
+            $currentPermission = $roleAccessPermission->getPermission();
             $uuid = $currentPermission->getUUID()->toString();
             if (in_array($uuid, $remainingUUIDs, true)) {
                 $remainingUUIDs = array_values(array_filter(

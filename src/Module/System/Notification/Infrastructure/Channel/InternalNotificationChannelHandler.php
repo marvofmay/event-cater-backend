@@ -36,6 +36,8 @@ final readonly class InternalNotificationChannelHandler implements NotificationC
             $message = [
                 'subscriberType' => InternalNotificationChannel::getChanelCode(),
                 'event'          => $eventName,
+                'title'          => $title,
+                'content'        => $content,
             ];
 
             foreach ($recipients as $recipient) {
