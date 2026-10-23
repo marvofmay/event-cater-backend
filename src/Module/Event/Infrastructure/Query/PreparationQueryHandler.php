@@ -75,8 +75,15 @@ final readonly class PreparationQueryHandler
             if ($query->kind !== 'all' && $query->kind !== $kind) {
                 continue;
             }
-            $parts[] = "SELECT '".$kind."' AS kind, uuid AS itemUuid, code, name, category, unit FROM ".$table." WHERE active = 1 AND (name LIKE ? ESCAPE '!' OR code LIKE ? ESCAPE '!')";
+            $category = $kind === 'equipment' ? 'category.name' : 'item.category';
+            $slang = $kind === 'equipment' ? 'item.slang_name' : 'NULL';
+            $join = $kind === 'equipment' ? ' JOIN equipment_category category ON category.uuid = item.category_uuid' : '';
+            $slangSearch = $kind === 'equipment' ? " OR item.slang_name LIKE ? ESCAPE '!'" : '';
+            $parts[] = "SELECT '".$kind."' AS kind, item.uuid AS itemUuid, item.code, item.name, ".$category.' AS category, item.unit, '.$slang.' AS slangName FROM '.$table.' item'.$join." WHERE item.active = 1 AND (item.name LIKE ? ESCAPE '!' OR item.code LIKE ? ESCAPE '!'".$slangSearch.')';
             array_push($params, self::pattern($query->search), self::pattern($query->search));
+            if ($kind === 'equipment') {
+                $params[] = self::pattern($query->search);
+            }
         }
         return ['items' => $this->db->fetchAllAssociative('SELECT * FROM ('.implode(' UNION ALL ', $parts).') catalog ORDER BY name, kind, itemUuid LIMIT 20', $params)];
     }

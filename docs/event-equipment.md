@@ -59,6 +59,10 @@ Transakcja blokuje wiersz wydarzenia i pracownika. Kontrola konfliktów używa b
 
 ## Sprzęt i menu
 
+Kategorie sprzętu to osobny słownik: `GET/POST /api/equipment-categories`, `PUT/DELETE /api/equipment-categories/{uuid}`. Zapis i usunięcie wymagają aktualnej `version`. Obowiązują uprawnienia katalogu `equipment` (`list`, `create`, `update`, `delete`). Nazwy są unikalne; kategorii przypisanej do dowolnego sprzętu, także archiwalnego, nie można usunąć. Zmiana nazwy kategorii jest od razu widoczna w katalogu sprzętu.
+
+Sprzęt przyjmuje `categoryUuid`, opcjonalne `slangName` (do 200 znaków) oraz `stockQuantity` — posiadaną ilość w jednostce pozycji, nieujemną liczbę całkowitą (domyślnie 0). Brak ilości w aktualizacji zachowuje jej dotychczasową wartość. Wyszukiwanie katalogu i podpowiedzi uwzględnia nazwę slangową, a filtr `categoryUuid` wybiera kategorię. Dotychczasowe tekstowe `category` pozostaje obsługiwane dla starszych klientów. Migracja `Version20261023200000` przenosi istniejące kategorie do słownika bez utraty powiązań. Nieznane dotychczas ilości zaczynają od 0 i wymagają uzupełnienia. Ilość posiadana jest ewidencją; zapotrzebowania wydarzeń jej nie pomniejszają i nie rezerwują sprzętu.
+
 Kod sprzętu jest unikalny i normalizowany do wielkich liter. Jednostki: `piece` (sztuka), `set` (komplet), `kit` (zestaw). Zestaw jest samodzielną pozycją, bez automatycznego rozbijania na elementy. Sprzęt można dezaktywować i przywrócić; autocomplete pokazuje wyłącznie aktywny katalog.
 
 Zapotrzebowanie zapisuje nazwę, kod i jednostkę z chwili dodania. Zmiana nazwy w katalogu nie zmienia historycznego wydarzenia. Jednostki nie można zmienić, gdy sprzęt jest powiązany z wydarzeniem. Ilość jest dodatnią liczbą całkowitą. Nieaktywną pozycję można usunąć z zapotrzebowania, ale nie zwiększać jej ilości.

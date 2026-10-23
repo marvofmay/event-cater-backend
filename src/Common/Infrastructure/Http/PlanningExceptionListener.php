@@ -28,7 +28,7 @@ final class PlanningExceptionListener
 
     public function __invoke(ExceptionEvent $event): void
     {
-        if (!preg_match('#^/api/(event-venues|kitchen-orders|events|equipment|consumables|preparation-templates|preparation-options)(/|$)#', $event->getRequest()->getPathInfo())) {
+        if (!preg_match('#^/api/(event-venues|kitchen-orders|events|equipment|equipment-categories|consumables|preparation-templates|preparation-options)(/|$)#', $event->getRequest()->getPathInfo())) {
             return;
         }
         $error = $event->getThrowable();

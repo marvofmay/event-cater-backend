@@ -11,6 +11,70 @@
     }
   ],
   "paths": {
+    "/api/equipment-categories": {
+      "get": {
+        "tags": ["Equipment"],
+        "summary": "List categories (equipment.list permission); supports q, page and limit",
+        "responses": {
+          "200": {
+            "description": "Paginated equipment categories",
+            "content": {"application/json": {"schema": {
+              "type": "object",
+              "properties": {
+                "items": {"type": "array", "items": {"$ref": "#/components/schemas/EquipmentCategory"}},
+                "total": {"type": "integer"},
+                "page": {"type": "integer"},
+                "limit": {"type": "integer"}
+              }
+            }}}
+          }
+        }
+      },
+      "post": {
+        "tags": ["Equipment"],
+        "summary": "Create a category (equipment.create permission)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {
+          "type": "object", "required": ["name"], "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 100}}
+        }}}},
+        "responses": {
+          "201": {"description": "Created", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EquipmentCategory"}}}},
+          "409": {"description": "Category name already exists"},
+          "422": {"description": "Invalid category name"}
+        }
+      }
+    },
+    "/api/equipment-categories/{uuid}": {
+      "parameters": [{"name": "uuid", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}],
+      "put": {
+        "tags": ["Equipment"],
+        "summary": "Rename a category (equipment.update permission)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {
+          "type": "object", "required": ["name", "version"], "properties": {
+            "name": {"type": "string", "minLength": 1, "maxLength": 100},
+            "version": {"type": "integer", "minimum": 1}
+          }
+        }}}},
+        "responses": {
+          "200": {"description": "Updated", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EquipmentCategory"}}}},
+          "404": {"description": "Category not found"},
+          "409": {"description": "Stale version or duplicate name"},
+          "422": {"description": "Invalid category name"}
+        }
+      },
+      "delete": {
+        "tags": ["Equipment"],
+        "summary": "Delete an unused category (equipment.delete permission)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {
+          "type": "object", "required": ["version"], "properties": {"version": {"type": "integer", "minimum": 1}}
+        }}}},
+        "responses": {
+          "200": {"description": "Deleted"},
+          "404": {"description": "Category not found"},
+          "409": {"description": "Stale version"},
+          "422": {"description": "Category is used by equipment, including archived items"}
+        }
+      }
+    },
     "/api/events": {
       "post": {
         "tags": [
@@ -2186,6 +2250,11 @@
             }
           },
           {
+            "name": "categoryUuid",
+            "in": "query",
+            "schema": {"type": "string", "format": "uuid"}
+          },
+          {
             "name": "active",
             "in": "query",
             "schema": {
@@ -2862,7 +2931,23 @@
           "category": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 100
+            "maxLength": 100,
+            "description": "Legacy text category; use categoryUuid for managed categories."
+          },
+          "categoryUuid": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "slangName": {
+            "type": "string",
+            "nullable": true,
+            "maxLength": 200
+          },
+          "stockQuantity": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 2147483647,
+            "description": "Owned quantity in the item unit; no event reservations. Defaults to 0 on creation, preserved on update when omitted."
           },
           "unit": {
             "type": "string",
@@ -2881,9 +2966,18 @@
         "required": [
           "code",
           "name",
-          "category",
           "unit"
-        ]
+        ],
+        "anyOf": [{"required": ["categoryUuid"]}, {"required": ["category"]}]
+      },
+      "EquipmentCategory": {
+        "type": "object",
+        "required": ["uuid", "name", "version"],
+        "properties": {
+          "uuid": {"type": "string", "format": "uuid"},
+          "name": {"type": "string", "minLength": 1, "maxLength": 100},
+          "version": {"type": "integer", "minimum": 1}
+        }
       },
       "Equipment": {
         "allOf": [

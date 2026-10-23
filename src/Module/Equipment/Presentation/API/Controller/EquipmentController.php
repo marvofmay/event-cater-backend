@@ -29,7 +29,7 @@ final class EquipmentController extends PlanningController
         $this->denyAccessUnlessGranted(PermissionEnum::CREATE, AccessEnum::EQUIPMENT);
         $body = PlanningPayload::json($request);
         $uuid = Uuid::uuid4()->toString();
-        $this->execute(new CreateEquipmentItem($uuid, $body->text('code'), $body->text('name'), $body->text('category'), $body->text('unit'), $body->text('description', false)));
+        $this->execute(new CreateEquipmentItem($uuid, $body->text('code'), $body->text('name'), $body->text('category', false), $body->text('unit'), $body->text('description', false), $body->uuid('categoryUuid', false), $body->text('slangName', false), $body->integer('stockQuantity', false) ?? 0));
         return $this->resource($this->ask(new GetEquipmentItem($uuid)), 201);
     }
 
@@ -41,7 +41,7 @@ final class EquipmentController extends PlanningController
             'true' => true, 'false' => false, 'all' => null,
             default => throw new BusinessRuleViolation('active must be true, false or all.'),
         };
-        return $this->resource($this->ask(new ListEquipmentItems(PlanningPayload::page($request), PlanningPayload::search($request), $active, $request->query->getString('category') ?: null)));
+        return $this->resource($this->ask(new ListEquipmentItems(PlanningPayload::page($request), PlanningPayload::search($request), $active, $request->query->getString('categoryUuid') ?: ($request->query->getString('category') ?: null))));
     }
 
     #[Route('/options', methods: ['GET'], priority: 10)]
@@ -49,7 +49,7 @@ final class EquipmentController extends PlanningController
     {
         $this->denyAccessUnlessGranted(PermissionEnum::LIST, AccessEnum::EQUIPMENT);
         $result = $this->ask(new ListEquipmentItems(new Page(1, 20), PlanningPayload::search($request)));
-        return $this->resource(['items' => array_map(static fn (array $r) => array_intersect_key($r, array_flip(['uuid', 'name', 'code', 'unit', 'category'])), $result['items'])]);
+        return $this->resource(['items' => array_map(static fn (array $row) => array_intersect_key($row, array_flip(['uuid', 'name', 'code', 'unit', 'category', 'categoryUuid', 'slangName', 'stockQuantity'])), $result['items'])]);
     }
 
     #[Route('/{uuid}', methods: ['GET'])]
@@ -65,7 +65,7 @@ final class EquipmentController extends PlanningController
         $this->denyAccessUnlessGranted(PermissionEnum::UPDATE, AccessEnum::EQUIPMENT);
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
-        $this->execute(new UpdateEquipmentItem($uuid, $body->version(), $body->text('code'), $body->text('name'), $body->text('category'), $body->text('unit'), $body->text('description', false)));
+        $this->execute(new UpdateEquipmentItem($uuid, $body->version(), $body->text('code'), $body->text('name'), $body->text('category', false), $body->text('unit'), $body->text('description', false), $body->uuid('categoryUuid', false), $body->text('slangName', false), $body->integer('stockQuantity', false)));
         return $this->resource($this->ask(new GetEquipmentItem($uuid)));
     }
 
