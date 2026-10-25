@@ -102,12 +102,14 @@ class Employee
     private string $firstName;
 
     #[ORM\Column(type: Types::STRING, length: 50, nullable: false)]
-    #[Assert\NotBlank()]
-    private string $lastName;
+    private string $lastName = '';
 
     #[ORM\Column(type: Types::STRING, length: 11, nullable: false)]
     #[Assert\NotBlank()]
     private string $pesel;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $isPeselFake = false;
 
     #[ORM\Column(type: Types::STRING, length: 50, nullable: true)]
     private ?string $internalCode;
@@ -256,6 +258,16 @@ class Employee
     public function setPESEL(string $pesel): void
     {
         $this->{self::COLUMN_PESEL} = $pesel;
+    }
+
+    public function isPeselFake(): bool
+    {
+        return $this->isPeselFake;
+    }
+
+    public function setIsPeselFake(bool $isPeselFake): void
+    {
+        $this->isPeselFake = $isPeselFake;
     }
 
     public function getInternalCode(): ?string

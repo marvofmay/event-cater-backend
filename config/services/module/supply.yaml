@@ -1,2 +1,3 @@
 services:
+  App\Module\Supply\Domain\Repository\ConsumableCategoryRepository: '@App\Module\Supply\Infrastructure\Persistence\DoctrineConsumableCategoryRepository'
   App\Module\Supply\Domain\Repository\ConsumableRepository: '@App\Module\Supply\Infrastructure\Persistence\DoctrineConsumableRepository'

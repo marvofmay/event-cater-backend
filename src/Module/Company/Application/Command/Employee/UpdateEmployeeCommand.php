@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Application\Command\Employee;
 
-use App\Common\Application\DTO\AddressDTO;
+use App\Module\Company\Application\DTO\Employee\EmployeeAddressDTO;
 use App\Common\Domain\Interface\CommandInterface;
 
 class UpdateEmployeeCommand implements CommandInterface
@@ -27,7 +27,8 @@ class UpdateEmployeeCommand implements CommandInterface
         public ?string $employmentTo,
         public bool $active,
         public ?array $phones,
-        public AddressDTO $address,
+        public ?EmployeeAddressDTO $address,
+        public bool $isPeselFake = false,
     ) {
     }
 }

@@ -36,6 +36,7 @@ final readonly class AccessesExistsValidator implements ValidatorInterface
 
         $foundRAccesses = $this->accessReaderRepository
             ->getAccessesByUUIDs($uuids)
+            ->filter(fn ($access) => $access->getActive() && $access->getModule()->getActive())
             ->map(fn ($access) => $access->getUUID())
             ->toArray();
 

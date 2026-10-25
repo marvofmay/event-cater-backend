@@ -20,7 +20,7 @@ use App\Module\Company\Domain\Aggregate\Employee\ValueObject\LastName;
 use App\Module\Company\Domain\Aggregate\Employee\ValueObject\PESEL;
 use App\Module\Company\Domain\Aggregate\Employee\ValueObject\PositionUUID;
 use App\Module\Company\Domain\Aggregate\Employee\ValueObject\RoleUUID;
-use App\Module\Company\Domain\Aggregate\ValueObject\Address;
+use App\Module\Company\Application\DTO\Employee\EmployeeAddressDTO;
 use App\Module\Company\Domain\Aggregate\ValueObject\Emails;
 use App\Module\Company\Domain\Aggregate\ValueObject\Phones;
 use App\Module\System\Domain\ValueObject\UserUUID;
@@ -57,7 +57,7 @@ final class CreateEmployeeCommandHandler extends CommandHandlerAbstract
         $employeeAggregate = EmployeeAggregate::create(
             FirstName::fromString($command->firstName),
             LastName::fromString($command->lastName),
-            PESEL::fromString($command->pesel),
+            PESEL::fromString($command->pesel, $command->isPeselFake),
             EmploymentFrom::fromString($command->employmentFrom),
             CompanyUUID::fromString($command->companyUUID),
             DepartmentUUID::fromString($command->departmentUUID),
@@ -65,7 +65,7 @@ final class CreateEmployeeCommandHandler extends CommandHandlerAbstract
             ContractTypeUUID::fromString($command->contractTypeUUID),
             RoleUUID::fromString($command->roleUUID),
             Emails::fromArray([$command->email]),
-            Address::fromDTO($command->address),
+            ($command->address ?? new EmployeeAddressDTO())->toAddress(),
             UserUUID::fromString($loggedUserUUID),
             $command->externalCode,
             $command->internalCode,

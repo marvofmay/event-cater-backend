@@ -28,6 +28,15 @@ final class ControlPlane
         return (string) $this->db()->getDatabase();
     }
 
+    public function technicalAdministrator(string $email): ?array
+    {
+        if (!$this->db()->createSchemaManager()->tablesExist(['saas_administrator'])) {
+            return null;
+        }
+
+        return $this->db()->fetchAssociative('SELECT uuid,email,password,active FROM saas_administrator WHERE email=? AND technical_access=1', [$email]) ?: null;
+    }
+
     public function tenant(string $slug): ?array
     {
         if (!$this->db()->createSchemaManager()->tablesExist(['saas_tenant'])) {

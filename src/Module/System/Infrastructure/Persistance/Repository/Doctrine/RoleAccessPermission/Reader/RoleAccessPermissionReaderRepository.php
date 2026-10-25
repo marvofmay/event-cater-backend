@@ -8,6 +8,7 @@ use App\Module\Company\Domain\Entity\Role;
 use App\Module\System\Domain\Entity\Access;
 use App\Module\System\Domain\Entity\Permission;
 use App\Module\System\Domain\Entity\RoleAccessPermission;
+use App\Module\System\Domain\Entity\RoleAccess;
 use App\Module\System\Domain\Interface\RoleAccessPermission\RoleAccessPermissionReaderInterface;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -23,11 +24,19 @@ class RoleAccessPermissionReaderRepository extends ServiceEntityRepository imple
 
     public function isRoleHasAccessAndPermission(Permission $permission, Access $access, Role $role): bool
     {
-        return null !== $this->findOneBy([
-            RoleAccessPermission::RELATION_PERMISSION => $permission,
-            RoleAccessPermission::RELATION_ACCESS => $access,
-            RoleAccessPermission::RELATION_ROLE => $role,
-        ]);
+        if ($role->getDeletedAt() !== null) {
+            return false;
+        }
+
+        return $this->createQueryBuilder('assignment')
+            ->innerJoin(RoleAccess::class, 'roleAccess', 'ON', 'roleAccess.role = assignment.role AND roleAccess.access = assignment.access')
+            ->where('assignment.permission = :permission')
+            ->andWhere('assignment.access = :access')
+            ->andWhere('assignment.role = :role')
+            ->setParameter('permission', $permission)
+            ->setParameter('access', $access)
+            ->setParameter('role', $role)
+            ->getQuery()->getOneOrNullResult() !== null;
     }
 
     public function getRoleAccessAndPermission(Role $role): Collection

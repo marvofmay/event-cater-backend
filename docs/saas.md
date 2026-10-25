@@ -19,11 +19,15 @@ Każda rzeczywista zmiana statusu wymaga powodu i oczekiwanej wersji (`409` przy
 
 ## API i aplikacja mobilna
 
+Konfiguracja dostępów i czynności dla ról pracowniczych: [dostępy i uprawnienia ról](role-authorization.md).
+
 Żądania biznesowe, w tym `/api/login`, wysyłają `X-Tenant: kod-firmy`. Domyślna wartość to `default`. JWT zawiera `tenantUuid`, `tenantSlug`, `tenantVersion`; API sprawdza powiązanie tokena z firmą przed załadowaniem użytkownika. Stare tokeny sprzed wdrożenia SaaS wymagają ponownego logowania.
 
-Frontend ma pole „Kod firmy” w logowaniu. Proxy Next przekazuje wybraną firmę z cookie `tenant_slug` do API; cookie służy wyłącznie routowaniu, nie autoryzacji. Aplikacja mobilna może przesyłać nagłówek bez cookie i używać istniejących prywatnych endpointów zdjęć wydarzenia. Identyfikatory rekordów oraz uprawnienia sprawdzane są w bazie wybranej firmy.
+Frontend ma pole „Kod firmy” z listą nazw aktywnych firm. Pobiera wyłącznie `{slug,name}` z publicznego `/api/saas/tenant-options`; lista pomija `default`. Nie loguje automatycznie do `default`; zapamiętuje ostatnio wybraną firmę i obsługuje `/login?tenant=kod-firmy`. Proxy Next przekazuje wybraną firmę z cookie `tenant_slug` do API; cookie służy wyłącznie routowaniu, nie autoryzacji. Aplikacja mobilna może przesyłać nagłówek bez cookie i używać istniejących prywatnych endpointów zdjęć wydarzenia. Identyfikatory rekordów oraz uprawnienia sprawdzane są w bazie wybranej firmy.
 
-Konta SaaS są osobne: nie są pracownikami żadnej firmy i nie umożliwiają przeglądania jej wydarzeń. Panel `/saas` korzysta z losowych sesji ważnych godzinę, zapisywanych w bazie wyłącznie jako SHA-256. Przeglądarka przechowuje tę sesję w `sessionStorage`, oddzielnie od biznesowego JWT. Wylogowanie unieważnia sesję po stronie serwera. Logowanie ma limit 5 prób/minutę dla e-maila i adresu IP. Hasła kont klientów i SaaS są haszowane; brak domyślnego hasła SaaS.
+Konta SaaS są osobne i domyślnie nie dają dostępu do danych firm. Jawna flaga `saas_administrator.technical_access` pozwala administratorowi technicznemu logować się do aktywnych tenantów przez `/login`, przy użyciu centralnego hasła i wybraniu firmy. Lokalna tożsamość techniczna powstaje dopiero po poprawnym logowaniu i nie jest powiązana z pracownikiem firmy. JWT pozostaje przypisany do jednego tenanta. Wyłączenie centralnego konta lub flagi dostępu blokuje także istniejące tokeny techniczne. Sam e-mail nie nadaje uprawnień.
+
+Panel `/saas` korzysta z losowych sesji ważnych godzinę, zapisywanych w bazie wyłącznie jako SHA-256. Przeglądarka przechowuje tę sesję w `sessionStorage`, oddzielnie od biznesowego JWT. Wylogowanie unieważnia sesję po stronie serwera. Logowanie SaaS ma limit 5 prób/minutę dla e-maila i adresu IP. Hasła kont klientów i SaaS są haszowane; brak domyślnego hasła SaaS.
 
 | Metoda | Endpoint | Działanie |
 |---|---|---|
@@ -34,7 +38,7 @@ Konta SaaS są osobne: nie są pracownikami żadnej firmy i nie umożliwiają pr
 | GET | `/api/saas/tenants/{uuid}` | Klient i historia |
 | PATCH | `/api/saas/tenants/{uuid}/status` | `{status,version,reason}` |
 
-Wszystkie endpointy SaaS oprócz logowania wymagają `Authorization: Bearer <sesja SaaS>`. JWT administratora firmy nie daje dostępu do SaaS. Sesja SaaS nie działa w API biznesowym. `201` przy tworzeniu oznacza zapisanie klienta; należy sprawdzić `provisioning`, zanim zaproponuje się aktywację.
+Wszystkie endpointy SaaS oprócz logowania i `/api/saas/tenant-options` wymagają `Authorization: Bearer <sesja SaaS>`. JWT administratora firmy nie daje dostępu do SaaS. Sesja SaaS nie działa w API biznesowym. `201` przy tworzeniu oznacza zapisanie klienta; należy sprawdzić `provisioning`, zanim zaproponuje się aktywację.
 
 ## Instalacja
 
@@ -47,6 +51,16 @@ Wszystkie endpointy SaaS oprócz logowania wymagają `Authorization: Bearer <ses
 Dotychczasowy administrator techniczny firmy `default` otrzymuje jawną flagę `user.tenant_administrator`. Konta bez pracownika nie dostają już automatycznie wszystkich uprawnień; sam adres e-mail nie nadaje uprawnień administratora. Pole nie jest wystawione w formularzach edycji użytkownika.
 
 ## Kolejki, pliki i utrzymanie
+
+### Administrator techniczny i przejęcie danych `default`
+
+`php bin/console app:saas:enable-technical-administrator adres@firma.pl` nadaje jawny dostęp techniczny istniejącemu centralnemu administratorowi. Jeśli nie ma konta centralnego, tworzy je z istniejącego administratora dawnej bazy, zachowując jego hasło. Wymaga konta bez powiązania z pracownikiem i z flagą administratora firmy. Nie kopiuje danych logowania do nowych tenantów podczas ich zakładania.
+
+`php bin/console app:saas:adopt-legacy-tenant mapa-smakow "Mapa Smaków" adres@firma.pl` pokazuje plan przeniesienia. Po wykonaniu backupu i zatrzymaniu workerów opcja `--execute` kopiuje wszystkie tabele biznesowe wraz z identyfikatorami i kluczami obcymi do osobnej bazy, sprawdza liczby wierszy, kopiuje prywatne media i zapisuje audyt. Tabele `saas_*` pozostają wyłącznie centralne. Dotychczasowy `default` staje się nieaktywny, a jego baza i pliki pozostają kopią źródłową. Polecenie obsługuje pierwsze wydzielenie danych z `default`; odmawia łączenia z istniejącym tenantem. Nie nadpisuje ani nie usuwa istniejących danych przy błędzie.
+
+`php bin/console app:company:seed-catering-positions mapa-smakow UUID-FIRMY` dodaje 25 stanowisk cateringowych i wiąże je z istniejącymi działami Kuchnia, Logistyka, Czystość i higiena, Zarząd oraz Obsługa. Istniejące stanowiska są wykorzystywane ponownie, także przy innym zapisie wielkości liter. Pozostałe stanowiska pozostają zachowane.
+
+Lokalne dane zostały przeniesione do tenanta **Mapa Smaków**, kod **`mapa-smakow`**. Konto **`admin.ec@gmail.com`** ma jawny centralny dostęp techniczny. Logowanie do aplikacji: `/login?tenant=mapa-smakow`; panel zarządzania SaaS: `/saas`. Dotychczasowe hasło konta pozostaje aktualne.
 
 Messenger zapisuje `TenantStamp` przy wysyłaniu i wybiera właściwą bazę przed transakcją obsługi. Wiadomości bez firmy, z nieaktualną wersją dostępu albo z zablokowanego klienta są odrzucane bez wykonania. Starszą kolejkę sprzed wdrożenia trzeba opróżnić przed aktualizacją lub przejrzeć ręcznie. Retry po zmianie statusu wymaga świadomego ponownego zlecenia operacji z aktualnym kontekstem. To nie jest mechanizm automatycznego wznawiania zadań po reaktywacji.
 

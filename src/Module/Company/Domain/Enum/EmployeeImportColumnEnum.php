@@ -25,6 +25,7 @@ enum EmployeeImportColumnEnum: int
     case EXTERNAL_CODE = 16;
     case EMPLOYMENT_TO = 17;
     case ACTIVE = 18;
+    case IS_PESEL_FAKE = 19;
 
     case DYNAMIC_IS_EMPLOYEE_WITH_PESEL_ALREADY_EXISTS = 100;
     case DYNAMIC_AGGREGATE_UUID = 101;
@@ -51,6 +52,7 @@ enum EmployeeImportColumnEnum: int
             self::EXTERNAL_CODE => 'externalCode',
             self::EMPLOYMENT_TO => 'employmentTo',
             self::ACTIVE => 'active',
+            self::IS_PESEL_FAKE => 'isPeselFake',
             self::DYNAMIC_IS_EMPLOYEE_WITH_PESEL_ALREADY_EXISTS => 'isEmployeeWithPESELAlreadyExists',
             self::DYNAMIC_AGGREGATE_UUID => 'aggregateUuid',
         };

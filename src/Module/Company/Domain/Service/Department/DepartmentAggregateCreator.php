@@ -20,6 +20,8 @@ final class DepartmentAggregateCreator extends AggregateAbstract
 {
     public function create(array $row, DepartmentUUID $uuid, ?DepartmentUUID $parentUUID, UserUUID $loggedUserUUID): void
     {
+        $phone = trim((string) ($row[DepartmentImportColumnEnum::PHONE->value] ?? ''));
+        $email = trim((string) ($row[DepartmentImportColumnEnum::EMAIL->value] ?? ''));
         $departmentAggregate = DepartmentAggregate::create(
             CompanyUUID::fromString($row[DepartmentImportColumnEnum::COMPANY_UUID->value]),
             Name::fromString($row[DepartmentImportColumnEnum::DEPARTMENT_NAME->value]),
@@ -33,8 +35,8 @@ final class DepartmentAggregateCreator extends AggregateAbstract
             $loggedUserUUID,
             (bool) $row[DepartmentImportColumnEnum::ACTIVE->value],
             $row[DepartmentImportColumnEnum::DEPARTMENT_DESCRIPTION->value],
-            Phones::fromArray([$row[DepartmentImportColumnEnum::PHONE->value]]),
-            $row[DepartmentImportColumnEnum::EMAIL->value] ? Emails::fromArray([$row[DepartmentImportColumnEnum::EMAIL->value]]) : null,
+            $phone !== '' ? Phones::fromArray([$phone]) : null,
+            $email !== '' ? Emails::fromArray([$email]) : null,
             $row[DepartmentImportColumnEnum::WEBSITE->value] ? Websites::fromArray([$row[DepartmentImportColumnEnum::WEBSITE->value]]) : null,
             $parentUUID,
             $uuid

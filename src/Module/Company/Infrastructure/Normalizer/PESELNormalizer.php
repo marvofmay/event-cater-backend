@@ -15,19 +15,21 @@ class PESELNormalizer implements NormalizerInterface, DenormalizerInterface
         return $data instanceof PESEL;
     }
 
-    public function normalize(mixed $data, ?string $format = null, array $context = []): string
+    public function normalize(mixed $data, ?string $format = null, array $context = []): string|array
     {
-        return $data->getValue();
+        return $data->isFake() ? ['value' => $data->getValue(), 'isFake' => true] : $data->getValue();
     }
 
     public function supportsDenormalization(mixed $data, string $type, ?string $format = null, array $context = []): bool
     {
-        return is_string($data) && is_a($type, PESEL::class, true);
+        return (is_string($data) || is_array($data)) && is_a($type, PESEL::class, true);
     }
 
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): PESEL
     {
-        return PESEL::fromString($data);
+        return is_array($data)
+            ? PESEL::fromString($data['value'], $data['isFake'] ?? false)
+            : PESEL::fromString($data);
     }
 
     public function getSupportedTypes(?string $format): array

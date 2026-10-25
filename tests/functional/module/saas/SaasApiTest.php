@@ -24,8 +24,10 @@ final class SaasApiTest extends FunctionalTestBase
             if (str_starts_with($query->getStatement(),'ALTER TABLE user')) { continue; }
             $db->executeStatement($query->getStatement(),$query->getParameters(),$query->getTypes());
         }
+        $db->executeStatement('ALTER TABLE saas_administrator ADD technical_access BOOLEAN NOT NULL DEFAULT 0');
         $this->password=bin2hex(random_bytes(12));
         $db->insert('saas_administrator',['uuid'=>Uuid::uuid4()->toString(),'email'=>'operator@example.test','password'=>password_hash($this->password,PASSWORD_DEFAULT),'active'=>1]);
+        static::getContainer()->get('limiter.saas_login')->create(hash('sha256', 'operator@example.test|127.0.0.1'))->reset();
         $response=$this->api('POST','/api/saas/login',['email'=>'operator@example.test','password'=>$this->password]); $this->adminToken=$response['token'];
         $this->client->setServerParameter('HTTP_Authorization','Bearer '.$this->adminToken);
     }
@@ -74,12 +76,15 @@ final class SaasApiTest extends FunctionalTestBase
         $tokenA=$this->customerLogin($a['slug']);
         $this->client->setServerParameter('HTTP_Authorization','Bearer '.$tokenA);
         $event=$this->api('POST','/api/events',['title'=>'Poufne wydarzenie A','date'=>'2026-12-24'],201);
+        $this->api('POST', '/api/roles', ['name' => 'Rola tylko firmy A'], 201);
+        $roleA = $this->api('GET', '/api/roles?phrase=Rola%20tylko%20firmy%20A')['data']['items'][0];
         $uuid=$event['data']['uuid']??$event['uuid'];
         $this->api('GET','/api/saas/tenants',[],403);
         $this->client->setServerParameter('HTTP_X_TENANT',$b['slug']);
         $this->api('GET','/api/events/'.$uuid,[],401);
         $tokenB=$this->customerLogin($b['slug']); $this->client->setServerParameter('HTTP_Authorization','Bearer '.$tokenB);
         $this->api('GET','/api/events/'.$uuid,[],404);
+        $this->api('PUT', '/api/roles/'.$roleA['uuid'].'/accesses', ['accesses' => []], 404);
         $this->api('POST','/api/events',['title'=>'Wydarzenie B','date'=>'2026-12-25'],201);
         $this->client->setServerParameter('HTTP_Authorization','Bearer '.$this->adminToken);
         $this->api('GET','/api/events',[],401);
@@ -134,5 +139,96 @@ final class SaasApiTest extends FunctionalTestBase
         $this->client->setServerParameter('HTTP_Authorization','');
         $this->api('GET','/api/saas/tenants',[],403);
         $this->api('POST','/api/saas/login',['email'=>'operator@example.test','password'=>'invalid'],403);
+    }
+
+    public function testTechnicalAdministratorUsesCentralCredentialsAndTenantBoundRevocableTokens(): void
+    {
+        $db = $this->em->getConnection();
+        $db->executeStatement('UPDATE saas_administrator SET technical_access=1 WHERE email=?', ['operator@example.test']);
+        $suffix = bin2hex(random_bytes(3));
+        $tenantA = $this->status($this->tenant('technical-a-'.$suffix), 'active');
+        $tenantB = $this->status($this->tenant('technical-b-'.$suffix), 'active');
+        $this->client->setServerParameter('HTTP_X_TENANT', $tenantA['slug']);
+        $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => 'wrong-password'], 401);
+        $central = static::getContainer()->get(\App\Module\Saas\Infrastructure\ControlPlane::class)->db();
+        $databaseA = $central->getDatabasePlatform()->quoteSingleIdentifier('ec_tenant_'.str_replace('-', '', $tenantA['uuid']));
+        self::assertSame(0, (int) $central->fetchOne('SELECT COUNT(*) FROM '.$databaseA.'.user WHERE email=?', ['operator@example.test']));
+        $loginA = $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $this->password]);
+        $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$loginA['token']);
+        $event = $this->api('POST', '/api/events', ['title' => 'Techniczny dostęp A', 'date' => '2026-12-31'], 201);
+        $this->client->setServerParameter('HTTP_X_TENANT', $tenantB['slug']);
+        $this->api('GET', '/api/events', [], 401);
+        $loginB = $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $this->password]);
+        $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$loginB['token']);
+        $this->api('GET', '/api/events/'.$event['uuid'], [], 404);
+        $this->api('GET', '/api/events');
+        $this->api('GET', '/api/saas/tenants', [], 403);
+        $control = static::getContainer()->get(\App\Module\Saas\Infrastructure\ControlPlane::class)->db();
+        $newPassword = bin2hex(random_bytes(12));
+        $control->executeStatement('UPDATE saas_administrator SET password=? WHERE email=?', [password_hash($newPassword, PASSWORD_DEFAULT), 'operator@example.test']);
+        $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $this->password], 401);
+        $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $newPassword]);
+        $this->password = $newPassword;
+        $control->executeStatement('UPDATE saas_administrator SET technical_access=0 WHERE email=?', ['operator@example.test']);
+        $this->api('GET', '/api/events', [], 401);
+        $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $this->password], 401);
+        $control->executeStatement('UPDATE saas_administrator SET technical_access=1, active=0 WHERE email=?', ['operator@example.test']);
+        $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $this->password], 401);
+        $control->executeStatement('UPDATE saas_administrator SET active=1 WHERE email=?', ['operator@example.test']);
+        $this->status($tenantB, 'suspended');
+        $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $this->password], 403);
+    }
+
+    public function testPublicTenantOptionsExposeOnlyReadyActiveNamedTenants(): void
+    {
+        $tenant = $this->tenant('options-'.bin2hex(random_bytes(3)));
+        $this->client->setServerParameter('HTTP_Authorization', '');
+        self::assertSame([], $this->api('GET', '/api/saas/tenant-options')['items']);
+        $tenant = $this->status($tenant, 'active');
+        $this->client->setServerParameter('HTTP_Authorization', '');
+        $options = $this->api('GET', '/api/saas/tenant-options')['items'];
+        self::assertSame([['slug' => $tenant['slug'], 'name' => $tenant['name']]], $options);
+    }
+
+    public function testLegacyAdoptionPreservesRowsForeignKeysMediaAndSourceDatabase(): void
+    {
+        $control = static::getContainer()->get(\App\Module\Saas\Infrastructure\ControlPlane::class);
+        $db = $control->db();
+        $db->executeStatement('UPDATE saas_administrator SET technical_access=1 WHERE email=?', ['operator@example.test']);
+        $source = $control->defaultDatabase();
+        $count = (int) $db->fetchOne('SELECT COUNT(*) FROM position');
+        $directory = sys_get_temp_dir().'/tenant-adoption-'.bin2hex(random_bytes(8));
+        $filesystem = new \Symfony\Component\Filesystem\Filesystem();
+        $filesystem->mkdir([$directory.'/storage/event-media', $directory.'/storage/equipment-photos/equipment-test']);
+        file_put_contents($directory.'/storage/event-media/test.jpg', 'event-media-fixture');
+        file_put_contents($directory.'/storage/equipment-photos/equipment-test/test.jpg', 'equipment-photo-fixture');
+        try {
+            $command = new \Symfony\Component\Console\Tester\CommandTester(new \App\Module\Saas\Presentation\Console\AdoptLegacyTenantCommand($control, $directory));
+            $arguments = ['slug' => 'adopted-test', 'name' => 'Mapa testowa', 'technical-email' => 'operator@example.test'];
+            self::assertSame(0, $command->execute($arguments));
+            self::assertNull($control->tenant('adopted-test'));
+            self::assertSame(0, $command->execute([...$arguments, '--execute' => true]));
+            $tenant = $control->tenant('adopted-test');
+            $this->databases[] = $tenant['database_name'];
+            self::assertSame('active', $tenant['status']);
+            self::assertSame('ready', $tenant['provisioning']);
+            self::assertSame('inactive', $control->tenant('default')['status']);
+            $target = $db->getDatabasePlatform()->quoteSingleIdentifier($tenant['database_name']);
+            self::assertSame($count, (int) $db->fetchOne('SELECT COUNT(*) FROM '.$target.'.position'));
+            self::assertSame($count, (int) $db->fetchOne('SELECT COUNT(*) FROM position'));
+            self::assertGreaterThan(0, (int) $db->fetchOne('SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND REFERENCED_TABLE_SCHEMA=?', [$tenant['database_name'], $tenant['database_name']]));
+            self::assertSame(0, (int) $db->fetchOne('SELECT COUNT(*) FROM information_schema.KEY_COLUMN_USAGE WHERE TABLE_SCHEMA=? AND REFERENCED_TABLE_SCHEMA=?', [$tenant['database_name'], $source]));
+            self::assertSame(0, (int) $db->fetchOne("SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA=? AND TABLE_NAME LIKE 'saas_%'", [$tenant['database_name']]));
+            self::assertSame('event-media-fixture', file_get_contents($directory.'/storage/event-media/'.$tenant['uuid'].'/test.jpg'));
+            self::assertSame('equipment-photo-fixture', file_get_contents($directory.'/storage/equipment-photos/'.$tenant['uuid'].'/equipment-test/test.jpg'));
+            self::assertFileExists($directory.'/storage/event-media/test.jpg');
+            self::assertSame(1, (int) $db->fetchOne("SELECT COUNT(*) FROM saas_audit WHERE tenant_uuid=? AND action='legacy_adopted'", [$tenant['uuid']]));
+            $this->client->setServerParameter('HTTP_X_TENANT', $tenant['slug']);
+            $login = $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $this->password]);
+            $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$login['token']);
+            $this->api('GET', '/api/events');
+        } finally {
+            $filesystem->remove($directory);
+        }
     }
 }

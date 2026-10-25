@@ -40,6 +40,7 @@ final readonly class PermissionsExistsValidator implements ValidatorInterface
 
         $foundRAccesses = $this->permissionReaderRepository
             ->getPermissionsByUUIDs($permissionsUUIDs)
+            ->filter(fn ($permission) => $permission->getActive())
             ->map(fn ($access) => $access->getUUID())
             ->toArray();
 

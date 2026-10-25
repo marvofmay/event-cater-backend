@@ -1,5 +1,15 @@
 # Adresy i usługi środowiska Event Cater
 
+## Środowisko lokalne — Mapa Smaków (25.10.2026)
+
+- Logowanie: http://localhost:3000/login?tenant=mapa-smakow — wybierz firmę **Mapa Smaków**, kod `mapa-smakow`.
+- Stanowiska: http://localhost:3000/manage/positions/list — 25 aktywnych stanowisk cateringowych przypisanych do pięciu działów.
+- Konto techniczne SaaS: `admin.ec@gmail.com`, dotychczasowe hasło; dostęp do każdej aktywnej firmy po jej wybraniu. Panel SaaS: http://localhost:3000/saas.
+- Wszystkie dotychczasowe dane biznesowe skopiowano do osobnej bazy Mapy Smaków z zachowaniem powiązań. Baza źródłowa pozostała zachowana; tenant `default` jest nieaktywny.
+- Backup sprzed migracji: lokalny plik `var/backups/before-mapa-smakow-20261025.sql`, wyłączony z Git.
+
+## Poprzednie środowisko chmurowe
+
 Stan sprawdzony: 23.10.2026. Zestawienie dotyczy aktualnie uruchomionego środowiska chmurowego.
 
 `localhost` oznacza maszynę, na której działa środowisko. Aby otworzyć usługę ze swojego komputera, użyj podglądu lub przekierowania odpowiedniego portu w środowisku chmurowym. Sam adres `localhost` na Twoim komputerze nie prowadzi do tej maszyny.

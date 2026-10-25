@@ -20,14 +20,18 @@ final readonly class LastNameValidator implements ImportRowValidatorInterface
 
     public function validate(array $row, array $additionalData = []): ?string
     {
-        $lastName = $row[EmployeeImportColumnEnum::LAST_NAME->value] ?? null;
+        $lastName = trim((string) ($row[EmployeeImportColumnEnum::LAST_NAME->value] ?? ''));
 
         if (empty($lastName)) {
-            return $this->messageService->get('employee.lastName.required', [], 'employees');
+            return null;
         }
 
-        if (strlen($lastName) < self::MINIMUM_LENGTH) {
+        if (mb_strlen($lastName) < self::MINIMUM_LENGTH) {
             return $this->messageService->get('employee.lastName.minimumLength', [':qty' => self::MINIMUM_LENGTH], 'employees');
+        }
+
+        if (mb_strlen($lastName) > 50) {
+            return $this->messageService->get('employee.lastName.maximumLength', [':qty' => 50], 'employees');
         }
 
         return null;

@@ -59,9 +59,8 @@ abstract class ListQueryHandlerAbstract implements ListQueryHandlerInterface
         }
 
         // pobranie tylko ID w kolejności sortowania
-        $ids = (clone $baseQB)
-            ->select("$alias.$identifier")
-            ->orderBy($orderByField, $orderDirection)
+        $idsQuery = (clone $baseQB)->select("$alias.$identifier");
+        $ids = $this->applySorting($idsQuery, $orderByField, $orderDirection)
             ->setFirstResult($query->getOffset())
             ->setMaxResults($query->getLimit())
             ->getQuery()
@@ -92,7 +91,7 @@ abstract class ListQueryHandlerAbstract implements ListQueryHandlerInterface
         }
 
         // zachowanie sortowania wg zapytania
-        $qb->orderBy($orderByField, $orderDirection);
+        $this->applySorting($qb, $orderByField, $orderDirection);
 
         $items = $qb->getQuery()->getResult();
 
@@ -102,6 +101,11 @@ abstract class ListQueryHandlerAbstract implements ListQueryHandlerInterface
             'limit' => $query->getLimit(),
             'items' => $this->transformIncludes($items, $query->getIncludes()),
         ];
+    }
+
+    protected function applySorting(QueryBuilder $qb, string $field, string $direction): QueryBuilder
+    {
+        return $qb->orderBy($field, $direction);
     }
 
     public function createBaseQueryBuilder(): QueryBuilder

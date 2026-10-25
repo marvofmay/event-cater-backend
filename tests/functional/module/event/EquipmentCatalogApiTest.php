@@ -55,6 +55,69 @@ final class EquipmentCatalogApiTest extends FunctionalTestBase
         self::assertSame(1, $this->api('GET', '/api/equipment-categories')['total']);
     }
 
+    public function testDeletingUnusedEquipmentReleasesItsCategory(): void
+    {
+        $this->getAuthenticatedClient();
+        $category = $this->api('POST', '/api/equipment-categories', ['name' => 'Urządzenia grzewcze'], 201);
+        $item = $this->api('POST', '/api/equipment', [
+            'code' => 'HEATER', 'name' => 'Warnik', 'categoryUuid' => $category['uuid'], 'unit' => 'piece',
+        ], 201);
+        $item = $this->api('PUT', '/api/equipment/'.$item['uuid'].'/active', ['version' => $item['version'], 'active' => false]);
+        $this->api('DELETE', '/api/equipment/'.$item['uuid'], ['version' => 1], 409);
+        $this->api('DELETE', '/api/equipment/'.$item['uuid'], ['version' => $item['version']]);
+        $this->api('GET', '/api/equipment/'.$item['uuid'], [], 404);
+        $this->api('DELETE', '/api/equipment-categories/'.$category['uuid'], ['version' => $category['version']]);
+    }
+
+    public function testEquipmentUsedByEventsOrTemplatesCannotBeDeleted(): void
+    {
+        $this->getAuthenticatedClient();
+        $item = $this->api('POST', '/api/equipment', [
+            'code' => 'TABLE', 'name' => 'Stół', 'category' => 'Meble', 'unit' => 'piece',
+        ], 201);
+        $template = $this->api('POST', '/api/preparation-templates', [
+            'name' => 'Stoły', 'lines' => [[
+                'kind' => 'equipment', 'itemUuid' => $item['uuid'], 'rule' => ['mode' => 'fixed', 'quantity' => '1'],
+            ]],
+        ], 201);
+        $this->api('DELETE', '/api/equipment/'.$item['uuid'], ['version' => $item['version']], 422);
+        $this->api('PUT', '/api/preparation-templates/'.$template['uuid'].'/active', ['version' => $template['version'], 'active' => false]);
+        $this->api('DELETE', '/api/equipment/'.$item['uuid'], ['version' => $item['version']], 422);
+        $event = $this->api('POST', '/api/events', ['title' => 'Bankiet', 'date' => '2026-12-31'], 201);
+        $this->api('PUT', '/api/events/'.$event['uuid'].'/equipment/'.$item['uuid'], ['version' => $event['version'], 'quantity' => 2]);
+        $response = $this->api('DELETE', '/api/equipment/'.$item['uuid'], ['version' => $item['version']], 422);
+        self::assertStringContainsString('wydarzenia', $response['message']);
+        self::assertSame($item['uuid'], $this->api('GET', '/api/equipment/'.$item['uuid'])['uuid']);
+    }
+
+    public function testDeletingCategoryCanMoveActiveAndArchivedEquipmentAtomically(): void
+    {
+        $this->getAuthenticatedClient();
+        $source = $this->api('POST', '/api/equipment-categories', ['name' => 'Urządzenia grzewcze'], 201);
+        $target = $this->api('POST', '/api/equipment-categories', ['name' => 'Inny sprzęt'], 201);
+        $items = [];
+        foreach (['HEATER-1', 'HEATER-2'] as $code) {
+            $items[] = $this->api('POST', '/api/equipment', [
+                'code' => $code, 'name' => 'Warnik', 'categoryUuid' => $source['uuid'], 'unit' => 'piece', 'stockQuantity' => 5,
+            ], 201);
+        }
+        $items[1] = $this->api('PUT', '/api/equipment/'.$items[1]['uuid'].'/active', ['version' => $items[1]['version'], 'active' => false]);
+        $this->api('DELETE', '/api/equipment-categories/'.$source['uuid'], ['version' => $source['version'], 'replacementCategoryUuid' => $source['uuid']], 422);
+        $this->api('DELETE', '/api/equipment-categories/'.$source['uuid'], ['version' => $source['version'], 'replacementCategoryUuid' => Uuid::uuid4()->toString()], 404);
+        $this->api('DELETE', '/api/equipment-categories/'.$source['uuid'], ['version' => $source['version'] + 1, 'replacementCategoryUuid' => $target['uuid']], 409);
+        self::assertSame(2, $this->api('GET', '/api/equipment?active=all&categoryUuid='.$source['uuid'])['total']);
+        $this->api('DELETE', '/api/equipment-categories/'.$source['uuid'], ['version' => $source['version'], 'replacementCategoryUuid' => $target['uuid']]);
+        foreach ($items as $item) {
+            $moved = $this->api('GET', '/api/equipment/'.$item['uuid']);
+            self::assertSame($target['uuid'], $moved['categoryUuid']);
+            self::assertSame('Inny sprzęt', $moved['category']);
+            self::assertSame($item['version'] + 1, $moved['version']);
+            self::assertSame($item['active'], $moved['active']);
+            self::assertSame(5, $moved['stockQuantity']);
+        }
+        self::assertSame(1, $this->api('GET', '/api/equipment-categories')['total']);
+    }
+
     public function testInvalidQuantitiesNamesAndMissingCategoriesAreRejected(): void
     {
         $this->getAuthenticatedClient();
@@ -100,6 +163,7 @@ final class EquipmentCatalogApiTest extends FunctionalTestBase
         $manager->flush();
         $this->getAuthenticatedClient('category-viewer@example.test', 'TestOnly123!');
         $this->api('GET', '/api/equipment-categories', [], 403);
+        $this->api('DELETE', '/api/equipment/'.Uuid::uuid4()->toString(), ['version' => 1], 403);
         $this->api('POST', '/api/equipment-categories', ['name' => 'Brak dostępu'], 403);
         $this->api('PUT', '/api/equipment-categories/'.$category['uuid'], ['version' => 1, 'name' => 'Brak dostępu'], 403);
         $this->api('DELETE', '/api/equipment-categories/'.$category['uuid'], ['version' => 1], 403);

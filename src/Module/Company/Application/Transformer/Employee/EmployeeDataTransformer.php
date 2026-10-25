@@ -33,6 +33,7 @@ class EmployeeDataTransformer implements DataTransformerInterface
             Employee::COLUMN_FIRST_NAME => $employee->getFirstName(),
             Employee::COLUMN_LAST_NAME => $employee->getLastName(),
             Employee::COLUMN_PESEL => $employee->getPesel(),
+            'isPeselFake' => $employee->isPeselFake(),
             Employee::COLUMN_INTERNAL_CODE => $employee->getInternalCode(),
             Employee::COLUMN_EXTERNAL_CODE => $employee->getExternalCode(),
             Employee::COLUMN_EMPLOYMENT_FROM => $employee->getEmploymentFrom()->format('Y-m-d'),
@@ -96,6 +97,7 @@ class EmployeeDataTransformer implements DataTransformerInterface
             Employee::COLUMN_FIRST_NAME => $parentEmployee->getFirstName(),
             Employee::COLUMN_LAST_NAME => $parentEmployee->getLastName(),
             Employee::COLUMN_PESEL => $parentEmployee->getPesel(),
+            'isPeselFake' => $parentEmployee->isPeselFake(),
         ];
     }
 

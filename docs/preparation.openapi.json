@@ -155,6 +155,7 @@
       },
       "ConsumableWrite": {
         "type": "object",
+        "anyOf": [{"required": ["categoryUuid"]}, {"required": ["category"]}],
         "properties": {
           "code": {
             "type": "string",
@@ -169,7 +170,13 @@
           "category": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 100
+            "maxLength": 100,
+            "description": "Legacy category name; use categoryUuid to select a dictionary entry"
+          },
+          "categoryUuid": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Existing consumable category UUID; required unless legacy category is supplied"
           },
           "unit": {
             "type": "string",
@@ -191,7 +198,6 @@
         "required": [
           "code",
           "name",
-          "category",
           "unit"
         ]
       },
@@ -564,6 +570,41 @@
     }
   },
   "paths": {
+    "/api/consumable-categories": {
+      "get": {
+        "summary": "Search product categories (consumables.list); supports q, page and limit",
+        "responses": {"200": {"description": "Paginated items with uuid, name and version"}}
+      },
+      "post": {
+        "summary": "Create product category (consumables.create)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {
+          "type": "object", "required": ["name"], "properties": {"name": {"type": "string", "minLength": 1, "maxLength": 100}}
+        }}}},
+        "responses": {"201": {"description": "Category created"}, "409": {"description": "Duplicate category name"}, "422": {"description": "Invalid name"}}
+      }
+    },
+    "/api/consumable-categories/{uuid}": {
+      "parameters": [{"name": "uuid", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}],
+      "put": {
+        "summary": "Rename product category (consumables.update)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {
+          "type": "object", "required": ["name", "version"], "properties": {
+            "name": {"type": "string", "minLength": 1, "maxLength": 100}, "version": {"type": "integer", "minimum": 1}
+          }
+        }}}},
+        "responses": {"200": {"description": "Updated category"}, "404": {"description": "Category not found"}, "409": {"description": "Duplicate name or stale version"}, "422": {"description": "Invalid name"}}
+      },
+      "delete": {
+        "summary": "Delete product category (consumables.delete); moving assigned products also requires consumables.update",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {
+          "type": "object", "required": ["version"], "properties": {
+            "version": {"type": "integer", "minimum": 1},
+            "replacementCategoryUuid": {"type": "string", "format": "uuid", "nullable": true}
+          }
+        }}}},
+        "responses": {"200": {"description": "Deleted category"}, "404": {"description": "Category not found"}, "409": {"description": "Stale version"}, "422": {"description": "Used category requires a distinct replacement category"}}
+      }
+    },
     "/api/events/{uuid}/preparation": {
       "get": {
         "summary": "Read event preparation (events.view)",
@@ -2198,6 +2239,11 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "categoryUuid",
+            "in": "query",
+            "schema": {"type": "string", "format": "uuid"}
           }
         ]
       }

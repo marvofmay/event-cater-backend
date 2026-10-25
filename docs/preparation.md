@@ -61,6 +61,12 @@ Każda mutacja listy używa aktualnej `version` wydarzenia. Nie ma osobnego, nie
 
 `/api/consumables` udostępnia katalog produktów/materiałów. Obowiązuje unikalny kod, nazwa, kategoria, jednostka, opis i archiwizacja. Jednostki nie można zmienić, gdy produkt jest powiązany z wydarzeniem.
 
+Kategorie produktów to biblioteka: `GET/POST /api/consumable-categories`, `PUT/DELETE /api/consumable-categories/{uuid}`. Korzysta z uprawnień `consumables.list/create/update/delete`. Zmiana i usunięcie wymagają bieżącej `version`. Produkt przyjmuje `categoryUuid`; odczyt zwraca identyfikator oraz aktualną nazwę w `category`. Dotychczasowe tekstowe `category` pozostaje obsługiwane dla starszych klientów. Listę produktów można filtrować po `categoryUuid`.
+
+Migracja `Version20261024090000` przenosi istniejące nazwy kategorii do biblioteki i zachowuje przypisania produktów. Komenda `php bin/console app:initialize-consumable-categories --no-interaction` uzupełnia brakujące grupy: Napoje i dodatki, Produkty spożywcze, Naczynia i sztućce jednorazowe, Opakowania, Higiena i sprzątanie, Materiały pomocnicze oraz Inne. Jest też częścią inicjalizacji danych domyślnych i można ją uruchamiać wielokrotnie bez duplikowania kategorii. Frontend udostępnia bibliotekę pod `/catering/supplies/categories`, a w formularzu produktu wybór z listy.
+
+Kategoria używana przez produkt, także archiwalny, wymaga wskazania `replacementCategoryUuid` przy usuwaniu. Przeniesienie wszystkich pozycji i usunięcie kategorii odbywają się atomowo oraz wymagają dodatkowo `consumables.update`. Wersje przeniesionych produktów rosną. Nazwy produktów i jednostki zapisane na wydarzeniach pozostają zachowane.
+
 `GET /api/preparation-options?kind=all&q=kawa` daje wspólne autocomplete sprzętu i produktów (do 20 wyników). Dostępne filtry: `all`, `equipment`, `consumable`. Odpowiedź zawiera `kind` i `itemUuid`; klient wybiera właściwy endpoint zapotrzebowania. Oddzielne katalogi mają własne uprawnienia.
 
 Szablon zawiera do 100 unikalnych pozycji. Reguła pozycji:

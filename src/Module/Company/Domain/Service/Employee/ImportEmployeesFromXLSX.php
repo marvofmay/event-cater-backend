@@ -46,6 +46,14 @@ final class ImportEmployeesFromXLSX extends XLSXIterator
         parent::__construct($this->translator);
     }
 
+    public function import(): array
+    {
+        return array_map(
+            static fn (array $row): array => array_map(static fn (mixed $value): mixed => is_string($value) ? trim($value) : $value, $row),
+            parent::import()
+        );
+    }
+
     public function getType(): string
     {
         return ImportKindEnum::IMPORT_EMPLOYEES->value;

@@ -69,7 +69,8 @@ final class UpdateEmployeeController extends AbstractController
                     $updateDTO->employmentTo,
                     $updateDTO->active,
                     $updateDTO->phones,
-                    $updateDTO->address
+                    $updateDTO->address,
+                    $updateDTO->isPeselFake
                 )
             );
         } catch (HandlerFailedException $e) {

@@ -356,6 +356,12 @@ final class EventEquipmentApiTest extends FunctionalTestBase
         self::assertStringContainsString('_test', $db->getDatabase());
         require_once self::getContainer()->getParameter('kernel.project_dir').'/migrations/Version20261023090000.php';
         require_once self::getContainer()->getParameter('kernel.project_dir').'/migrations/Version20261023100000.php';
+        require_once self::getContainer()->getParameter('kernel.project_dir').'/migrations/Version20261024100000.php';
+        $photos = new \DoctrineMigrations\Version20261024100000($db, new \Psr\Log\NullLogger());
+        $photos->down(new \Doctrine\DBAL\Schema\Schema());
+        foreach ($photos->getSql() as $query) {
+            $db->executeStatement($query->getStatement());
+        }
         $preparation = new \DoctrineMigrations\Version20261023100000($db, new \Psr\Log\NullLogger());
         $preparation->down(new \Doctrine\DBAL\Schema\Schema());
         foreach ($preparation->getSql() as $query) {
@@ -380,6 +386,12 @@ final class EventEquipmentApiTest extends FunctionalTestBase
             $db->executeStatement($query->getStatement());
         }
         self::assertTrue($db->createSchemaManager()->tablesExist(['event_preparation_list', 'event_preparation_line', 'preparation_template', 'consumable_item']));
+        $photos = new \DoctrineMigrations\Version20261024100000($db, new \Psr\Log\NullLogger());
+        $photos->up(new \Doctrine\DBAL\Schema\Schema());
+        foreach ($photos->getSql() as $query) {
+            $db->executeStatement($query->getStatement());
+        }
+        self::assertTrue($db->createSchemaManager()->tablesExist(['equipment_photo']));
 
     }
 

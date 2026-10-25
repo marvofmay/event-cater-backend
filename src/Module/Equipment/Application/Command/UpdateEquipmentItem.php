@@ -6,7 +6,7 @@ namespace App\Module\Equipment\Application\Command;
 
 final readonly class UpdateEquipmentItem
 {
-    public function __construct(public string $uuid, public int $version, public string $code, public string $name, public ?string $category, public string $unit, public ?string $description, public ?string $categoryUuid = null, public ?string $slangName = null, public ?int $stockQuantity = null)
+    public function __construct(public string $uuid, public int $version, public string $code, public string $name, public ?string $category, public string $unit, public ?string $description, public ?string $categoryUuid = null, public ?string $slangName = null, public ?int $stockQuantity = null, public ?string $storageLocationUuid = null, public bool $storageLocationProvided = false)
     {
     }
 }

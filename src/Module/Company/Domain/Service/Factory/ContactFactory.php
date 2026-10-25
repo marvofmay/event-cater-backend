@@ -12,18 +12,21 @@ use App\Module\Company\Domain\Enum\Contact\ContactTypeEnum;
 
 class ContactFactory
 {
-    public function create(Phones $phones, ?Emails $emails = null, ?Websites $websites = null): array
+    public function create(?Phones $phones, ?Emails $emails = null, ?Websites $websites = null): array
     {
         $contacts = [];
 
         $dataSets = [
-            ContactTypeEnum::PHONE->value => $phones->toArray() ?? [],
+            ContactTypeEnum::PHONE->value => $phones?->toArray() ?? [],
             ContactTypeEnum::EMAIL->value => $emails?->toArray() ?? [],
             ContactTypeEnum::WEBSITE->value => $websites?->toArray() ?? [],
         ];
 
         foreach ($dataSets as $type => $values) {
             foreach ($values as $value) {
+                if ($value === null || trim((string) $value) === '') {
+                    continue;
+                }
                 $contact = new Contact();
                 $contact->setType($type);
                 $contact->setData($value);

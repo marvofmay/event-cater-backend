@@ -44,6 +44,10 @@ abstract class AccessPermissionVoter extends Voter
             return false;
         }
 
+        if (!in_array($attribute, $subject->allowedPermissions(), true)) {
+            return false;
+        }
+
         if ($attribute->value !== $this->getAttributeName()) {
             return false;
         }

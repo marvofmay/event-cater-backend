@@ -59,11 +59,41 @@ Transakcja blokuje wiersz wydarzenia i pracownika. Kontrola konfliktów używa b
 
 ## Sprzęt i menu
 
-Kategorie sprzętu to osobny słownik: `GET/POST /api/equipment-categories`, `PUT/DELETE /api/equipment-categories/{uuid}`. Zapis i usunięcie wymagają aktualnej `version`. Obowiązują uprawnienia katalogu `equipment` (`list`, `create`, `update`, `delete`). Nazwy są unikalne; kategorii przypisanej do dowolnego sprzętu, także archiwalnego, nie można usunąć. Zmiana nazwy kategorii jest od razu widoczna w katalogu sprzętu.
+Kategorie sprzętu to osobny słownik: `GET/POST /api/equipment-categories`, `PUT/DELETE /api/equipment-categories/{uuid}`. Zapis i usunięcie wymagają aktualnej `version`. Obowiązują uprawnienia katalogu `equipment` (`list`, `create`, `update`, `delete`). Nazwy są unikalne. Usunięcie używanej kategorii wymaga opcjonalnego pola `replacementCategoryUuid` wskazującego inną istniejącą kategorię oraz dodatkowego uprawnienia `equipment.update`. Sprzęt aktywny i archiwalny zostaje przeniesiony atomowo do kategorii docelowej; jego wersje rosną, a stany i powiązania z wydarzeniami pozostają zachowane. Bez kategorii docelowej używana kategoria nie zostanie usunięta (422). Zmiana nazwy kategorii jest od razu widoczna w katalogu sprzętu.
 
 Sprzęt przyjmuje `categoryUuid`, opcjonalne `slangName` (do 200 znaków) oraz `stockQuantity` — posiadaną ilość w jednostce pozycji, nieujemną liczbę całkowitą (domyślnie 0). Brak ilości w aktualizacji zachowuje jej dotychczasową wartość. Wyszukiwanie katalogu i podpowiedzi uwzględnia nazwę slangową, a filtr `categoryUuid` wybiera kategorię. Dotychczasowe tekstowe `category` pozostaje obsługiwane dla starszych klientów. Migracja `Version20261023200000` przenosi istniejące kategorie do słownika bez utraty powiązań. Nieznane dotychczas ilości zaczynają od 0 i wymagają uzupełnienia. Ilość posiadana jest ewidencją; zapotrzebowania wydarzeń jej nie pomniejszają i nie rezerwują sprzętu.
 
+### Miejsca przechowywania sprzętu
+
+Biblioteka miejsc: `GET/POST /api/equipment-locations`, `PUT/DELETE /api/equipment-locations/{uuid}`. Nazwy są unikalne, mają do 200 znaków; zmiana i usunięcie wymagają `version`. Obowiązują uprawnienia katalogu sprzętu `list/create/update`; usunięcie wymaga `delete` i `update`, ponieważ odłącza miejsce od przypisanych pozycji, także archiwalnych, zwiększając ich wersje. Sam sprzęt pozostaje w katalogu.
+
+Sprzęt przyjmuje opcjonalne `storageLocationUuid`, a odpowiedzi zawierają też aktualną nazwę w `storageLocation`. Pominięcie pola przy aktualizacji zachowuje dotychczasowe przypisanie; jawne `null` je usuwa. Lista obsługuje filtr `storageLocationUuid` oraz wyszukiwanie po nazwie miejsca. Biblioteka jest dostępna pod `/catering/equipment/locations` i przez przycisk „Miejsca sprzętu” w katalogu. Formularz sprzętu udostępnia wybór z biblioteki.
+
+Migracja `Version20261024110000` dodaje bibliotekę oraz opcjonalne powiązanie. Istniejący sprzęt nie otrzymuje automatycznie przypisania. Komenda `php bin/console app:initialize-equipment-locations --no-interaction`, także uruchamiana przy inicjalizacji danych domyślnych, dodaje bez duplikatów dziewięć miejsc:
+
+- pod schodami po stronie prawej (zmywaka);
+- pod schodami po stronie lewej (toalet);
+- za barem;
+- w biurze;
+- w magazynie po stronie stołów bilardowych;
+- na zmywaku;
+- w przejściu do kuchni;
+- w szafie za drzwiami "western";
+- w magazynie po prawej stronie za drzwiami "western".
+
 Kod sprzętu jest unikalny i normalizowany do wielkich liter. Jednostki: `piece` (sztuka), `set` (komplet), `kit` (zestaw). Zestaw jest samodzielną pozycją, bez automatycznego rozbijania na elementy. Sprzęt można dezaktywować i przywrócić; autocomplete pokazuje wyłącznie aktywny katalog.
+
+`DELETE /api/equipment/{uuid}` z aktualną `version` i uprawnieniem `equipment.delete` trwale usuwa nieużywany sprzęt (aktywny lub archiwalny). Powiązanie z wydarzeniem lub szablonem, także archiwalnym, blokuje operację (422). Dla używanego sprzętu pozostaje archiwizacja lub zmiana kategorii. Po usunięciu wszystkich sprzętów z kategorii można usunąć kategorię. Archiwizacja sprzętu sama nie zwalnia kategorii.
+
+### Zdjęcia sprzętu
+
+Pozycja katalogu może mieć do 20 zdjęć JPEG, PNG, WebP lub GIF, każde do 20 MiB. Formularz dodawania/edycji obsługuje wybór wielu plików oraz przeciąganie. Zdjęcia i zaznaczone usunięcia zapisują się po kliknięciu „Zapisz”. Lista sprzętu pokazuje miniaturę i akcję galerii. Przy błędzie jednego z uploadów formularz zachowuje utworzoną pozycję oraz już zapisane zdjęcia, umożliwiając ponowienie pozostałych.
+
+- `POST /api/equipment/{uuid}/photos` — multipart `version`, `file`; wymaga `equipment.update`, zwraca sprzęt z nową wersją (201).
+- `GET /api/equipment/{uuid}/photos/{photoUuid}` — prywatny podgląd, wymaga `equipment.view`.
+- `DELETE /api/equipment/{uuid}/photos/{photoUuid}` — JSON `version`, wymaga `equipment.update`, zwraca sprzęt z nową wersją.
+
+Odczyt sprzętu i jego lista zawierają `photos`: `uuid`, `name`, `mimeType`, `size`, `createdAt`. Pliki są poza katalogiem publicznym, w `storage/equipment-photos`, w osobnych folderach sprzętu i najemców. Typ jest wykrywany z zawartości, a obraz dodatkowo walidowany; SVG i filmy są odrzucane. Prywatna odpowiedź używa `inline`, `nosniff` i `private, no-store`. Powiązanie zdjęcia ze wskazanym sprzętem jest sprawdzane. Nieudany zapis usuwa przesłany plik; usunięcie zdjęcia lub trwałe usunięcie sprzętu sprząta jego pliki po udanym zapisie bazy. Migracja `Version20261024100000` tworzy tabelę galerii.
 
 Zapotrzebowanie zapisuje nazwę, kod i jednostkę z chwili dodania. Zmiana nazwy w katalogu nie zmienia historycznego wydarzenia. Jednostki nie można zmienić, gdy sprzęt jest powiązany z wydarzeniem. Ilość jest dodatnią liczbą całkowitą. Nieaktywną pozycję można usunąć z zapotrzebowania, ale nie zwiększać jej ilości.
 

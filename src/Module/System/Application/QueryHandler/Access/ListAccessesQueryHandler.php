@@ -35,7 +35,7 @@ final readonly class ListAccessesQueryHandler
 
         return $this->accessReaderRepository
             ->getAccesses()
-            ->filter(fn (Access $access) => $access->getActive())
+            ->filter(fn (Access $access) => $access->getActive() && $access->getModule()->getActive() && AccessEnum::tryFromModuleAndName($access->getModule()->getName(), $access->getName()) !== null)
             ->map(fn (Access $access) => [
                 Access::COLUMN_UUID => $access->getUUID()->toString(),
                 Access::COLUMN_NAME => $access->getName(),

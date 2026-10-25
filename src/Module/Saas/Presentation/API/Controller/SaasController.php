@@ -18,6 +18,12 @@ final readonly class SaasController
     {
     }
 
+    #[Route('/tenant-options', methods: ['GET'])]
+    public function options(): JsonResponse
+    {
+        return new JsonResponse(['items' => $this->service->tenantOptions()]);
+    }
+
     #[Route('/login', methods: ['POST'])]
     public function login(Request $r): JsonResponse
     {

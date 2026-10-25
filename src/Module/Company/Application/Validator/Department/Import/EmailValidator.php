@@ -19,16 +19,18 @@ final readonly class EmailValidator implements ImportRowValidatorInterface
 
     public function validate(array $row, array $additionalData = []): ?string
     {
-        $email = $row[DepartmentImportColumnEnum::EMAIL->value] ?? null;
-        if (null !== $email) {
-            $errorMessage = Email::validate($email);
-            if (null !== $errorMessage) {
-                return $this->messageService->get($errorMessage, [], 'validators');
-            }
+        $email = trim((string) ($row[DepartmentImportColumnEnum::EMAIL->value] ?? ''));
+        if ($email === '') {
+            return null;
+        }
+        $errorMessage = Email::validate($email);
+        if (null !== $errorMessage) {
+            return $this->messageService->get($errorMessage, [], 'validators');
         }
 
-        $internalCode = (string) $row[DepartmentImportColumnEnum::DEPARTMENT_INTERNAL_CODE->value] ?? null;
-        if (array_key_exists($email, $additionalData['emailsInternalCodes']) && $additionalData['emailsInternalCodes'][$email] !== $internalCode) {
+        $internalCode = (string) ($row[DepartmentImportColumnEnum::DEPARTMENT_INTERNAL_CODE->value] ?? '');
+        $emailsInternalCodes = $additionalData['emailsInternalCodes'] ?? [];
+        if (array_key_exists($email, $emailsInternalCodes) && $emailsInternalCodes[$email] !== $internalCode) {
             return $this->messageService->get('department.email.alreadyExists', [':email' => $email], 'departments');
         }
 

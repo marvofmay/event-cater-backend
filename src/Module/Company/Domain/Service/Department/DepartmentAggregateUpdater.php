@@ -20,6 +20,8 @@ final class DepartmentAggregateUpdater extends AggregateAbstract
 {
     public function update(array $row, ?DepartmentUUID $parentUUID, UserUUID $loggedUserUUID): void
     {
+        $phone = trim((string) ($row[DepartmentImportColumnEnum::PHONE->value] ?? ''));
+        $email = trim((string) ($row[DepartmentImportColumnEnum::EMAIL->value] ?? ''));
         $departmentAggregate = $this->departmentAggregateReaderRepository->getDepartmentAggregateByUUID(
             DepartmentUUID::fromString($row[DepartmentImportColumnEnum::DYNAMIC_AGGREGATE_UUID->value]),
         );
@@ -37,8 +39,8 @@ final class DepartmentAggregateUpdater extends AggregateAbstract
             $loggedUserUUID,
             (bool) $row[DepartmentImportColumnEnum::ACTIVE->value],
             $row[DepartmentImportColumnEnum::DEPARTMENT_DESCRIPTION->value],
-            $row[DepartmentImportColumnEnum::PHONE->value] ? Phones::fromArray([$row[DepartmentImportColumnEnum::PHONE->value]]) : null,
-            $row[DepartmentImportColumnEnum::EMAIL->value] ? Emails::fromArray([$row[DepartmentImportColumnEnum::EMAIL->value]]) : null,
+            $phone !== '' ? Phones::fromArray([$phone]) : null,
+            $email !== '' ? Emails::fromArray([$email]) : null,
             $row[DepartmentImportColumnEnum::WEBSITE->value] ? Websites::fromArray([$row[DepartmentImportColumnEnum::WEBSITE->value]]) : null,
             $parentUUID,
         );

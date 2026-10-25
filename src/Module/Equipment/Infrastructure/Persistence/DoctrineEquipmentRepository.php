@@ -22,6 +22,11 @@ final readonly class DoctrineEquipmentRepository implements EquipmentRepository
         $this->em->persist($item);
     }
 
+    public function remove(EquipmentItem $item): void
+    {
+        $this->em->remove($item);
+    }
+
     public function getForUpdate(string $uuid, int $expectedVersion): EquipmentItem
     {
         $item = $this->em->find(EquipmentItem::class, $uuid);

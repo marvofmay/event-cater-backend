@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Application\DTO\Employee;
 
-use App\Common\Application\DTO\AddressDTO;
 use App\Common\Validator\Constraints\MinMaxLength;
 use App\Common\Validator\Constraints\NotBlank;
 use App\Module\Company\Structure\Validator\Constraints\Employee\EmploymentDateRange;
@@ -104,16 +103,12 @@ class CreateDTO
         }
     }
 
-    #[NotBlank(message: [
-        'text' => 'Employee.lastName.required',
-        'domain' => 'employees',
-    ])]
     #[MinMaxLength(min: 3, max: 50, message: [
         'tooShort' => 'employee.lastName.minimumLength',
         'tooLong' => 'employee.lastName.maximumLength',
         'domain' => 'employees',
     ])]
-    public string $lastName {
+    public string $lastName = '' {
         get {
             return $this->lastName;
         }
@@ -131,6 +126,8 @@ class CreateDTO
             return $this->pesel;
         }
     }
+
+    public bool $isPeselFake = false;
 
     public ?string $externalCode = null {
         get {
@@ -173,7 +170,9 @@ class CreateDTO
 
     #[Assert\All([
         new Assert\Type(type: 'string'),
+        new Assert\NotBlank(normalizer: 'trim'),
     ])]
+    #[Assert\NotNull]
     #[Assert\Type('array')]
     #[Assert\Count(
         min: 1,
@@ -187,9 +186,8 @@ class CreateDTO
         }
     }
 
-    #[Assert\NotBlank]
     #[Assert\Valid]
-    public AddressDTO $address {
+    public ?EmployeeAddressDTO $address = null {
         get {
             return $this->address;
         }

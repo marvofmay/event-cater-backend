@@ -19,12 +19,22 @@ final readonly class PESELValidator implements ImportRowValidatorInterface
 
     public function validate(array $row, array $additionalData = []): ?string
     {
-        $pesel = (string) $row[EmployeeImportColumnEnum::PESEL->value] ?? null;
-        if (null === $pesel) {
+        $pesel = trim((string) ($row[EmployeeImportColumnEnum::PESEL->value] ?? ''));
+        if ('' === $pesel) {
             return $this->messageService->get('employee.pesel.required', [], 'employees');
         }
 
-        $errorMessage = PESEL::validate($pesel);
+        $flag = $row[EmployeeImportColumnEnum::IS_PESEL_FAKE->value] ?? null;
+        $isFake = null === $flag || '' === trim((string) $flag)
+            ? (($additionalData['employees'][$pesel] ?? null)?->isPeselFake() ?? false)
+            : filter_var($flag, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+        if (null === $isFake) {
+            return 'Kolumna isPeselFake musi zawierać 1 albo 0.';
+        }
+
+        $errorMessage = $isFake
+            ? (preg_match('/^\d{11}$/D', $pesel) ? null : 'pesel.invalidLength')
+            : PESEL::validate($pesel);
         if (null !== $errorMessage) {
             return $this->messageService->get($errorMessage, [], 'validators');
         }

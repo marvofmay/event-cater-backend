@@ -11,6 +11,40 @@
     }
   ],
   "paths": {
+    "/api/equipment-locations": {
+      "get": {
+        "tags": ["Equipment"],
+        "summary": "Search storage location library (equipment.list); supports q, page and limit",
+        "responses": {"200": {"description": "Paginated locations", "content": {"application/json": {"schema": {"type": "object", "properties": {
+          "items": {"type": "array", "items": {"$ref": "#/components/schemas/EquipmentLocation"}}, "total": {"type": "integer"}, "page": {"type": "integer"}, "limit": {"type": "integer"}
+        }}}}}}
+      },
+      "post": {
+        "tags": ["Equipment"],
+        "summary": "Create storage location (equipment.create)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["name"], "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 200}
+        }}}}},
+        "responses": {"201": {"description": "Created location", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EquipmentLocation"}}}}, "409": {"description": "Duplicate name"}, "422": {"description": "Invalid name"}}
+      }
+    },
+    "/api/equipment-locations/{uuid}": {
+      "parameters": [{"name": "uuid", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}],
+      "put": {
+        "tags": ["Equipment"],
+        "summary": "Rename storage location (equipment.update)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"type": "object", "required": ["name", "version"], "properties": {
+          "name": {"type": "string", "minLength": 1, "maxLength": 200}, "version": {"type": "integer", "minimum": 1}
+        }}}}},
+        "responses": {"200": {"description": "Updated location", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/EquipmentLocation"}}}}, "404": {"description": "Location not found"}, "409": {"description": "Stale version or duplicate name"}, "422": {"description": "Invalid name"}}
+      },
+      "delete": {
+        "tags": ["Equipment"],
+        "summary": "Delete location and clear its catalog assignments; equipment is preserved (equipment.delete and equipment.update)",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/VersionInput"}}}},
+        "responses": {"200": {"description": "Location deleted; assigned equipment versions incremented"}, "404": {"description": "Location not found"}, "409": {"description": "Stale version"}}
+      }
+    },
     "/api/equipment-categories": {
       "get": {
         "tags": ["Equipment"],
@@ -63,15 +97,18 @@
       },
       "delete": {
         "tags": ["Equipment"],
-        "summary": "Delete an unused category (equipment.delete permission)",
+        "summary": "Delete a category (equipment.delete); optionally move its equipment to another category (also equipment.update)",
         "requestBody": {"required": true, "content": {"application/json": {"schema": {
-          "type": "object", "required": ["version"], "properties": {"version": {"type": "integer", "minimum": 1}}
+          "type": "object", "required": ["version"], "properties": {
+            "version": {"type": "integer", "minimum": 1},
+            "replacementCategoryUuid": {"type": "string", "format": "uuid", "nullable": true, "description": "Move all active and archived equipment to this existing category before deleting the source category"}
+          }
         }}}},
         "responses": {
           "200": {"description": "Deleted"},
           "404": {"description": "Category not found"},
           "409": {"description": "Stale version"},
-          "422": {"description": "Category is used by equipment, including archived items"}
+          "422": {"description": "Used category requires a replacement; replacement must differ from source"}
         }
       }
     },
@@ -2255,6 +2292,11 @@
             "schema": {"type": "string", "format": "uuid"}
           },
           {
+            "name": "storageLocationUuid",
+            "in": "query",
+            "schema": {"type": "string", "format": "uuid"}
+          },
+          {
             "name": "active",
             "in": "query",
             "schema": {
@@ -2389,6 +2431,21 @@
       }
     },
     "/api/equipment/{uuid}": {
+      "delete": {
+        "tags": ["Equipment"],
+        "summary": "Permanently delete unused equipment (delete permission); events and templates block deletion",
+        "parameters": [{"name": "uuid", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}],
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/VersionInput"}}}},
+        "responses": {
+          "200": {"description": "Equipment permanently deleted"},
+          "400": {"description": "Malformed request"},
+          "401": {"description": "Authentication required"},
+          "403": {"description": "Missing delete permission"},
+          "404": {"description": "Equipment not found"},
+          "409": {"description": "Stale version"},
+          "422": {"description": "Invalid input or equipment referenced by an event or template"}
+        }
+      },
       "get": {
         "tags": [
           "Equipment"
@@ -2582,6 +2639,56 @@
               }
             }
           }
+        }
+      }
+    },
+    "/api/equipment/{uuid}/photos": {
+      "parameters": [{"name": "uuid", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}],
+      "post": {
+        "tags": ["Equipment"],
+        "summary": "Add a private equipment photo (equipment.update); up to 20 photos, each at most 20 MiB",
+        "requestBody": {"required": true, "content": {"multipart/form-data": {"schema": {
+          "type": "object", "required": ["version", "file"], "properties": {
+            "version": {"type": "string", "pattern": "^[1-9][0-9]*$"},
+            "file": {"type": "string", "format": "binary", "description": "JPEG, PNG, WebP or GIF; validated from file content"}
+          }
+        }}}},
+        "responses": {
+          "201": {"description": "Updated equipment with new version and photos", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Equipment"}}}},
+          "401": {"description": "JWT required"}, "403": {"description": "Missing equipment.update"},
+          "404": {"description": "Equipment not found"}, "409": {"description": "Stale version"},
+          "422": {"description": "Invalid image, missing input, file too large or photo limit exceeded"}
+        }
+      }
+    },
+    "/api/equipment/{uuid}/photos/{photoUuid}": {
+      "parameters": [
+        {"name": "uuid", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}},
+        {"name": "photoUuid", "in": "path", "required": true, "schema": {"type": "string", "format": "uuid"}}
+      ],
+      "get": {
+        "tags": ["Equipment"],
+        "summary": "View a private equipment photo (equipment.view); inline image, nosniff, private no-store",
+        "responses": {
+          "200": {"description": "Image bytes", "content": {
+            "image/jpeg": {"schema": {"type": "string", "format": "binary"}},
+            "image/png": {"schema": {"type": "string", "format": "binary"}},
+            "image/webp": {"schema": {"type": "string", "format": "binary"}},
+            "image/gif": {"schema": {"type": "string", "format": "binary"}}
+          }},
+          "401": {"description": "JWT required"}, "403": {"description": "Missing equipment.view"},
+          "404": {"description": "Photo not found for this equipment"}
+        }
+      },
+      "delete": {
+        "tags": ["Equipment"],
+        "summary": "Delete an equipment photo (equipment.update); current equipment version required",
+        "requestBody": {"required": true, "content": {"application/json": {"schema": {"$ref": "#/components/schemas/VersionInput"}}}},
+        "responses": {
+          "200": {"description": "Updated equipment with new version and remaining photos", "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Equipment"}}}},
+          "401": {"description": "JWT required"}, "403": {"description": "Missing equipment.update"},
+          "404": {"description": "Photo not found for this equipment"}, "409": {"description": "Stale version"},
+          "422": {"description": "Invalid input"}
         }
       }
     },
@@ -2938,6 +3045,10 @@
             "type": "string",
             "format": "uuid"
           },
+          "storageLocationUuid": {
+            "type": "string", "format": "uuid", "nullable": true,
+            "description": "Storage location from the library. Optional; omitted on update preserves assignment, explicit null clears it."
+          },
           "slangName": {
             "type": "string",
             "nullable": true,
@@ -2970,6 +3081,14 @@
         ],
         "anyOf": [{"required": ["categoryUuid"]}, {"required": ["category"]}]
       },
+      "EquipmentLocation": {
+        "type": "object", "required": ["uuid", "name", "version"],
+        "properties": {
+          "uuid": {"type": "string", "format": "uuid"},
+          "name": {"type": "string", "minLength": 1, "maxLength": 200},
+          "version": {"type": "integer", "minimum": 1}
+        }
+      },
       "EquipmentCategory": {
         "type": "object",
         "required": ["uuid", "name", "version"],
@@ -2977,6 +3096,17 @@
           "uuid": {"type": "string", "format": "uuid"},
           "name": {"type": "string", "minLength": 1, "maxLength": 100},
           "version": {"type": "integer", "minimum": 1}
+        }
+      },
+      "EquipmentPhoto": {
+        "type": "object",
+        "required": ["uuid", "name", "mimeType", "size", "createdAt"],
+        "properties": {
+          "uuid": {"type": "string", "format": "uuid"},
+          "name": {"type": "string", "maxLength": 150},
+          "mimeType": {"type": "string", "enum": ["image/jpeg", "image/png", "image/webp", "image/gif"]},
+          "size": {"type": "integer", "minimum": 1, "maximum": 20971520},
+          "createdAt": {"type": "string", "format": "date-time"}
         }
       },
       "Equipment": {
@@ -2991,6 +3121,11 @@
                 "type": "string",
                 "format": "uuid"
               },
+              "photos": {
+                "type": "array", "maxItems": 20,
+                "items": {"$ref": "#/components/schemas/EquipmentPhoto"}
+              },
+              "storageLocation": {"type": "string", "nullable": true, "description": "Current storage location name"},
               "active": {
                 "type": "boolean"
               },

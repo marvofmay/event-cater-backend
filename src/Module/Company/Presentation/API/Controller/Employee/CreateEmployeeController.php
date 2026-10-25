@@ -62,7 +62,8 @@ final class CreateEmployeeController extends AbstractController
                 $createDTO->employmentTo,
                 $createDTO->active,
                 $createDTO->phones,
-                $createDTO->address
+                $createDTO->address,
+                $createDTO->isPeselFake
             ));
         } catch (HandlerFailedException $exception) {
             throw $exception->getPrevious() ?? $exception;

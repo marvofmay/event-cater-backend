@@ -64,6 +64,11 @@ final readonly class SaasService
         return $this->control->db()->fetchAllAssociative('SELECT uuid,slug,name,contact_email AS contactEmail,status,provisioning,version,created_at AS createdAt,updated_at AS updatedAt FROM saas_tenant ORDER BY created_at DESC, name');
     }
 
+    public function tenantOptions(): array
+    {
+        return $this->control->db()->fetchAllAssociative("SELECT slug,name FROM saas_tenant WHERE status='active' AND provisioning='ready' AND slug<>'default' ORDER BY name");
+    }
+
     public function create(#[\SensitiveParameter] array $input, string $actor): array
     {
         $name = trim((string) ($input['name'] ?? ''));

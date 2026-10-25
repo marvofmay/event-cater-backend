@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Module\Company\Domain\Service\Employee;
 
 use App\Common\Domain\Abstract\AggregateAbstract;
+use App\Module\Company\Domain\Aggregate\Company\ValueObject\CompanyUUID;
+use App\Module\Company\Domain\Entity\Department;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Contracts\Service\Attribute\Required;
 use App\Module\Company\Domain\Aggregate\Department\ValueObject\DepartmentUUID;
 use App\Module\Company\Domain\Aggregate\Employee\EmployeeAggregate;
 use App\Module\Company\Domain\Aggregate\Employee\ValueObject\ContractTypeUUID;
@@ -24,6 +28,14 @@ use App\Module\System\Domain\ValueObject\UserUUID;
 
 final class EmployeeAggregateUpdater extends AggregateAbstract
 {
+    #[Required]
+    public function setEntityManager(EntityManagerInterface $entityManager): void
+    {
+        $this->entityManager = $entityManager;
+    }
+
+    private EntityManagerInterface $entityManager;
+
     public function update(array $row, ?EmployeeUUID $parentUUID, UserUUID $loggedUserUUID): void
     {
         $employeeAggregate = $this->employeeAggregateReaderRepository->getEmployeeAggregateByUUID(
@@ -32,25 +44,26 @@ final class EmployeeAggregateUpdater extends AggregateAbstract
 
         $employeeAggregate->update(
             FirstName::fromString($row[EmployeeImportColumnEnum::FIRST_NAME->value]),
-            LastName::fromString($row[EmployeeImportColumnEnum::LAST_NAME->value]),
-            PESEL::fromString($row[EmployeeImportColumnEnum::PESEL->value]),
+            LastName::fromString((string) ($row[EmployeeImportColumnEnum::LAST_NAME->value] ?? '')),
+            PESEL::fromString((string) $row[EmployeeImportColumnEnum::PESEL->value], (bool) $row[EmployeeImportColumnEnum::IS_PESEL_FAKE->value]),
             EmploymentFrom::fromString($row[EmployeeImportColumnEnum::EMPLOYMENT_FROM->value]),
+            CompanyUUID::fromString($this->entityManager->find(Department::class, $row[EmployeeImportColumnEnum::DEPARTMENT_UUID->value])->getCompany()->getUUID()->toString()),
             DepartmentUUID::fromString($row[EmployeeImportColumnEnum::DEPARTMENT_UUID->value]),
             PositionUUID::fromString($row[EmployeeImportColumnEnum::POSITION_UUID->value]),
             ContractTypeUUID::fromString($row[EmployeeImportColumnEnum::CONTACT_TYPE_UUID->value]),
             RoleUUID::fromString($row[EmployeeImportColumnEnum::ROLE_UUID->value]),
             Emails::fromArray([$row[EmployeeImportColumnEnum::EMAIL->value]]),
             new Address(
-                $row[EmployeeImportColumnEnum::STREET->value],
-                $row[EmployeeImportColumnEnum::POSTCODE->value],
-                $row[EmployeeImportColumnEnum::CITY->value],
-                $row[EmployeeImportColumnEnum::COUNTRY->value]
+                (string) ($row[EmployeeImportColumnEnum::STREET->value] ?? ''),
+                (string) ($row[EmployeeImportColumnEnum::POSTCODE->value] ?? ''),
+                (string) ($row[EmployeeImportColumnEnum::CITY->value] ?? ''),
+                (string) ($row[EmployeeImportColumnEnum::COUNTRY->value] ?? '')
             ),
             $loggedUserUUID,
             $row[EmployeeImportColumnEnum::EXTERNAL_CODE->value],
             $row[EmployeeImportColumnEnum::INTERNAL_CODE->value],
             (bool) $row[EmployeeImportColumnEnum::ACTIVE->value],
-            Phones::fromArray([$row[EmployeeImportColumnEnum::PHONE->value]]),
+            Phones::fromArray([(string) $row[EmployeeImportColumnEnum::PHONE->value]]),
             $parentUUID,
             $row[EmployeeImportColumnEnum::EMPLOYMENT_TO->value] ? EmploymentTo::fromString($row[EmployeeImportColumnEnum::EMPLOYMENT_TO->value], EmploymentFrom::fromString($row[EmployeeImportColumnEnum::EMPLOYMENT_FROM->value])) : null,
         );

@@ -10,8 +10,10 @@ use App\Common\Domain\Enum\TimeStampableEntityFieldEnum;
 use App\Module\Company\Application\Event\Position\PositionListedEvent;
 use App\Module\Company\Application\Query\Position\ListPositionsQuery;
 use App\Module\Company\Domain\Entity\Position;
+use App\Module\Company\Domain\Entity\PositionDepartment;
 use App\Module\Company\Domain\Enum\Position\PositionEntityFieldEnum;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -36,6 +38,25 @@ final class ListPositionsQueryHandler extends ListQueryHandlerAbstract
     public function getEntityClass(): string
     {
         return Position::class;
+    }
+
+    protected function applySorting(QueryBuilder $qb, string $field, string $direction): QueryBuilder
+    {
+        if ($field !== $this->getAlias().'.departments') {
+            return parent::applySorting($qb, $field, $direction);
+        }
+        $departmentName = $this->entityManager->createQueryBuilder()
+            ->select('MIN(sortDepartment.name)')
+            ->from(PositionDepartment::class, 'sortAssignment')
+            ->innerJoin('sortAssignment.department', 'sortDepartment')
+            ->where('sortAssignment.position = '.$this->getAlias())
+            ->andWhere('sortAssignment.deletedAt IS NULL')
+            ->andWhere('sortDepartment.deletedAt IS NULL');
+
+        return $qb->addSelect('('.$departmentName->getDQL().') AS HIDDEN departmentName')
+            ->orderBy('departmentName', $direction)
+            ->addOrderBy($this->getAlias().'.name', 'ASC')
+            ->addOrderBy($this->getAlias().'.uuid', 'ASC');
     }
 
     public function getAlias(): string

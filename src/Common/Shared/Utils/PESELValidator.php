@@ -12,14 +12,22 @@ final readonly class PESELValidator
             return 'pesel.invalidLength';
         }
 
-        $weights = [1, 3, 7, 9, 1, 3, 7, 9, 1, 3];
-        $checksum = self::calculateChecksum($pesel, $weights);
+        $checksum = self::calculateCheckDigit(substr($pesel, 0, 10));
 
         if ($checksum !== (int) $pesel[10]) {
             return 'pesel.invalid';
         }
 
         return null;
+    }
+
+    public static function calculateCheckDigit(string $prefix): int
+    {
+        if (!preg_match('/^\d{10}$/D', $prefix)) {
+            throw new \InvalidArgumentException('PESEL prefix must contain 10 digits.');
+        }
+
+        return self::calculateChecksum($prefix, [1, 3, 7, 9, 1, 3, 7, 9, 1, 3]);
     }
 
     private static function calculateChecksum(string $number, array $weights): int

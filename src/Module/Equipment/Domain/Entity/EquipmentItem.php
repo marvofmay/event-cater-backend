@@ -23,6 +23,9 @@ class EquipmentItem
     #[ORM\ManyToOne(targetEntity: EquipmentCategory::class)]
     #[ORM\JoinColumn(name: 'category_uuid', referencedColumnName: 'uuid', nullable: false)]
     private EquipmentCategory $category;
+    #[ORM\ManyToOne(targetEntity: EquipmentLocation::class)]
+    #[ORM\JoinColumn(name: 'storage_location_uuid', referencedColumnName: 'uuid', nullable: true, onDelete: 'SET NULL')]
+    private ?EquipmentLocation $storageLocation = null;
     #[ORM\Column(length: 200, nullable: true)]
     private ?string $slangName = null;
     #[ORM\Column(type: 'integer')]
@@ -90,6 +93,17 @@ class EquipmentItem
         $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 
+    public function recordPhotoChange(): void
+    {
+        $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+    }
+
+    public function changeStorageLocation(?EquipmentLocation $location): void
+    {
+        $this->storageLocation = $location;
+        $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+    }
+
     public function uuid(): string
     {
         return $this->uuid;
@@ -110,6 +124,7 @@ class EquipmentItem
     {
         return ['uuid' => $this->uuid, 'code' => $this->code, 'name' => $this->name,
             'category' => $this->category->name(), 'categoryUuid' => $this->category->uuid(),
+            'storageLocation' => $this->storageLocation?->name(), 'storageLocationUuid' => $this->storageLocation?->uuid(),
             'slangName' => $this->slangName, 'stockQuantity' => $this->stockQuantity,
             'unit' => $this->unit, 'description' => $this->description,
             'active' => $this->active, 'version' => $this->version, 'updatedAt' => $this->updatedAt->format(DATE_ATOM)];

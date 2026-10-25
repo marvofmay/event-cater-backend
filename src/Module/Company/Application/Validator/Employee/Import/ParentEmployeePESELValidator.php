@@ -24,7 +24,8 @@ final readonly class ParentEmployeePESELValidator implements ImportRowValidatorI
             return null;
         }
 
-        $errorMessage = PESEL::validate($parentEmployeePESEL);
+        $parentEmployeePESEL = trim((string) $parentEmployeePESEL);
+        $errorMessage = preg_match('/^\d{11}$/D', $parentEmployeePESEL) ? null : 'pesel.invalidLength';
         if (null !== $errorMessage) {
             return $this->messageService->get($errorMessage, [], 'validators');
         }

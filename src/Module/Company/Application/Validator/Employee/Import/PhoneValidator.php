@@ -18,8 +18,8 @@ final readonly class PhoneValidator implements ImportRowValidatorInterface
 
     public function validate(array $row, array $additionalData = []): ?string
     {
-        $phone = $row[EmployeeImportColumnEnum::PHONE->value] ?? null;
-        if (null === $phone) {
+        $phone = trim((string) ($row[EmployeeImportColumnEnum::PHONE->value] ?? ''));
+        if ('' === $phone) {
             return $this->messageService->get('employee.phone.required', [], 'employees');
         }
 

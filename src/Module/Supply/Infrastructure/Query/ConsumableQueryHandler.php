@@ -19,7 +19,7 @@ final readonly class ConsumableQueryHandler
     #[AsMessageHandler(bus: 'query.bus')]
     public function get(GetConsumable $query): array
     {
-        $row = $this->db->fetchAssociative('SELECT * FROM consumable_item WHERE uuid = ?', [$query->uuid]);
+        $row = $this->db->fetchAssociative('SELECT item.*, category.name AS category FROM consumable_item item JOIN consumable_category category ON category.uuid = item.category_uuid WHERE item.uuid = ?', [$query->uuid]);
         if (!$row) {
             throw new PlanningResourceNotFound('Consumable not found.');
         }
@@ -32,27 +32,28 @@ final readonly class ConsumableQueryHandler
         $where = ['1 = 1'];
         $params = [];
         if ($query->active !== null) {
-            $where[] = 'active = ?';
+            $where[] = 'item.active = ?';
             $params[] = (int) $query->active;
         }
         if ($query->category !== null) {
-            $where[] = 'category = ?';
-            $params[] = $query->category;
+            $where[] = '(item.category_uuid = ? OR category.name = ?)';
+            array_push($params, $query->category, $query->category);
         }
         if ($query->search !== '') {
-            $where[] = "(name LIKE ? ESCAPE '!' OR code LIKE ? ESCAPE '!')";
+            $where[] = "(item.name LIKE ? ESCAPE '!' OR item.code LIKE ? ESCAPE '!')";
             $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $query->search).'%';
             array_push($params, $pattern, $pattern);
         }
         $condition = implode(' AND ', $where);
-        $total = (int) $this->db->fetchOne('SELECT COUNT(*) FROM consumable_item WHERE '.$condition, $params);
-        $rows = $this->db->fetchAllAssociative('SELECT * FROM consumable_item WHERE '.$condition.' ORDER BY name, uuid LIMIT '.$query->page->limit.' OFFSET '.$query->page->offset(), $params);
+        $from = ' FROM consumable_item item JOIN consumable_category category ON category.uuid = item.category_uuid WHERE ';
+        $total = (int) $this->db->fetchOne('SELECT COUNT(*)'.$from.$condition, $params);
+        $rows = $this->db->fetchAllAssociative('SELECT item.*, category.name AS category'.$from.$condition.' ORDER BY item.name, item.uuid LIMIT '.$query->page->limit.' OFFSET '.$query->page->offset(), $params);
         return $query->page->result(array_map($this->normalize(...), $rows), $total);
     }
 
     private function normalize(array $row): array
     {
-        return ['uuid' => $row['uuid'], 'code' => $row['code'], 'name' => $row['name'], 'category' => $row['category'],
+        return ['uuid' => $row['uuid'], 'code' => $row['code'], 'name' => $row['name'], 'category' => $row['category'], 'categoryUuid' => $row['category_uuid'],
             'unit' => $row['unit'], 'description' => $row['description'], 'active' => (bool) $row['active'], 'version' => (int) $row['version'], 'updatedAt' => (new \DateTimeImmutable($row['updated_at'], new \DateTimeZone('UTC')))->format(DATE_ATOM)];
     }
 }

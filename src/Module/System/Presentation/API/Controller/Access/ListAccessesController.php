@@ -31,11 +31,9 @@ final class ListAccessesController extends AbstractController
     #[Route(path: '/api/accesses', name: 'api.accesses.list', methods: ['GET'])]
     public function __invoke(): JsonResponse
     {
-        $this->denyAccessUnlessGranted(
-            PermissionEnum::LIST,
-            AccessEnum::ROLES,
-            $this->messageService->get('accessDenied')
-        );
+        if (!$this->isGranted(PermissionEnum::ASSIGN_ACCESS_TO_ROLE, AccessEnum::ROLES) && !$this->isGranted(PermissionEnum::ASSIGN_PERMISSION_TO_ACCESS_ROLE, AccessEnum::ROLES)) {
+            $this->denyAccessUnlessGranted(PermissionEnum::LIST, AccessEnum::ROLES, $this->messageService->get('accessDenied'));
+        }
 
         try {
             $data = $this->queryBus->dispatch(new ListAccessesQuery())

@@ -134,11 +134,31 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     private bool $tenantAdministrator = false;
 
+    #[ORM\Column(type: Types::STRING, length: 36, nullable: true)]
+    private ?string $saasAdministratorUuid = null;
+
+    public function getSaasAdministratorUuid(): ?string
+    {
+        return $this->saasAdministratorUuid;
+    }
+
+    public function makeTechnicalAdministrator(string $uuid): void
+    {
+        if ($this->employee !== null) {
+            throw new \LogicException('A technical administrator cannot be linked to a company employee.');
+        }
+        $this->saasAdministratorUuid = $uuid;
+        $this->tenantAdministrator = true;
+    }
+
     public function isTenantAdministrator(): bool { return $this->tenantAdministrator; }
     public function makeTenantAdministrator(): void { $this->tenantAdministrator = true; }
 
     public function getRoles(): array
     {
+        if ($this->saasAdministratorUuid !== null) {
+            return ['Administrator techniczny SaaS'];
+        }
         if (null === $this->employee) {
             return ['Pracownik techniczny systemu HRApp - nie powiązany z pracownikiem firmy'];
         }

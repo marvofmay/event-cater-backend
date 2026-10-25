@@ -52,7 +52,11 @@ final class EquipmentCategoryController extends PlanningController
     {
         $this->denyAccessUnlessGranted(PermissionEnum::DELETE, AccessEnum::EQUIPMENT);
         $body = PlanningPayload::json($request);
-        $this->execute(new DeleteEquipmentCategory(PlanningPayload::identifier($uuid), $body->version()));
+        $replacementCategoryUuid = $body->uuid('replacementCategoryUuid', false);
+        if ($replacementCategoryUuid !== null) {
+            $this->denyAccessUnlessGranted(PermissionEnum::UPDATE, AccessEnum::EQUIPMENT);
+        }
+        $this->execute(new DeleteEquipmentCategory(PlanningPayload::identifier($uuid), $body->version(), $replacementCategoryUuid));
         return $this->resource(['success' => true]);
     }
 }

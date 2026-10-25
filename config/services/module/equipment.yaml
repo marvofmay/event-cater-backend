@@ -1,3 +1,4 @@
 services:
+  App\Module\Equipment\Domain\Repository\EquipmentLocationRepository: '@App\Module\Equipment\Infrastructure\Persistence\DoctrineEquipmentLocationRepository'
   App\Module\Equipment\Domain\Repository\EquipmentRepository: '@App\Module\Equipment\Infrastructure\Persistence\DoctrineEquipmentRepository'
   App\Module\Equipment\Domain\Repository\EquipmentCategoryRepository: '@App\Module\Equipment\Infrastructure\Persistence\DoctrineEquipmentCategoryRepository'

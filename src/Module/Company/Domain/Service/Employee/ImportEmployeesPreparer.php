@@ -31,6 +31,11 @@ final readonly class ImportEmployeesPreparer
                 fn (string $pesel) => $this->employeeReaderRepository->getEmployeeByPESEL($pesel)
             );
 
+            $fakeFlag = $row[EmployeeImportColumnEnum::IS_PESEL_FAKE->value] ?? null;
+            $row[EmployeeImportColumnEnum::IS_PESEL_FAKE->value] = null === $fakeFlag || '' === trim((string) $fakeFlag)
+                ? ($existingEmployee?->isPeselFake() ?? false)
+                : filter_var($fakeFlag, FILTER_VALIDATE_BOOLEAN);
+
             $row[EmployeeImportColumnEnum::DYNAMIC_IS_EMPLOYEE_WITH_PESEL_ALREADY_EXISTS->value] = null !== $existingEmployee;
 
             if (!isset($peselMap[$pesel])) {

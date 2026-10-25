@@ -19,8 +19,8 @@ final readonly class EmailValidator implements ImportRowValidatorInterface
 
     public function validate(array $row, array $additionalData = []): ?string
     {
-        $email = $row[EmployeeImportColumnEnum::EMAIL->value] ?? null;
-        if (null === $email) {
+        $email = trim((string) ($row[EmployeeImportColumnEnum::EMAIL->value] ?? ''));
+        if ('' === $email) {
             return $this->messageService->get('employee.email.required', [], 'employees');
         }
 
@@ -30,7 +30,7 @@ final readonly class EmailValidator implements ImportRowValidatorInterface
         }
 
         $pesel = (string) $row[EmployeeImportColumnEnum::PESEL->value] ?? null;
-        if (array_key_exists($email, $additionalData['emailsPESELs']) && $additionalData['emailsPESELs'][$email] !== $pesel) {
+        if (array_key_exists($email, ($additionalData['emailsPESELs'] ?? [])) && $additionalData['emailsPESELs'][$email] !== $pesel) {
             return $this->messageService->get('employee.email.alreadyExists', [':email' => $email], 'employees');
         }
 

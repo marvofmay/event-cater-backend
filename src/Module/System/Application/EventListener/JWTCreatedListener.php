@@ -22,7 +22,8 @@ final readonly class JWTCreatedListener
         private AuthEventRecorder $authEventRecorder,
         private EventDispatcherInterface $eventDispatcher,
         private UserAuthorizationInfoProvider $userAuthInfoProvider,
-        private UserPersonalInfoProvider $userPersonalInfoProvider
+        private UserPersonalInfoProvider $userPersonalInfoProvider,
+        private \Doctrine\ORM\EntityManagerInterface $em
     ) {
     }
 
@@ -31,9 +32,16 @@ final readonly class JWTCreatedListener
         $user = $event->getUser();
         $payload = $event->getData();
 
+        if ($user->getSaasAdministratorUuid() !== null) {
+            $this->em->persist($user);
+            $this->em->flush();
+            $payload['saasAdministratorUuid'] = $user->getSaasAdministratorUuid();
+        }
+
         $tenant = $this->tenantContext->current();
         $payload['tenantUuid'] = $tenant['uuid'];
         $payload['tenantSlug'] = $tenant['slug'];
+        $payload['tenantName'] = $tenant['name'];
         $payload['tenantVersion'] = (int)$tenant['version'];
 
         $payload['user'] = $this->userPersonalInfoProvider->getUserInfo($user);

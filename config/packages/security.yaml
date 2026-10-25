@@ -6,9 +6,7 @@ security:
             cost:      15
     providers:
         app_user_provider:
-            entity:
-                class: App\Module\Company\Domain\Entity\User
-                property: email
+            id: App\Module\Saas\Infrastructure\TenantUserProvider
     firewalls:
         saas:
             pattern: ^/api/saas(?:/|$)

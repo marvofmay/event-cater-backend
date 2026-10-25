@@ -20,8 +20,9 @@ class ConsumableItem
     private string $code;
     #[ORM\Column(length: 200)]
     private string $name;
-    #[ORM\Column(length: 100)]
-    private string $category;
+    #[ORM\ManyToOne(targetEntity: ConsumableCategory::class)]
+    #[ORM\JoinColumn(name: 'category_uuid', referencedColumnName: 'uuid', nullable: false)]
+    private ConsumableCategory $category;
     #[ORM\Column(length: 10)]
     private string $unit;
     #[ORM\Column(type: 'text', nullable: true)]
@@ -38,7 +39,7 @@ class ConsumableItem
     {
     }
 
-    public static function create(string $uuid, string $code, string $name, string $category, string $unit, ?string $description): self
+    public static function create(string $uuid, string $code, string $name, ConsumableCategory $category, string $unit, ?string $description): self
     {
         $self = new self();
         $self->uuid = Uuid::fromString($uuid)->toString();
@@ -46,10 +47,10 @@ class ConsumableItem
         return $self;
     }
 
-    public function replaceDetails(string $code, string $name, string $category, string $unit, ?string $description): void
+    public function replaceDetails(string $code, string $name, ConsumableCategory $category, string $unit, ?string $description): void
     {
         $code = strtoupper(trim($code));
-        if (!preg_match('/^[A-Z0-9][A-Z0-9_-]{0,49}$/D', $code) || trim($name) === '' || mb_strlen($name) > 200 || trim($category) === '' || mb_strlen($category) > 100) {
+        if (!preg_match('/^[A-Z0-9][A-Z0-9_-]{0,49}$/D', $code) || trim($name) === '' || mb_strlen($name) > 200) {
             throw new BusinessRuleViolation('Consumable requires a unique code (1..50 letters/digits/-/_), name (1..200) and category (1..100).');
         }
         if (!in_array($unit, ['piece', 'carton', 'pack', 'bottle', 'kg', 'l'], true) || ($description !== null && mb_strlen($description) > 10000)) {
@@ -57,7 +58,7 @@ class ConsumableItem
         }
         $this->code = $code;
         $this->name = trim($name);
-        $this->category = trim($category);
+        $this->category = $category;
         $this->unit = $unit;
         $this->description = $description;
         $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
@@ -79,7 +80,7 @@ class ConsumableItem
     }
     public function toArray(): array
     {
-        return ['uuid' => $this->uuid, 'code' => $this->code, 'name' => $this->name, 'category' => $this->category,
+        return ['uuid' => $this->uuid, 'code' => $this->code, 'name' => $this->name, 'category' => $this->category->name(), 'categoryUuid' => $this->category->uuid(),
             'unit' => $this->unit, 'description' => $this->description, 'active' => $this->active,
             'version' => $this->version, 'updatedAt' => $this->updatedAt->format(DATE_ATOM)];
     }

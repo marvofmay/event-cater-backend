@@ -35,8 +35,18 @@ final readonly class EquipmentCategoryCommandHandler
     public function delete(DeleteEquipmentCategory $command): void
     {
         $category = $this->categories->getForUpdate($command->uuid, $command->version);
+        if ($command->replacementCategoryUuid !== null) {
+            if ($command->replacementCategoryUuid === $command->uuid) {
+                throw new BusinessRuleViolation('Wybierz inną kategorię docelową.');
+            }
+            $replacement = $this->categories->getForUpdate($command->replacementCategoryUuid);
+            $this->connection->executeStatement(
+                'UPDATE equipment_item SET category_uuid = ?, version = version + 1, updated_at = ? WHERE category_uuid = ?',
+                [$replacement->uuid(), gmdate('Y-m-d H:i:s'), $command->uuid],
+            );
+        }
         if ($this->connection->fetchOne('SELECT uuid FROM equipment_item WHERE category_uuid = ? LIMIT 1 FOR UPDATE', [$command->uuid]) !== false) {
-            throw new BusinessRuleViolation('Nie można usunąć kategorii przypisanej do sprzętu, także archiwalnego. Najpierw zmień kategorię tych pozycji.');
+            throw new BusinessRuleViolation('Ta kategoria zawiera sprzęt, także archiwalny. Wybierz kategorię docelową w polu „Przenieś sprzęt do kategorii” i ponów usunięcie.');
         }
         $this->categories->remove($category);
     }

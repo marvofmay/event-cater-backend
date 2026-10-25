@@ -18,6 +18,8 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 use Symfony\Component\Messenger\Exception\HandlerFailedException;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Validator\Exception\ValidationFailedException;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[AsEventListener(event: 'kernel.exception', priority: 300)]
@@ -37,8 +39,8 @@ final readonly class UnifiedApiExceptionListener
         }
 
         $channel = $this->getControllerErrorChannel($event);
-        if ($exception instanceof UnprocessableEntityHttpException) {
-            $validationException = $event->getThrowable()->getPrevious();
+        if ($exception instanceof UnprocessableEntityHttpException && $exception->getPrevious() instanceof ValidationFailedException) {
+            $validationException = $exception->getPrevious();
             $errorMessages = [];
             foreach ($validationException->getViolations() as $violation) {
                 $errorMessages[$this->translator->trans($violation->getPropertyPath(), [], 'messages')] = $violation->getMessage();
@@ -55,7 +57,13 @@ final readonly class UnifiedApiExceptionListener
             $event->setResponse(new JsonResponse([
                 'message' => $this->translator->trans('errors.occurred', [], 'validators'),
                 'errors' => $errorMessages,
-            ]));
+            ], 422));
+
+            return;
+        }
+
+        if ($exception instanceof AccessDeniedException) {
+            $event->setResponse(new JsonResponse(['message' => $this->translator->trans('accessDenied')], 403));
 
             return;
         }
@@ -79,7 +87,9 @@ final readonly class UnifiedApiExceptionListener
 
         $message = sprintf('%s', $exception->getMessage());
         $this->logError($channel, $message);
-        $event->setResponse(new JsonResponse(['message' => $message], $exception->getCode()));
+        $status = (int) $exception->getCode();
+        $status = $status >= 400 && $status <= 599 ? $status : 500;
+        $event->setResponse(new JsonResponse(['message' => $status === 500 ? $this->translator->trans('errors.http') : $message], $status));
     }
 
     private function getControllerErrorChannel(ExceptionEvent $event): MonologChannelEnum
