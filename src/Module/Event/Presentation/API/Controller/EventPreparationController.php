@@ -88,7 +88,13 @@ final class EventPreparationController extends PlanningController
         $this->allow(PermissionEnum::PLAN_EVENT_PREPARATION);
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
-        $this->execute(new ConfigurePreparationLine($uuid, $body->version(), PlanningPayload::identifier($lineUuid), $body->uuid('responsibleUuid', false), $body->text('sourceLocation', false), $body->text('instructions', false), $this->actor()));
+        $lineUuid = PlanningPayload::identifier($lineUuid);
+        $lines = array_column($this->ask(new GetEventPreparation($uuid))['lines'], null, 'uuid');
+        if (!isset($lines[$lineUuid])) throw new \App\Common\Application\Exception\PlanningResourceNotFound('Preparation line not found for this event.');
+        if ($body->has('requiredQuantity')) {
+            if ($lines[$lineUuid]['kind'] === 'equipment') $this->allow(PermissionEnum::PLAN_EVENT_EQUIPMENT);
+        }
+        $this->execute(new ConfigurePreparationLine($uuid, $body->version(), $lineUuid, $body->uuid('responsibleUuid', false), $body->has('sourceLocation') ? $body->text('sourceLocation', false) : $lines[$lineUuid]['sourceLocation'], $body->has('instructions') ? $body->text('instructions', false) : $lines[$lineUuid]['instructions'], $this->actor(), $body->quantity('requiredQuantity', false)));
         return $this->result($uuid);
     }
 

@@ -10,5 +10,6 @@ interface PreparationTemplateRepository
 {
     public function getForApply(string $uuid, int $version): PreparationTemplate;
     public function add(PreparationTemplate $item): void;
+    public function remove(PreparationTemplate $item): void;
     public function getForUpdate(string $uuid, int $version): PreparationTemplate;
 }

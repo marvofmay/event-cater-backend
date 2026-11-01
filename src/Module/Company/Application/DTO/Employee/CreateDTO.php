@@ -49,11 +49,7 @@ class CreateDTO
     }
 
     #[Assert\Uuid(message: 'contractType.invalidUUID')]
-    #[NotBlank(message: [
-        'text' => 'contractType.uuid.required',
-        'domain' => 'contract_types',
-    ])]
-    public string $contractTypeUUID {
+    public ?string $contractTypeUUID = null {
         get {
             return $this->contractTypeUUID;
         }
@@ -77,12 +73,10 @@ class CreateDTO
         }
     }
 
-    #[NotBlank(message: [
-        'text' => 'employee.email.required',
-        'domain' => 'employees',
-    ])]
+    #[Assert\NotBlank(message: 'Podaj adres e-mail pracownika.', normalizer: 'trim')]
+    #[Assert\Length(max: 100)]
     #[Assert\Email(message: 'email.invalid')]
-    public string $email {
+    public ?string $email = null {
         get {
             return $this->email;
         }
@@ -142,11 +136,7 @@ class CreateDTO
     }
 
     #[Assert\Date]
-    #[NotBlank(message: [
-        'text' => 'employee.employmentFrom.required',
-        'domain' => 'employees',
-    ])]
-    public string $employmentFrom {
+    public ?string $employmentFrom = null {
         get {
             return $this->employmentFrom;
         }

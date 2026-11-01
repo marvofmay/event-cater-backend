@@ -35,6 +35,10 @@ final readonly class ContractTypeExistsValidator implements ValidatorInterface
         }
 
         $contractTypeUUID = $data->contractTypeUUID;
+        if (null === $contractTypeUUID || '' === $contractTypeUUID) {
+            return;
+        }
+
         $contractTypeExists = $this->contractTypeReaderRepository->isContractTypeWithUUIDExists($contractTypeUUID);
         if (!$contractTypeExists) {
             throw new \Exception($this->translator->trans('contractType.uuid.notExists', [':uuid' => $contractTypeUUID], 'contract_types'), Response::HTTP_CONFLICT);

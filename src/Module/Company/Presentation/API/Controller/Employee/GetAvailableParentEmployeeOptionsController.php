@@ -39,11 +39,7 @@ final class GetAvailableParentEmployeeOptionsController extends AbstractControll
     #[Route(path: '/api/employees/parent-options', name: 'api.employees.parent-options', methods: ['GET'])]
     public function __invoke(#[MapQueryString] ParentEmployeeOptionsQueryDTO $queryDTO): JsonResponse
     {
-        $this->denyAccessUnlessGranted(
-            PermissionEnum::LIST,
-            AccessEnum::EMPLOYEES,
-            $this->messageService->get('accessDenied')
-        );
+        if (!$this->isGranted(PermissionEnum::CREATE, AccessEnum::EMPLOYEES) && !$this->isGranted(PermissionEnum::UPDATE, AccessEnum::EMPLOYEES)) throw $this->createAccessDeniedException();
 
         try {
             $envelope = $this->queryBus->dispatch(

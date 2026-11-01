@@ -17,6 +17,7 @@ enum AccessEnum: string implements EnumInterface
     case EVENTS = ModuleEnum::EVENTS->value . '.events';
     case EQUIPMENT = ModuleEnum::EQUIPMENT->value . '.equipment';
     case MANAGE = ModuleEnum::COMPANY->value . '.manage';
+    case COMPANY_STRUCTURE = ModuleEnum::COMPANY->value . '.company_structure';
     case COMPANIES = ModuleEnum::COMPANY->value . '.companies';
     case DEPARTMENTS = ModuleEnum::COMPANY->value . '.departments';
     case EMPLOYEES = ModuleEnum::COMPANY->value . '.employees';
@@ -44,6 +45,7 @@ enum AccessEnum: string implements EnumInterface
     public function allowedPermissions(): array
     {
         return match ($this) {
+            self::COMPANY_STRUCTURE => [PermissionEnum::VIEW],
             self::EVENT_VENUES,
             self::CONSUMABLES,
             self::PREPARATION_TEMPLATES,
@@ -130,6 +132,14 @@ enum AccessEnum: string implements EnumInterface
         return self::tryFrom($moduleName.'.'.$accessName);
     }
 
+    public function parent(): ?self
+    {
+        return match ($this) {
+            self::COMPANIES, self::DEPARTMENTS, self::EMPLOYEES, self::INDUSTRIES, self::ROLES, self::POSITIONS, self::CONTRACT_TYPES, self::IMPORTS => self::MANAGE,
+            default => null,
+        };
+    }
+
     /**
      * @return PermissionEnum[]
      */
@@ -156,6 +166,7 @@ enum AccessEnum: string implements EnumInterface
             self::EVENTS => 'Events',
             self::EQUIPMENT => 'Equipment',
             self::MANAGE => 'Manage',
+            self::COMPANY_STRUCTURE => 'Company structure',
             self::COMPANIES => 'Companies',
             self::DEPARTMENTS => 'Departments',
             self::EMPLOYEES => 'Employees',

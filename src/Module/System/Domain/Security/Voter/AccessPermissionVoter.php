@@ -94,6 +94,10 @@ abstract class AccessPermissionVoter extends Voter
         }
 
         $role = $employee->getRole();
+        $parent = $subject->parent();
+        if ($parent !== null && !$role->getAccesses()->exists(static fn ($key, $access) => $access->getName() === explode('.', $parent->value)[1] && $access->getModule()->getName() === explode('.', $parent->value)[0] && $access->getActive())) {
+            return false;
+        }
 
         return $this->roleAccessPermissionChecker->check($this->permission, $this->access, $role);
     }

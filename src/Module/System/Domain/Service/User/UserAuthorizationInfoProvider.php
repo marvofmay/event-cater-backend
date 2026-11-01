@@ -78,6 +78,13 @@ final readonly class UserAuthorizationInfoProvider
             $accesses = $role->getAccesses();
         }
 
-        return $accesses->filter(fn ($access) => $access->getActive() && $access->getModule()->getActive())->getValues();
+        $active = $accesses->filter(fn ($access) => $access->getActive() && $access->getModule()->getActive())->getValues();
+        $names = array_map(static fn ($access) => $access->getModule()->getName().'.'.$access->getName(), $active);
+
+        return array_values(array_filter($active, static function ($access) use ($names): bool {
+            $parent = AccessEnum::tryFromModuleAndName($access->getModule()->getName(), $access->getName())?->parent();
+
+            return $parent === null || in_array($parent->value, $names, true);
+        }));
     }
 }

@@ -6,6 +6,7 @@ namespace App\Module\Event\Application\CommandHandler;
 
 use App\Module\Event\Application\Command\ChangePreparationTemplateActive;
 use App\Module\Event\Application\Command\CreatePreparationTemplate;
+use App\Module\Event\Application\Command\DeletePreparationTemplate;
 use App\Module\Event\Application\Command\UpdatePreparationTemplate;
 use App\Module\Event\Application\Service\PreparationTemplateResolver;
 use App\Module\Event\Domain\Entity\PreparationTemplate;
@@ -28,6 +29,11 @@ final readonly class PreparationTemplateCommandHandler
     {
         $template = $this->templates->getForUpdate($command->uuid, $command->version);
         $template->replaceDefinition($command->name, $command->description, $this->resolver->resolve($command->lines));
+    }
+    #[AsMessageHandler(bus: 'command.bus')]
+    public function delete(DeletePreparationTemplate $command): void
+    {
+        $this->templates->remove($this->templates->getForUpdate($command->uuid, $command->version));
     }
     #[AsMessageHandler(bus: 'command.bus')]
     public function active(ChangePreparationTemplateActive $command): void

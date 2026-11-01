@@ -42,6 +42,10 @@ final readonly class EmployeeProjector
     {
         $this->employeeCreator->create($event);
 
+        if ([] === $event->emails->toArray()) {
+            return;
+        }
+
         $this->emailService->sendEmail(
             recipients: $event->emails->toArray(),
             subject: sprintf('Witaj w firmie %s!', $event->firstName->getValue()),
@@ -49,7 +53,7 @@ final readonly class EmployeeProjector
             templateName: 'emails/welcome.html.twig',
             context: [
                 'firstName' => $event->firstName->getValue(),
-                'login' => $event->emails->toArray()[0],
+                'login' => \App\Module\Company\Domain\Service\User\LoginPhone::normalize($event->phones->toArray()[0]),
             ],
         );
     }

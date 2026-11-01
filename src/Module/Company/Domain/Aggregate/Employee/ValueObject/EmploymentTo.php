@@ -8,11 +8,11 @@ class EmploymentTo extends EmploymentDateAbstract
 {
     protected ?\DateTimeImmutable $date;
 
-    public static function fromString(?string $dateString, EmploymentFrom $from): static
+    public static function fromString(?string $dateString, ?EmploymentFrom $from): static
     {
         $instance = new static($dateString);
 
-        if (null !== $instance->date && $instance->date <= $from->toDateTime()) {
+        if (null !== $from && null !== $instance->date && $instance->date <= $from->toDateTime()) {
             throw new \InvalidArgumentException('EmploymentTo must be after EmploymentFrom.');
         }
 

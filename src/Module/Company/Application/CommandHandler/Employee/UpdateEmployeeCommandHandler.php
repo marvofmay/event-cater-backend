@@ -64,11 +64,11 @@ final class UpdateEmployeeCommandHandler extends CommandHandlerAbstract
             FirstName::fromString($command->firstName),
             LastName::fromString($command->lastName),
             PESEL::fromString($command->pesel, $command->isPeselFake),
-            EmploymentFrom::fromString($command->employmentFrom),
+            EmploymentFrom::fromNullableString($command->employmentFrom),
             CompanyUUID::fromString($command->companyUUID),
             DepartmentUUID::fromString($command->departmentUUID),
             PositionUUID::fromString($command->positionUUID),
-            ContractTypeUUID::fromString($command->contractTypeUUID),
+            $command->contractTypeUUID ? ContractTypeUUID::fromString($command->contractTypeUUID) : null,
             RoleUUID::fromString($command->roleUUID),
             Emails::fromArray([$command->email]),
             ($command->address ?? new EmployeeAddressDTO())->toAddress(),
@@ -78,7 +78,7 @@ final class UpdateEmployeeCommandHandler extends CommandHandlerAbstract
             $command->active,
             Phones::fromArray($command->phones),
             $command->parentEmployeeUUID ? EmployeeUUID::fromString($command->parentEmployeeUUID) : null,
-            $command->employmentTo ? EmploymentTo::fromString($command->employmentTo, EmploymentFrom::fromString($command->employmentFrom)) : null,
+            $command->employmentTo ? EmploymentTo::fromString($command->employmentTo, EmploymentFrom::fromNullableString($command->employmentFrom)) : null,
         );
 
         $events = $employeeAggregate->pullEvents();

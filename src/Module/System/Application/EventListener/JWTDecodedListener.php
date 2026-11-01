@@ -12,7 +12,7 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 #[AsEventListener(event: 'lexik_jwt_authentication.on_jwt_decoded', method: 'onJWTDecoded')]
 final readonly class JWTDecodedListener
 {
-    public function __construct(private BlacklistTokenService $blacklist, private \App\Module\Saas\Infrastructure\TenantContext $tenantContext, private \App\Module\Saas\Infrastructure\ControlPlane $control)
+    public function __construct(private BlacklistTokenService $blacklist, private \App\Module\Saas\Infrastructure\TenantContext $tenantContext, private \App\Module\Saas\Infrastructure\ControlPlane $control, private \Doctrine\DBAL\Connection $connection)
     {
     }
 
@@ -26,6 +26,12 @@ final readonly class JWTDecodedListener
         }
 
         $tokenUUID = $payload['tokenUUID'];
+        $version = $this->connection->fetchOne('SELECT credential_version FROM user WHERE uuid = ? AND deleted_at IS NULL', [$payload['user']['uuid'] ?? '']);
+        if ($version === false || (int) $version !== (int) ($payload['credentialVersion'] ?? 0)) {
+            $event->markAsInvalid();
+
+            return;
+        }
         if (isset($payload['saasAdministratorUuid'])) {
             $admin = $this->control->technicalAdministrator($payload['username'] ?? $payload['email'] ?? '');
             if (!$admin || !$admin['active'] || $admin['uuid'] !== $payload['saasAdministratorUuid']) {

@@ -20,7 +20,8 @@ class EmploymentDateRangeValidator extends ConstraintValidator
             return;
         }
 
-        if (null === $value->employmentFrom || null === $value->employmentTo) {
+        if (null === $value->employmentFrom || '' === trim($value->employmentFrom)
+            || null === $value->employmentTo || '' === trim($value->employmentTo)) {
             return;
         }
 

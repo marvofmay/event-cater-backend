@@ -16,6 +16,23 @@ framework:
                 middleware:
                     - App\Module\Saas\Infrastructure\TenantMiddleware
         transports:
+            password_reset:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%/password_reset'
+                retry_strategy:
+                    max_retries: 2
+                    delay: 1000
+                options:
+                    exchange:
+                        name: password_reset
+                        type: direct
+            send_sms:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%/send_sms'
+                retry_strategy:
+                    max_retries: 2
+                options:
+                    exchange:
+                        name: send_sms
+                        type: direct
             async: '%env(MESSENGER_TRANSPORT_DSN)%'
             company_xlsx_import:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%/company_xlsx_import'
@@ -42,10 +59,19 @@ framework:
                   name: 'send_email'
                   type: direct
         routing:
+            'App\Module\System\Application\Command\Auth\RequestPasswordResetCommand': password_reset
+            'App\Module\System\Application\Command\Auth\PasswordChangedNoticeCommand': password_reset
+            'App\Module\System\Application\Command\Sms\SendBrevoSmsCommand': send_sms
             'App\Module\Company\Application\Command\Company\ImportCompaniesCommand': company_xlsx_import
             'App\Module\Company\Application\Command\Department\ImportDepartmentsCommand': department_xlsx_import
             'App\Module\Company\Application\Command\Employee\ImportEmployeesCommand': employee_xlsx_import
             'App\Module\System\Application\Command\Email\SendEmailCommand': send_email
+
+when@test:
+    framework:
+        messenger:
+            transports:
+                password_reset: 'in-memory://'
 
 # when@test:
 #    framework:

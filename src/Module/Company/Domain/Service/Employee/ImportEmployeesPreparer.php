@@ -48,6 +48,19 @@ final readonly class ImportEmployeesPreparer
             $preparedRows[] = $row;
         }
 
+        $parents = [];
+        foreach ($preparedRows as $row) $parents[(string) $row[EmployeeImportColumnEnum::PESEL->value]] = trim((string) ($row[EmployeeImportColumnEnum::PARENT_EMPLOYEE_PESEL->value] ?? ''));
+        $depths = [];
+        $depth = function (string $pesel, array $seen = []) use (&$depth, &$depths, $parents): int {
+            if (isset($depths[$pesel])) return $depths[$pesel];
+            if (isset($seen[$pesel]) || count($seen) >= 64) throw new \DomainException('Powiązania przełożonych tworzą cykl.');
+            $seen[$pesel] = true;
+            $parent = $parents[$pesel] ?? '';
+
+            return $depths[$pesel] = $parent !== '' && isset($parents[$parent]) ? 1 + $depth($parent, $seen) : 0;
+        };
+        usort($preparedRows, static fn ($first, $second) => $depth((string) $first[EmployeeImportColumnEnum::PESEL->value]) <=> $depth((string) $second[EmployeeImportColumnEnum::PESEL->value]));
+
         return [$preparedRows, $peselMap];
     }
 }

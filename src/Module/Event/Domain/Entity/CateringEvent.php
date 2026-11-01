@@ -58,6 +58,9 @@ class CateringEvent
     #[ORM\Column(length: 200, nullable: true)]
     private ?string $customerName = null;
 
+    #[ORM\Column(length: 36, nullable: true)]
+    private ?string $customerUuid = null;
+
     #[ORM\Column(type: 'json')]
     private array $contacts = [];
 
@@ -201,6 +204,11 @@ class CateringEvent
         return new EventSchedule($this->date, $this->timezone, $this->readyAt, $this->startsAt, $this->endsAt);
     }
 
+    public function assignCustomer(?string $uuid): void
+    {
+        $this->customerUuid = $uuid;
+    }
+
     public function toArray(): array
     {
         return [
@@ -208,7 +216,7 @@ class CateringEvent
             'description' => $this->description, 'status' => $this->status->value,
             ...$this->schedule()->toArray(), 'location' => $this->location,
             'guestCount' => $this->guestCount, 'coordinatorUuid' => $this->coordinatorUuid,
-            'customerName' => $this->customerName, 'contacts' => $this->contacts, 'menu' => $this->menu,
+            'customerName' => $this->customerName, 'customerUuid' => $this->customerUuid, 'contacts' => $this->contacts, 'menu' => $this->menu,
             'version' => $this->version, 'createdAt' => $this->createdAt->format(DATE_ATOM),
             'updatedAt' => $this->updatedAt->format(DATE_ATOM),
         ];

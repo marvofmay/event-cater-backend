@@ -50,6 +50,13 @@ final readonly class JWTCreatedListener
         $payload['modules'] = $this->userAuthInfoProvider->getModules($user);
         $payload['accesses'] = $this->userAuthInfoProvider->getAccesses($user);
         $payload['permissions'] = $this->userAuthInfoProvider->getPermissions($user);
+        $payload['mustChangePassword'] = $user->mustChangePassword();
+        $payload['credentialVersion'] = $user->getCredentialVersion();
+        if ($user->mustChangePassword()) {
+            $payload['modules'] = [];
+            $payload['accesses'] = [];
+            $payload['permissions'] = [];
+        }
 
         $tokenUUID = TokenUUID::generate();
         $payload['tokenUUID'] = $tokenUUID->toString();

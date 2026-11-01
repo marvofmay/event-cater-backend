@@ -33,9 +33,9 @@ final readonly class EmployeeAlreadyExistsValidator implements ValidatorInterfac
 
         $employeeUUID = $data->employeeUUID ?? null;
         $pesel = $data->pesel;
-        $email = $data->email;
+        $email = $data->email ?? '';
         $employeeExists = $this->employeeReaderRepository->isEmployeeAlreadyExistsWithEmailOrPESEL($pesel, $email, $employeeUUID);
-        if ($employeeExists) {
+        if ($employeeExists || ('' !== $email && $this->employeeReaderRepository->isEmployeeWithEmailExists($email, $employeeUUID))) {
             throw new \Exception($this->translator->trans('employee.alreadyExistsWithEmailsOrPESEL', [':pesel' => $pesel, ':email' => $email], 'employees'), Response::HTTP_CONFLICT);
         }
     }

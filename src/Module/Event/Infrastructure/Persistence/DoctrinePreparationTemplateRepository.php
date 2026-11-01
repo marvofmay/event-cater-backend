@@ -20,6 +20,10 @@ final readonly class DoctrinePreparationTemplateRepository implements Preparatio
     {
         $this->em->persist($item);
     }
+    public function remove(PreparationTemplate $item): void
+    {
+        $this->em->remove($item);
+    }
     public function getForApply(string $uuid, int $version): PreparationTemplate
     {
         return $this->getLocked($uuid, $version, LockMode::PESSIMISTIC_READ);

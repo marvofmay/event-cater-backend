@@ -27,6 +27,8 @@ use App\Module\Company\Domain\Interface\Role\RoleReaderInterface;
 use App\Module\Company\Domain\Service\Employee\Factory\EmployeeFactory;
 use App\Module\Company\Domain\Service\Factory\AddressFactory;
 use App\Module\Company\Domain\Service\Factory\ContactFactory;
+use App\Module\Company\Domain\Service\User\UserFactory;
+use App\Module\Company\Domain\Service\User\LoginPhone;
 use Doctrine\Common\Collections\Collection;
 
 final readonly class EmployeeUpdater
@@ -45,6 +47,7 @@ final readonly class EmployeeUpdater
         private ContactWriterInterface $contactWriterRepository,
         private AddressWriterInterface $addressWriterRepository,
         private EntityReferenceCache $entityReferenceCache,
+        private UserFactory $userFactory,
     ) {
     }
 
@@ -54,7 +57,7 @@ final readonly class EmployeeUpdater
         $user = $employee->getUser();
         $address = $employee->getAddress();
         $contacts = $employee->getContacts();
-        $email = $event->emails->toArray()[0];
+        $email = $event->emails->toArray()[0] ?? null;
 
         $this->employeeFactory->update($employee, $event);
 
@@ -64,8 +67,14 @@ final readonly class EmployeeUpdater
         $address = $this->addressFactory->create($event->address);
         $contacts = $this->contactFactory->create($event->phones, $event->emails);
 
-        if ($user->getEmail() !== $email) {
-            $user->setEmail($email);
+        $phone = $event->phones->toArray()[0];
+        if (null === $user) {
+            $user = $this->userFactory->createEmployee($email, $phone, $event->pesel->getValue());
+        } else {
+            $user->setLoginPhone(LoginPhone::normalize($phone));
+            if (null !== $email && $user->getEmail() !== $email) {
+                $user->setEmail($email);
+            }
         }
 
         $company = $this->entityReferenceCache->get(
@@ -92,11 +101,13 @@ final readonly class EmployeeUpdater
             fn (string $uuid) => $this->positionReaderRepository->getPositionByUUID($uuid)
         );
 
-        $contractType = $this->entityReferenceCache->get(
-            ContractType::class,
-            $event->contractTypeUUID->toString(),
-            fn (string $uuid) => $this->contractTypeReaderRepository->getContractTypeByUUID($uuid)
-        );
+        $contractType = $event->contractTypeUUID
+            ? $this->entityReferenceCache->get(
+                ContractType::class,
+                $event->contractTypeUUID->toString(),
+                fn (string $uuid) => $this->contractTypeReaderRepository->getContractTypeByUUID($uuid)
+            )
+            : null;
 
         $parentEmployee = $event->parentEmployeeUUID?->toString()
             ? $this->entityReferenceCache->get(
@@ -129,11 +140,11 @@ final readonly class EmployeeUpdater
         Department $department,
         Role $role,
         Position $position,
-        ContractType $contractType,
+        ?ContractType $contractType,
         ?Employee $parentEmployee,
         Address $address,
         array $contacts,
-        User $user,
+        ?User $user,
     ): void {
         $employee->setCompany($company);
         $employee->setDepartment($department);

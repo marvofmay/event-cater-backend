@@ -11,9 +11,15 @@ security:
         saas:
             pattern: ^/api/saas(?:/|$)
             security: false
+        password_reset:
+            pattern: ^/api/auth/password-reset(?:/|$)
+            security: false
         login:
             pattern: ^/api/login
             stateless: true
+            login_throttling:
+                max_attempts: 5
+                interval: '1 minute'
             json_login:
                 username_path: email
                 check_path: /api/login
@@ -31,6 +37,7 @@ security:
             provider: app_user_provider
 
     access_control:
+        - { path: ^/api/auth/password-reset(?:/|$), roles: PUBLIC_ACCESS }
         - { path: ^/api/doc, roles: PUBLIC_ACCESS }
         - { path: ^/api/login, roles: PUBLIC_ACCESS }
 #        - { path: ^/api/users/register, roles: PUBLIC_ACCESS }

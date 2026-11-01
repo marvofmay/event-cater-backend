@@ -23,7 +23,7 @@ final readonly class EmploymentFromValidator implements ImportRowValidatorInterf
         $employmentFrom = $row[EmployeeImportColumnEnum::EMPLOYMENT_FROM->value] ?? null;
 
         if (empty($employmentFrom)) {
-            return $this->messageService->get('employee.employmentFrom.required', [], 'employees');
+            return null;
         }
 
         $errorMessage = DateFormatValidator::validate($employmentFrom, DateFormatEnum::YYYY_MM_DD->value);

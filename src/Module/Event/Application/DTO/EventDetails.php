@@ -17,6 +17,7 @@ final readonly class EventDetails
         public ?int $guestCount = null,
         public ?string $coordinatorUuid = null,
         public ?string $customerName = null,
+        public ?string $customerUuid = null,
     ) {
     }
 }

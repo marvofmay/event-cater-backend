@@ -21,7 +21,7 @@ final readonly class SymfonyEmailSender implements EmailSenderInterface
     {
         $message = new SymfonyEmail()->subject($email->getSubject());
 
-        if ($email->getSender() !== null) {
+        if ($email->getSender()?->getEmail() !== null) {
             $message->from(new Address($email->getSender()->getEmail()));
         } else {
             $message->from(new Address('noreply@hrapp.com', 'System HRApp'));

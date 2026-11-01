@@ -22,4 +22,14 @@ final readonly class UserFactory implements UserFactoryInterface
 
         return $user;
     }
+
+    public function createEmployee(?string $email, string $phone, #[\SensitiveParameter] string $pesel): User
+    {
+        $user = User::create($email);
+        $user->setLoginPhone(LoginPhone::normalize($phone));
+        $user->setPassword($this->passwordHasher->hashPassword($user, $pesel));
+        $user->requirePasswordChange();
+
+        return $user;
+    }
 }

@@ -9,6 +9,7 @@ use App\Common\Presentation\Http\PlanningController;
 use App\Common\Presentation\Http\PlanningPayload;
 use App\Module\Event\Application\Command\ChangePreparationTemplateActive;
 use App\Module\Event\Application\Command\CreatePreparationTemplate;
+use App\Module\Event\Application\Command\DeletePreparationTemplate;
 use App\Module\Event\Application\Command\UpdatePreparationTemplate;
 use App\Module\Event\Application\Query\GetPreparationTemplate;
 use App\Module\Event\Application\Query\ListPreparationTemplates;
@@ -96,5 +97,15 @@ final class PreparationTemplateController extends PlanningController
         $uuid = PlanningPayload::identifier($uuid);
         $this->execute(new ChangePreparationTemplateActive($uuid, $body->version(), $active));
         return $this->resource($this->ask(new GetPreparationTemplate($uuid)));
+    }
+
+    #[Route('/api/preparation-templates/{uuid}', methods: ['DELETE'], requirements: ['uuid' => '[0-9a-fA-F-]{36}'])]
+    public function delete(string $uuid, Request $request): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(PermissionEnum::DELETE, AccessEnum::PREPARATION_TEMPLATES);
+        $body = PlanningPayload::json($request);
+        $this->execute(new DeletePreparationTemplate(PlanningPayload::identifier($uuid), $body->version()));
+
+        return $this->resource(['message' => 'Trwale usunięto szablon.']);
     }
 }

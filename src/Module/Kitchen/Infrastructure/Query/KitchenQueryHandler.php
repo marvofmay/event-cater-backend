@@ -22,7 +22,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 final readonly class KitchenQueryHandler
 {
-    public function __construct(private EntityManagerInterface $em, private EventProductionSource $events, private \App\Module\Kitchen\Application\Port\KitchenStaffDirectory $staff)
+    public function __construct(private EntityManagerInterface $em, private EventProductionSource $events, private \App\Module\Kitchen\Application\Port\KitchenStaffDirectory $staff, private \App\Common\Infrastructure\Query\HistoryActors $historyActors)
     {
     }
     #[AsMessageHandler(bus: 'query.bus')]
@@ -75,7 +75,7 @@ final readonly class KitchenQueryHandler
         $this->requireOrder($q->uuid);
         $repo = $this->em->getRepository(KitchenHistoryEntry::class);
         $rows = $repo->findBy(['order' => $q->uuid], ['orderVersion' => 'DESC'], $q->page->limit, $q->page->offset());
-        return $q->page->result(array_map(static fn (KitchenHistoryEntry $h) => $h->toArray(), $rows), $repo->count(['order' => $q->uuid]));
+        return $q->page->result($this->historyActors->enrich(array_map(static fn (KitchenHistoryEntry $h) => $h->toArray(), $rows)), $repo->count(['order' => $q->uuid]));
     }
     #[AsMessageHandler(bus: 'query.bus')]
     public function revision(GetKitchenRevision $q): array

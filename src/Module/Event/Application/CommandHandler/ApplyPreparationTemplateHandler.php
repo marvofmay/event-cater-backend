@@ -64,8 +64,7 @@ final readonly class ApplyPreparationTemplateHandler
                 if ($line->unit() !== $snapshot['unit']) {
                     throw new BusinessRuleViolation('Catalog unit differs from the event snapshot.');
                 }
-                $current = $line->toArray();
-                $line->configure($line->responsibleUuid(), $current['responsibleName'], $definition['sourceLocation'], $definition['instructions']);
+                $line->configure(null, null, $definition['sourceLocation'] ?? $snapshot['storageLocation'] ?? null, $definition['instructions']);
                 $line->useRule($rule, $command->templateUuid, $command->templateVersion);
                 $applied[] = $line->toArray();
             }

@@ -21,9 +21,11 @@ final readonly class ConfigureEventPreparationHandler
     {
         $this->editor->edit($command->uuid, $command->version, $command->actorUuid, 'preparation_configured', function (CateringEvent $event) use ($command): array {
             $list = $this->planner->get($event);
+            $before = $this->planner->checkpoint($list);
             $name = $command->responsibleUuid === null ? null : $this->employees->requireActive($command->responsibleUuid);
             $list->configure($command->responsibleUuid, $name, $command->deadlineAt, $command->notes);
-            return $this->planner->checkpoint($list);
+            $after = $this->planner->checkpoint($list);
+            return [...$after, 'before' => $before, 'after' => $after];
         });
     }
 }

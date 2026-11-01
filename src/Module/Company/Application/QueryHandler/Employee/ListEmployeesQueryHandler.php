@@ -9,6 +9,7 @@ use App\Common\Application\QueryHandler\ListQueryHandlerAbstract;
 use App\Module\Company\Application\Event\Employee\EmployeeListedEvent;
 use App\Module\Company\Application\Query\Employee\ListEmployeesQuery;
 use App\Module\Company\Domain\Entity\Employee;
+use App\Module\Company\Infrastructure\ReadModel\EmployeeAvatarReader;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
@@ -19,7 +20,8 @@ final class ListEmployeesQueryHandler extends ListQueryHandlerAbstract
     public function __construct(
         public EntityManagerInterface $entityManager,
         protected TransformerFactory $transformerFactory,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly EmployeeAvatarReader $avatars,
     ) {
         parent::__construct($entityManager, $transformerFactory);
     }
@@ -28,7 +30,13 @@ final class ListEmployeesQueryHandler extends ListQueryHandlerAbstract
     {
         $this->eventDispatcher->dispatch(new EmployeeListedEvent([$query]));
 
-        return $this->handle($query);
+        $result = $this->handle($query);
+        $avatars = $this->avatars->forEmployees(array_column($result['items'], 'uuid'));
+        foreach ($result['items'] as &$employee) {
+            $employee['avatar'] = $avatars[$employee['uuid']] ?? null;
+        }
+
+        return $result;
     }
 
     public function getEntityClass(): string

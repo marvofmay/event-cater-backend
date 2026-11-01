@@ -16,7 +16,7 @@ final readonly class CatalogEquipmentDirectory implements EquipmentCatalog
 
     public function requireActive(string $uuid): array
     {
-        $item = $this->connection->fetchAssociative('SELECT uuid, name, code, unit, active FROM equipment_item WHERE uuid = ? FOR SHARE', [$uuid]);
+        $item = $this->connection->fetchAssociative('SELECT item.uuid, item.name, item.code, item.unit, item.active, location.name AS storageLocation FROM equipment_item item LEFT JOIN equipment_location location ON location.uuid = item.storage_location_uuid WHERE item.uuid = ? FOR SHARE', [$uuid]);
         if (!$item || !$item['active']) {
             throw new BusinessRuleViolation('Equipment must exist and be active.');
         }

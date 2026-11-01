@@ -35,5 +35,14 @@ final readonly class ParentEmployeeExistsValidator
         if (!$employeeExists) {
             throw new \Exception($this->translator->trans('employee.uuid.notExists', [':uuid' => $parentUUID], 'employees'), Response::HTTP_CONFLICT);
         }
+        $parent = $this->employeeReaderRepository->getEmployeeByUUID($parentUUID);
+        if ($parent->getCompany()->getUUID()->toString() !== $data->companyUUID) throw new \Exception('Przełożony musi należeć do tej samej firmy.', 422);
+        $seen = [];
+        while ($parent !== null) {
+            $uuid = $parent->getUUID()->toString();
+            if ($uuid === ($data->employeeUUID ?? null) || isset($seen[$uuid]) || count($seen) >= 64) throw new \Exception('Powiązanie przełożonego tworzy cykl lub przekracza 64 poziomy.', 422);
+            $seen[$uuid] = true;
+            $parent = $parent->getParentEmployee();
+        }
     }
 }

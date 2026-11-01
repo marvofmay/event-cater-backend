@@ -13,6 +13,8 @@ final readonly class UserPersonalInfoProvider
         return [
             'uuid'  => $user->getUUID()->toString(),
             'email' => $user->getEmail(),
+            'loginPhone' => $user->getLoginPhone(),
+            'technicalAdministrator' => $user->getSaasAdministratorUuid() !== null,
         ];
     }
 

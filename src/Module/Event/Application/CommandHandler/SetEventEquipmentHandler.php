@@ -31,7 +31,7 @@ final readonly class SetEventEquipmentHandler
                 $requirement = new EquipmentRequirement($event, $item['uuid'], $item['name'], $item['code'], $item['unit'], $command->quantity, $command->notes);
                 $this->em->persist($requirement);
             }
-            $this->preparation->equipmentChanged($event, $requirement, $before);
+            $this->preparation->equipmentChanged($event, $requirement, $before, $item['storageLocation'] ?? null);
             return $requirement->toArray();
         });
     }

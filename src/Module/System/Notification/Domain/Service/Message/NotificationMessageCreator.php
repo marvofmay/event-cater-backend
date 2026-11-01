@@ -25,7 +25,7 @@ final readonly class NotificationMessageCreator implements NotificationMessageCr
         string $title,
         string $content,
         array $recipients
-    ): void {
+    ): string {
         $notificationMessage = NotificationMessage::create($event, $channel, $template, $title, $content);
         foreach ($recipients as $user) {
             $recipient = NotificationRecipient::create($notificationMessage, $user);
@@ -33,5 +33,7 @@ final readonly class NotificationMessageCreator implements NotificationMessageCr
         }
 
         $this->notificationMessageWriter->save($notificationMessage);
+
+        return $notificationMessage->getUUID()->toString();
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Module\Saas\Infrastructure;
 
 use App\Module\Company\Domain\Entity\User;
+use App\Module\Company\Domain\Service\User\LoginPhone;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
@@ -20,7 +21,12 @@ final readonly class TenantUserProvider implements UserProviderInterface
     public function loadUserByIdentifier(string $identifier): UserInterface
     {
         $email = strtolower(trim($identifier));
-        $user = $this->em->getRepository(User::class)->findOneBy(['email' => $email]);
+        try {
+            $criteria = str_contains($email, '@') ? ['email' => $email] : ['loginPhone' => LoginPhone::normalize($email)];
+        } catch (\InvalidArgumentException) {
+            throw new UserNotFoundException();
+        }
+        $user = $this->em->getRepository(User::class)->findOneBy($criteria);
         $admin = $this->control->technicalAdministrator($email);
         if ($admin) {
             if (!$admin['active'] || $user?->getEmployee() !== null) {
@@ -32,7 +38,7 @@ final readonly class TenantUserProvider implements UserProviderInterface
 
             return $user;
         }
-        if (!$user || $user->getSaasAdministratorUuid() !== null) {
+        if (!$user || $user->getSaasAdministratorUuid() !== null || ($user->getEmployee() !== null && !$user->getEmployee()->getActive())) {
             throw new UserNotFoundException();
         }
 

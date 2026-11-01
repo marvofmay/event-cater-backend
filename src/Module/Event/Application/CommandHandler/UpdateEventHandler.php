@@ -14,7 +14,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler(bus: 'command.bus')]
 final readonly class UpdateEventHandler
 {
-    public function __construct(private EventEditor $editor, private PreparationPlanner $preparation, private EmployeeDirectory $employees)
+    public function __construct(private EventEditor $editor, private PreparationPlanner $preparation, private EmployeeDirectory $employees, private \App\Module\Event\Application\Service\EventCustomerDirectory $customers)
     {
     }
     public function __invoke(UpdateEvent $command): void
@@ -25,7 +25,8 @@ final readonly class UpdateEventHandler
             if ($d->coordinatorUuid) {
                 $this->employees->requireActive($d->coordinatorUuid);
             }
-            $event->replaceDetails($d->title, $d->description, $d->schedule, $d->location, $d->guestCount, $d->coordinatorUuid, $d->customerName);
+            $event->replaceDetails($d->title, $d->description, $d->schedule, $d->location, $d->guestCount, $d->coordinatorUuid, $this->customers->name($d->customerUuid, $d->customerName));
+            $event->assignCustomer($d->customerUuid);
             $this->preparation->contextChanged($event, $before);
         });
     }

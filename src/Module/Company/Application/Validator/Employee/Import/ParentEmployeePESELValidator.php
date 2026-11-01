@@ -29,6 +29,26 @@ final readonly class ParentEmployeePESELValidator implements ImportRowValidatorI
         if (null !== $errorMessage) {
             return $this->messageService->get($errorMessage, [], 'validators');
         }
+        $records = $additionalData['supervisorRows'] ?? [];
+        $employees = $additionalData['employees'] ?? [];
+        if (!isset($records[$parentEmployeePESEL]) && !isset($employees[$parentEmployeePESEL])) return 'Nie znaleziono przełożonego wskazanego numerem PESEL.';
+        $department = $additionalData['departments'][(string) ($row[EmployeeImportColumnEnum::DEPARTMENT_UUID->value] ?? '')] ?? null;
+        $parentDepartment = isset($records[$parentEmployeePESEL]) ? ($additionalData['departments'][$records[$parentEmployeePESEL]['department']] ?? null) : ($employees[$parentEmployeePESEL] ?? null)?->getDepartment();
+        if ($department && $parentDepartment && $department->getCompany()->getUUID()->toString() !== $parentDepartment->getCompany()->getUUID()->toString()) return 'Przełożony musi należeć do tej samej firmy.';
+        $seen = [(string) ($row[EmployeeImportColumnEnum::PESEL->value] ?? '') => true];
+        $current = $parentEmployeePESEL;
+        $entity = $employees[$current] ?? null;
+        while ($current !== '') {
+            if (isset($seen[$current]) || count($seen) >= 64) return 'Powiązania przełożonych tworzą cykl lub przekraczają 64 poziomy.';
+            $seen[$current] = true;
+            if (isset($records[$current])) {
+                $current = $records[$current]['parent'];
+                $entity = $employees[$current] ?? null;
+            } else {
+                $entity = $entity?->getParentEmployee();
+                $current = $entity?->getPESEL() ?? '';
+            }
+        }
 
         return null;
     }

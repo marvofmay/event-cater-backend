@@ -30,7 +30,7 @@ class EmployeeFactory
         $employee->setLastName($event->lastName->getValue());
         $employee->setPESEL($event->pesel->getValue());
         $employee->setIsPeselFake($event->pesel->isFake());
-        $employee->setEmploymentFrom(\DateTime::createFromFormat('Y-m-d', $event->employmentFrom->getValue()));
+        $employee->setEmploymentFrom($event->employmentFrom ? \DateTime::createFromFormat('Y-m-d', $event->employmentFrom->getValue()) : null);
         if (null !== $event->employmentTo) {
             $employee->setEmploymentTo(\DateTime::createFromFormat('Y-m-d', $event->employmentTo->getValue()));
         }

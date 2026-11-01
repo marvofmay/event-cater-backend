@@ -29,7 +29,8 @@ final class EventPayloadMapper
             $body->text('description', false),
             $body->integer('guestCount', false),
             $body->uuid('coordinatorUuid', false),
-            $body->text('customerName', false)
+            $body->text('customerName', false),
+            $body->uuid('customerUuid', false)
         );
     }
 

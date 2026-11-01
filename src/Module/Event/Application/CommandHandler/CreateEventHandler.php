@@ -16,7 +16,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler(bus: 'command.bus')]
 final readonly class CreateEventHandler
 {
-    public function __construct(private EventRepository $events, private EmployeeDirectory $employees, private EntityManagerInterface $em)
+    public function __construct(private EventRepository $events, private EmployeeDirectory $employees, private EntityManagerInterface $em, private \App\Module\Event\Application\Service\EventCustomerDirectory $customers)
     {
     }
     public function __invoke(CreateEvent $command): void
@@ -26,7 +26,8 @@ final readonly class CreateEventHandler
             $this->employees->requireActive($d->coordinatorUuid);
         }
         $event = CateringEvent::create($command->uuid, $d->title, $d->schedule);
-        $event->replaceDetails($d->title, $d->description, $d->schedule, $d->location, $d->guestCount, $d->coordinatorUuid, $d->customerName);
+        $event->replaceDetails($d->title, $d->description, $d->schedule, $d->location, $d->guestCount, $d->coordinatorUuid, $this->customers->name($d->customerUuid, $d->customerName));
+        $event->assignCustomer($d->customerUuid);
         $this->events->add($event);
         $this->em->persist(new EventPreparationList($event));
         $this->em->persist(new EventHistoryEntry($event, $command->actorUuid, 'created', $event->toArray()));

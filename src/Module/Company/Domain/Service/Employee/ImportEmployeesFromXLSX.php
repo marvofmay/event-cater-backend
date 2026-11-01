@@ -81,6 +81,9 @@ final class ImportEmployeesFromXLSX extends XLSXIterator
                     'roles' => $roles,
                     'employees' => $employees,
                     'emailsPESELs' => $emailsPESELs,
+                    'duplicateLoginPhones' => $this->importEmployeesReferenceLoader->duplicateLoginPhones,
+                    'duplicateLoginEmails' => $this->importEmployeesReferenceLoader->duplicateLoginEmails,
+                    'supervisorRows' => $this->importEmployeesReferenceLoader->supervisorRows,
                 ]
             );
             if (null !== $error) {

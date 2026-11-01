@@ -63,6 +63,7 @@ class PreparationTemplate
             }
             $keys[$key] = true;
             $rule = PreparationRule::restore($line['rule']);
+            $rule->reserveQuantity?->assertUnit($line['unit']);
             // Validate both the catalog unit and numeric limits without guessing guest counts.
             if ($rule->mode === 'fixed') {
                 $rule->calculate(null, $line['unit']);

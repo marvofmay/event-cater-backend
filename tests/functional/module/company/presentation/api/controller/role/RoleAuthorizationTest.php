@@ -177,7 +177,22 @@ final class RoleAuthorizationTest extends FunctionalTestBase
         $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$token);
         $this->save([$this->selection('roles', ['list', 'view', 'assign_access_to_role']), $this->selection('notes', ['list', 'view'])], 403);
         $this->save([$this->selection('roles', ['list', 'view', 'assign_access_to_role'])]);
-        self::assertCount(1, $this->assigned());
+        self::assertCount(2, $this->assigned());
+    }
+
+    public function testManagementGateDoesNotGrantOrRevokeIndependentStructureView(): void
+    {
+        $this->save([$this->selection('employees', ['list']), $this->selection('company_structure', ['view'])]);
+        self::assertContains('manage', array_column($this->assigned(), 'name'));
+        $this->employeeLogin();
+        $this->api('GET', '/api/employees');
+        $this->api('GET', '/api/company-structure');
+        self::getContainer()->get('doctrine')->getConnection()->executeStatement('DELETE FROM role_access WHERE role_uuid = ? AND access_uuid = ?', [$this->roleUuid, $this->accesses['manage']['uuid']]);
+        $this->api('GET', '/api/employees', [], 403);
+        $this->api('GET', '/api/company-structure');
+        $context = $this->api('GET', '/api/auth/authorization');
+        self::assertNotContains('employees.list', $context['permissions']);
+        self::assertContains('company_structure.view', $context['permissions']);
     }
 
     public function testOrphanedPermissionAndInactiveAccessDoNotGrantAuthorization(): void

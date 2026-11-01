@@ -17,7 +17,7 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 final readonly class EventQueryHandler
 {
-    public function __construct(private Connection $db, private EntityManagerInterface $em, private PreparationQueryHandler $preparation)
+    public function __construct(private Connection $db, private EntityManagerInterface $em, private PreparationQueryHandler $preparation, private \App\Common\Infrastructure\Query\HistoryActors $historyActors)
     {
     }
 
@@ -87,7 +87,7 @@ final readonly class EventQueryHandler
             $query->page->limit,
             $query->page->offset()
         );
-        return $query->page->result(array_map(static fn (EventHistoryEntry $entry) => $entry->toArray(), $rows), $total);
+        return $query->page->result($this->historyActors->enrich(array_map(static fn (EventHistoryEntry $entry) => $entry->toArray(), $rows)), $total);
     }
 
     #[AsMessageHandler(bus: 'query.bus')]
@@ -109,7 +109,7 @@ final readonly class EventQueryHandler
 
     private function requireEvent(string $uuid): array
     {
-        $row = $this->db->fetchAssociative('SELECT * FROM catering_event WHERE uuid = ?', [$uuid]);
+        $row = $this->db->fetchAssociative("SELECT event.*, CASE WHEN coordinator.uuid IS NULL THEN NULL ELSE TRIM(CONCAT_WS(' ', coordinator.first_name, coordinator.last_name)) END AS coordinator_name FROM catering_event event LEFT JOIN employee coordinator ON coordinator.uuid = event.coordinator_uuid AND coordinator.deleted_at IS NULL WHERE event.uuid = ?", [$uuid]);
         if (!$row) {
             throw new PlanningResourceNotFound('Event not found.');
         }
@@ -123,7 +123,8 @@ final readonly class EventQueryHandler
             'readyAt' => self::dateTime($r['ready_at']), 'startsAt' => self::dateTime($r['starts_at']), 'endsAt' => self::dateTime($r['ends_at']),
             'location' => json_decode($r['location'], true, flags: JSON_THROW_ON_ERROR),
             'guestCount' => $r['guest_count'] === null ? null : (int) $r['guest_count'], 'coordinatorUuid' => $r['coordinator_uuid'],
-            'customerName' => $r['customer_name'], 'contacts' => json_decode($r['contacts'], true, flags: JSON_THROW_ON_ERROR),
+            'coordinatorName' => $r['coordinator_name'],
+            'customerName' => $r['customer_name'], 'customerUuid' => $r['customer_uuid'], 'contacts' => json_decode($r['contacts'], true, flags: JSON_THROW_ON_ERROR),
             'menu' => json_decode($r['menu'], true, flags: JSON_THROW_ON_ERROR), 'version' => (int) $r['version'],
             'createdAt' => self::dateTime($r['created_at']), 'updatedAt' => self::dateTime($r['updated_at'])];
     }

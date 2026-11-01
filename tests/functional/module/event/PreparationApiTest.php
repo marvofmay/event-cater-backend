@@ -21,6 +21,132 @@ use Ramsey\Uuid\Uuid;
 
 final class PreparationApiTest extends FunctionalTestBase
 {
+    public function testHistoryIncludesAuthorAndOnlyChangedEventFields(): void
+    {
+        $this->getAuthenticatedClient();
+        $event = $this->event(['guestCount' => 50]);
+        $this->api('PUT', '/api/events/'.$event['uuid'], [
+            'version' => $event['version'], 'title' => 'Nowa nazwa', 'date' => $event['date'], 'guestCount' => 60,
+        ]);
+        $history = $this->api('GET', '/api/events/'.$event['uuid'].'/history');
+        self::assertSame('details_replaced', $history['items'][0]['action']);
+        self::assertNotEmpty($history['items'][0]['actorName']);
+        self::assertNotSame('Użytkownik niedostępny', $history['items'][0]['actorName']);
+        $changes = $history['items'][0]['details']['changes'];
+        self::assertSame(50, $changes['guestCount']['before']);
+        self::assertSame(60, $changes['guestCount']['after']);
+        self::assertSame('Kompletacja', $changes['title']['before']);
+        self::assertSame('Nowa nazwa', $changes['title']['after']);
+        self::assertArrayNotHasKey('date', $changes);
+        self::assertArrayNotHasKey('version', $changes);
+        self::assertArrayNotHasKey('changes', $history['items'][1]['details']);
+    }
+
+    public function testPlanningUsesOneOwnerAndEquipmentLocationDefaultsAndAtomicLineEdits(): void
+    {
+        $this->getAuthenticatedClient();
+        $owner = $this->employee();
+        $location = $this->api('POST', '/api/equipment-locations', ['name' => 'Testowe zaplecze'], 201);
+        $gear = $this->gear();
+        $gear['storageLocationUuid'] = $location['uuid'];
+        $gear = $this->api('PUT', '/api/equipment/'.$gear['uuid'], $gear);
+        $options = $this->api('GET', '/api/preparation-options?kind=equipment&q=BOWL');
+        self::assertSame('Testowe zaplecze', $options['items'][0]['storageLocation']);
+        $event = $this->event();
+        $this->api('PUT', '/api/events/'.$event['uuid'].'/equipment/'.$gear['uuid'], ['version' => $event['version'], 'quantity' => 5]);
+        $list = $this->list($event['uuid']);
+        self::assertSame('Testowe zaplecze', $list['lines'][0]['sourceLocation']);
+        $lineUUID = $list['lines'][0]['uuid'];
+        $linePath = '/api/events/'.$event['uuid'].'/preparation/lines/'.$lineUUID;
+        $this->api('PUT', $linePath, ['version' => $list['version'], 'responsibleUuid' => $owner, 'sourceLocation' => 'Za barem'], 422);
+        $this->api('PUT', $linePath, ['version' => $list['version'], 'requiredQuantity' => '8', 'instructions' => str_repeat('a', 2001)], 422);
+        self::assertSame('5.000', $this->list($event['uuid'])['lines'][0]['requiredQuantity']);
+        $list = $this->api('PUT', $linePath, ['version' => $list['version'], 'requiredQuantity' => '8', 'sourceLocation' => 'Na zmywaku', 'instructions' => 'Zabrać z górnej półki.']);
+        self::assertSame('8.000', $list['lines'][0]['requiredQuantity']);
+        self::assertSame('Na zmywaku', $list['lines'][0]['sourceLocation']);
+        self::assertNull($list['lines'][0]['responsibleUuid']);
+        $list = $this->configure($list, $owner);
+        self::assertSame($owner, $list['responsibleUuid']);
+        $location = $this->api('PUT', '/api/equipment-locations/'.$location['uuid'], ['version' => $location['version'], 'name' => 'Testowy magazyn']);
+        self::assertSame('Na zmywaku', $this->list($event['uuid'])['lines'][0]['sourceLocation']);
+        self::getContainer()->get('doctrine')->getConnection()->executeStatement('UPDATE event_preparation_line SET source_location = NULL WHERE uuid = ?', [$lineUUID]);
+        self::assertSame('Testowy magazyn', $this->list($event['uuid'])['lines'][0]['sourceLocation']);
+        $this->grantUser('plan-only@example.test', ['view', 'plan_event_preparation']);
+        $this->getAuthenticatedClient('plan-only@example.test', 'TestOnly123!');
+        $this->api('PUT', $linePath, ['version' => $list['version'], 'requiredQuantity' => '9', 'sourceLocation' => 'Inne'], 403);
+        $list = $this->api('PUT', $linePath, ['version' => $list['version'], 'sourceLocation' => 'Inne']);
+        self::assertSame('8.000', $list['lines'][0]['requiredQuantity']);
+        self::assertSame('Zabrać z górnej półki.', $list['lines'][0]['instructions']);
+        $this->getAuthenticatedClient();
+        $template = $this->api('POST', '/api/preparation-templates', ['name' => 'Domyślne miejsce', 'lines' => [['kind' => 'equipment', 'itemUuid' => $gear['uuid'], 'rule' => ['mode' => 'fixed', 'quantity' => '1']]]], 201);
+        self::assertSame('Testowy magazyn', $template['lines'][0]['sourceLocation']);
+    }
+
+    public function testTemplateFixedReserveIsSavedAppliedAndRemainsFixedWhenGuestCountChanges(): void
+    {
+        $this->getAuthenticatedClient();
+        $gear = $this->gear();
+        $event = $this->event(['guestCount' => 50]);
+        $definition = ['name' => 'Filiżanki z zapasem', 'lines' => [['kind' => 'equipment', 'itemUuid' => $gear['uuid'], 'rule' => ['mode' => 'per_guest', 'quantity' => '1', 'perGuests' => 1, 'reserveQuantity' => '5']]]];
+        $template = $this->api('POST', '/api/preparation-templates', $definition, 201);
+        self::assertSame('5.000', $template['lines'][0]['rule']['reserveQuantity']);
+        $list = $this->workflow($this->list($event['uuid']), 'apply-template', ['templateUuid' => $template['uuid'], 'templateVersion' => $template['version']]);
+        self::assertSame('55.000', $list['lines'][0]['requiredQuantity']);
+        $this->api('PUT', '/api/events/'.$event['uuid'], ['version' => $list['version'], 'title' => 'Kompletacja', 'date' => '2026-12-31', 'guestCount' => 100]);
+        self::assertSame('105.000', $this->list($event['uuid'])['lines'][0]['requiredQuantity']);
+        $definition['lines'][0]['rule']['reserveQuantity'] = '0.5';
+        $this->api('POST', '/api/preparation-templates', $definition, 422);
+        $definition['lines'][0]['rule']['reserveQuantity'] = '5';
+        $definition['lines'][0]['rule']['reservePercent'] = 10;
+        $this->api('POST', '/api/preparation-templates', $definition, 422);
+    }
+
+    public function testTemplatesCanBePermanentlyDeletedWithoutChangingEventSnapshots(): void
+    {
+        $this->getAuthenticatedClient();
+        $gear = $this->gear();
+        $event = $this->event(['guestCount' => 50]);
+        $definition = ['name' => 'Lista do usunięcia', 'lines' => [['kind' => 'equipment', 'itemUuid' => $gear['uuid'], 'rule' => ['mode' => 'per_guest', 'quantity' => 1, 'perGuests' => 1]]]];
+        $template = $this->api('POST', '/api/preparation-templates', $definition, 201);
+        $list = $this->workflow($this->list($event['uuid']), 'apply-template', ['templateUuid' => $template['uuid'], 'templateVersion' => $template['version']]);
+        $path = '/api/preparation-templates/'.$template['uuid'];
+        $this->api('DELETE', $path, ['unrelated' => true], 422);
+        $this->api('DELETE', $path, ['version' => 99], 409);
+        $this->grantUser('template-viewer@example.test', ['view']);
+        $this->getAuthenticatedClient('template-viewer@example.test', 'TestOnly123!');
+        $this->api('DELETE', $path, ['version' => $template['version']], 403);
+        $this->getAuthenticatedClient();
+        $template = $this->api('PUT', $path.'/active', ['version' => $template['version'], 'active' => false]);
+        $this->api('DELETE', $path, ['version' => $template['version']]);
+        $this->api('GET', $path, [], 404);
+        $this->api('DELETE', $path, ['version' => $template['version']], 404);
+        self::assertSame(0, (int) self::getContainer()->get('doctrine')->getConnection()->fetchOne('SELECT COUNT(*) FROM preparation_template WHERE uuid = ?', [$template['uuid']]));
+        self::assertSame($list['lines'], $this->list($event['uuid'])['lines']);
+        $this->api('PUT', '/api/events/'.$event['uuid'], ['version' => $list['version'], 'title' => 'Kompletacja', 'date' => '2026-12-31', 'guestCount' => 60]);
+        self::assertSame('60.000', $this->line($this->list($event['uuid']), 'equipment', $gear['uuid'])['requiredQuantity']);
+        $activeTemplate = $this->api('POST', '/api/preparation-templates', $definition, 201);
+        $this->api('DELETE', '/api/preparation-templates/'.$activeTemplate['uuid'], ['version' => $activeTemplate['version']]);
+        self::assertSame(0, $this->api('GET', '/api/preparation-templates?active=all')['total']);
+    }
+
+    public function testEventDetailsIncludeCurrentCoordinatorName(): void
+    {
+        $this->getAuthenticatedClient();
+        $event = $this->event();
+        self::assertNull($event['coordinatorName']);
+        $employeeUUID = $this->employee();
+        $event = $this->event(['coordinatorUuid' => $employeeUUID]);
+        self::assertSame($employeeUUID, $event['coordinatorUuid']);
+        self::assertSame('Anna Kowalska', $event['coordinatorName']);
+        $connection = self::getContainer()->get('doctrine')->getConnection();
+        $connection->executeStatement('UPDATE employee SET first_name = ?, active = 0 WHERE uuid = ?', ['Joanna', $employeeUUID]);
+        self::assertSame('Joanna Kowalska', $this->api('GET', '/api/events/'.$event['uuid'])['coordinatorName']);
+        $connection->executeStatement('UPDATE employee SET deleted_at = CURRENT_TIMESTAMP WHERE uuid = ?', [$employeeUUID]);
+        $event = $this->api('GET', '/api/events/'.$event['uuid']);
+        self::assertNull($event['coordinatorName']);
+        self::assertSame($employeeUUID, $event['coordinatorUuid']);
+    }
+
     private function api(string $method, string $url, array $body = [], int $status = 200): array
     {
         $this->client->jsonRequest($method, $url, $body);
@@ -253,7 +379,7 @@ final class PreparationApiTest extends FunctionalTestBase
         $this->progress($list, $list['lines'][0]['uuid'], ['preparedQuantity' => 1], 422);
         $this->workflow($list, 'approve', [], 422);
         $list = $this->configure($list, $owner);
-        $list = $this->api('PUT', '/api/events/'.$a['uuid'].'/preparation/lines/'.$list['lines'][0]['uuid'], ['version' => $list['version'], 'responsibleUuid' => $owner, 'sourceLocation' => 'Chłodnia A', 'instructions' => 'Mleko 1 l, kartony zamknięte.']);
+        $list = $this->api('PUT', '/api/events/'.$a['uuid'].'/preparation/lines/'.$list['lines'][0]['uuid'], ['version' => $list['version'], 'sourceLocation' => 'Chłodnia A', 'instructions' => 'Mleko 1 l, kartony zamknięte.']);
         self::assertSame('Chłodnia A', $list['lines'][0]['sourceLocation']);
         $this->progress($this->list($b['uuid']), $list['lines'][0]['uuid'], ['preparedQuantity' => 1], 404);
         $list = $this->workflow($list, 'approve');
@@ -314,6 +440,20 @@ final class PreparationApiTest extends FunctionalTestBase
         $user->setEmployee($employee);
         $em->persist($user);
         $em->flush();
+    }
+
+    public function testCustomerDirectoryRequiresEventPermissions(): void
+    {
+        $this->grantUser('customer-viewer@example.test', ['view']);
+        $this->getAuthenticatedClient('customer-viewer@example.test', 'TestOnly123!');
+        $this->api('GET', '/api/event-customers');
+        $this->api('POST', '/api/event-customers', ['name' => 'Bez prawa zapisu'], 403);
+        $this->grantUser('customer-editor@example.test', ['update']);
+        $this->getAuthenticatedClient('customer-editor@example.test', 'TestOnly123!');
+        $this->api('POST', '/api/event-customers', ['name' => 'Nowy klient'], 201);
+        $this->grantUser('customer-no-access@example.test', []);
+        $this->getAuthenticatedClient('customer-no-access@example.test', 'TestOnly123!');
+        $this->api('GET', '/api/event-customers', [], 403);
     }
 
     public function testPreparationLoadingAndShortageAcceptanceHaveSeparatePermissions(): void

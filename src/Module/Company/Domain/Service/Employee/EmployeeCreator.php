@@ -48,8 +48,8 @@ final readonly class EmployeeCreator
     {
         $employee = $this->employeeFactory->create($event);
 
-        $email = $event->emails->toArray()[0];
-        $user = $this->userFactory->create($email, $email);
+        $email = $event->emails->toArray()[0] ?? null;
+        $user = $this->userFactory->createEmployee($email, $event->phones->toArray()[0], $event->pesel->getValue());
 
         $company = $this->entityReferenceCache->get(
             Company::class,
@@ -75,11 +75,13 @@ final readonly class EmployeeCreator
             fn (string $uuid) => $this->positionReaderRepository->getPositionByUUID($uuid)
         );
 
-        $contractType = $this->entityReferenceCache->get(
-            ContractType::class,
-            $event->contractTypeUUID->toString(),
-            fn (string $uuid) => $this->contractTypeReaderRepository->getContractTypeByUUID($uuid)
-        );
+        $contractType = $event->contractTypeUUID
+            ? $this->entityReferenceCache->get(
+                ContractType::class,
+                $event->contractTypeUUID->toString(),
+                fn (string $uuid) => $this->contractTypeReaderRepository->getContractTypeByUUID($uuid)
+            )
+            : null;
 
         $parentEmployee = $event->parentEmployeeUUID?->toString()
             ? $this->entityReferenceCache->get(
@@ -103,11 +105,11 @@ final readonly class EmployeeCreator
         Department $department,
         Role $role,
         Position $position,
-        ContractType $contractType,
+        ?ContractType $contractType,
         ?Employee $parentEmployee,
         Address $address,
         array $contacts,
-        User $user,
+        ?User $user,
     ): void {
         $employee->setCompany($company);
         $employee->setDepartment($department);

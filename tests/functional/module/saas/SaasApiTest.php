@@ -114,6 +114,27 @@ final class SaasApiTest extends FunctionalTestBase
         self::assertArrayNotHasKey('database_name',$detail);
         $this->api('PATCH','/api/saas/tenants/'.$a['uuid'].'/status',['status'=>'suspended','version'=>1,'reason'=>'Stale browser'],409);
     }
+    public function testCustomerDirectoryAndEventReferencesAreIsolatedBetweenTenants(): void
+    {
+        $suffix = bin2hex(random_bytes(3));
+        $first = $this->tenant('customer-a-'.$suffix);
+        $second = $this->tenant('customer-b-'.$suffix);
+        $this->status($first, 'active');
+        $this->status($second, 'active');
+        $token = $this->customerLogin($first['slug']);
+        $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$token);
+        $customer = $this->api('POST', '/api/event-customers', ['name' => 'Kontrahent pierwszej firmy'], 201);
+        self::assertSame($customer['uuid'], $this->api('GET', '/api/event-customers')['items'][0]['uuid']);
+        $token = $this->customerLogin($second['slug']);
+        $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$token);
+        self::assertSame([], $this->api('GET', '/api/event-customers')['items']);
+        $this->api('POST', '/api/events', ['title' => 'Próba obcego kontrahenta', 'date' => '2026-12-31', 'customerUuid' => $customer['uuid']], 404);
+        $own = $this->api('POST', '/api/event-customers', ['name' => 'Kontrahent drugiej firmy'], 201);
+        $event = $this->api('POST', '/api/events', ['title' => 'Własny kontrahent', 'date' => '2026-12-31', 'customerUuid' => $own['uuid']], 201);
+        self::assertSame($own['uuid'], $event['customerUuid']);
+        self::assertSame($own['name'], $event['customerName']);
+    }
+
     public function testQueuedMessagesRequireAnActiveCurrentTenantAndCarryItsIdentity():void
     {
         $middleware=static::getContainer()->get(\App\Module\Saas\Infrastructure\TenantMiddleware::class);

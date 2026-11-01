@@ -42,13 +42,13 @@ final class EmployeeAggregateCreator extends AggregateAbstract
             FirstName::fromString($row[EmployeeImportColumnEnum::FIRST_NAME->value]),
             LastName::fromString((string) ($row[EmployeeImportColumnEnum::LAST_NAME->value] ?? '')),
             PESEL::fromString((string) $row[EmployeeImportColumnEnum::PESEL->value], (bool) $row[EmployeeImportColumnEnum::IS_PESEL_FAKE->value]),
-            EmploymentFrom::fromString($row[EmployeeImportColumnEnum::EMPLOYMENT_FROM->value]),
+            EmploymentFrom::fromNullableString($row[EmployeeImportColumnEnum::EMPLOYMENT_FROM->value] ?? null),
             CompanyUUID::fromString($this->entityManager->find(Department::class, $row[EmployeeImportColumnEnum::DEPARTMENT_UUID->value])->getCompany()->getUUID()->toString()),
             DepartmentUUID::fromString($row[EmployeeImportColumnEnum::DEPARTMENT_UUID->value]),
             PositionUUID::fromString($row[EmployeeImportColumnEnum::POSITION_UUID->value]),
-            ContractTypeUUID::fromString($row[EmployeeImportColumnEnum::CONTACT_TYPE_UUID->value]),
+            !empty($row[EmployeeImportColumnEnum::CONTACT_TYPE_UUID->value]) ? ContractTypeUUID::fromString($row[EmployeeImportColumnEnum::CONTACT_TYPE_UUID->value]) : null,
             RoleUUID::fromString($row[EmployeeImportColumnEnum::ROLE_UUID->value]),
-            Emails::fromArray([$row[EmployeeImportColumnEnum::EMAIL->value]]),
+            Emails::fromArray([$row[EmployeeImportColumnEnum::EMAIL->value] ?? null]),
             new Address(
                 (string) ($row[EmployeeImportColumnEnum::STREET->value] ?? ''),
                 (string) ($row[EmployeeImportColumnEnum::POSTCODE->value] ?? ''),
@@ -61,7 +61,7 @@ final class EmployeeAggregateCreator extends AggregateAbstract
             (bool) $row[EmployeeImportColumnEnum::ACTIVE->value],
             Phones::fromArray([(string) $row[EmployeeImportColumnEnum::PHONE->value]]),
             $parentUUID,
-            $row[EmployeeImportColumnEnum::EMPLOYMENT_TO->value] ? EmploymentTo::fromString($row[EmployeeImportColumnEnum::EMPLOYMENT_TO->value], EmploymentFrom::fromString($row[EmployeeImportColumnEnum::EMPLOYMENT_FROM->value])) : null,
+            $row[EmployeeImportColumnEnum::EMPLOYMENT_TO->value] ? EmploymentTo::fromString($row[EmployeeImportColumnEnum::EMPLOYMENT_TO->value], EmploymentFrom::fromNullableString($row[EmployeeImportColumnEnum::EMPLOYMENT_FROM->value] ?? null)) : null,
             $uuid
         );
 

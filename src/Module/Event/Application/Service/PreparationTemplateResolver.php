@@ -27,7 +27,7 @@ final readonly class PreparationTemplateResolver
                 default => throw new BusinessRuleViolation('Unknown template item kind.'),
             };
             PreparationRule::restore($definition['rule']);
-            $resolved[] = [...$definition, 'name' => $snapshot['name'], 'code' => $snapshot['code'], 'unit' => $snapshot['unit']];
+            $resolved[] = [...$definition, 'name' => $snapshot['name'], 'code' => $snapshot['code'], 'unit' => $snapshot['unit'], 'sourceLocation' => $definition['sourceLocation'] ?? $snapshot['storageLocation'] ?? null];
         }
         return $resolved;
     }

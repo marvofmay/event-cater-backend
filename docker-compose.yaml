@@ -184,3 +184,40 @@ services:
       - .:/var/www/html
     networks:
       - hr-network
+
+  worker-send-sms:
+    container_name: worker-send-sms
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: ["php", "bin/console", "messenger:consume", "send_sms", "--verbose", "--no-interaction", "--memory-limit=256M"]
+    depends_on:
+      - rabbitmq
+      - service-company
+    environment:
+      MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f
+    volumes:
+      - .:/var/www/html
+    restart: unless-stopped
+    networks:
+      - hr-network
+
+  worker-password-reset:
+    container_name: worker-password-reset
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    command: ["php", "bin/console", "messenger:consume", "password_reset", "--no-interaction", "--memory-limit=256M"]
+    depends_on:
+      - rabbitmq
+      - service-company
+    environment:
+      MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f
+      MAILER_DSN: ${MAILER_DSN:-smtp://mailpit:1025}
+      PASSWORD_RESET_URL: ${PASSWORD_RESET_URL:-http://localhost:3000/reset-password}
+      PASSWORD_RESET_SENDER: ${PASSWORD_RESET_SENDER:-noreply@hrapp.com}
+    volumes:
+      - .:/var/www/html
+    restart: unless-stopped
+    networks:
+      - hr-network

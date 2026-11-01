@@ -20,7 +20,7 @@ final readonly class ContractTypeUUIDValidator implements ImportRowValidatorInte
     {
         $contractTypeUUID = $row[EmployeeImportColumnEnum::CONTACT_TYPE_UUID->value] ?? null;
         if (empty($contractTypeUUID)) {
-            return $this->messageService->get('employee.contractTypeUUID.required', [], 'employees');
+            return null;
         }
 
         $contractTypeExists = isset($additionalData['contractTypes'][$contractTypeUUID]);

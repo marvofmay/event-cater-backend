@@ -11,6 +11,7 @@ use App\Module\System\Notification\Domain\Interface\Message\NotificationResolveI
 use App\Module\System\Notification\Domain\Interface\Template\NotificationTemplateSettingReaderInterface;
 use App\Module\System\Notification\Domain\Service\Channel\NotificationChannelDispatcher;
 use App\Module\System\Notification\Domain\Service\Event\NotificationEventPayloadDispatcher;
+use App\Module\System\Infrastructure\Preference\PreferenceService;
 
 final readonly class NotificationResolver implements NotificationResolveInterface
 {
@@ -20,7 +21,8 @@ final readonly class NotificationResolver implements NotificationResolveInterfac
         private NotificationTemplateSettingReaderInterface $templateReaderRepository,
         private NotificationMessageCreatorInterface $messageCreator,
         private NotificationChannelDispatcher $channelDispatcher,
-        private NotificationEventPayloadDispatcher $payloadDispatcher
+        private NotificationEventPayloadDispatcher $payloadDispatcher,
+        private PreferenceService $preferences,
     ) {
     }
 
@@ -33,11 +35,15 @@ final readonly class NotificationResolver implements NotificationResolveInterfac
         foreach ($templates as $template) {
             $event = $template->getEvent();
             $channel = $template->getChannel();
+            $channelRecipients = $this->preferences->filterRecipients($channel->getChannelCode(), $recipients);
+            if ([] === $channelRecipients) {
+                continue;
+            }
             $title = $this->renderTemplate($template->getTitle(), $payload);
             $content = $this->renderTemplate($template->getContent(), $payload);
 
-            $this->messageCreator->create($event, $channel, $template, $title, $content, $recipients);
-            $this->channelDispatcher->dispatch($event, $channel, $recipients, $title, $content, $payload);
+            $messageUuid = $this->messageCreator->create($event, $channel, $template, $title, $content, $channelRecipients);
+            $this->channelDispatcher->dispatch($event, $channel, $channelRecipients, $title, $content, [...$payload, 'notificationMessageUUID' => $messageUuid]);
         }
     }
 

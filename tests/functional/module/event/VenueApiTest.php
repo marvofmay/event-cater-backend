@@ -38,6 +38,8 @@ final class VenueApiTest extends FunctionalTestBase
         $saved = $this->api('POST', '/api/events/'.$first['uuid'].'/save-venue', ['version' => $first['version'], 'name' => 'Poprzednia sala'], 201);
         self::assertSame('Długa 1', $saved['location']['street']);
         self::assertSame('Anna', $saved['contacts'][0]['name']);
+        self::assertNotSame($venue['uuid'], $saved['uuid']);
+        self::assertSame('Długa 2', $this->api('GET', '/api/event-venues/'.$venue['uuid'])['location']['street']);
         $history = $this->api('GET', '/api/events/'.$first['uuid'].'/history');
         self::assertSame('venue_applied', $history['items'][0]['action']);
         $options = $this->api('GET', '/api/event-venues/options?q=Kraków');

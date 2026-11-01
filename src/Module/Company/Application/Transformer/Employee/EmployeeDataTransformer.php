@@ -36,7 +36,7 @@ class EmployeeDataTransformer implements DataTransformerInterface
             'isPeselFake' => $employee->isPeselFake(),
             Employee::COLUMN_INTERNAL_CODE => $employee->getInternalCode(),
             Employee::COLUMN_EXTERNAL_CODE => $employee->getExternalCode(),
-            Employee::COLUMN_EMPLOYMENT_FROM => $employee->getEmploymentFrom()->format('Y-m-d'),
+            Employee::COLUMN_EMPLOYMENT_FROM => $employee->getEmploymentFrom()?->format('Y-m-d'),
             Employee::COLUMN_EMPLOYMENT_TO => $employee->getEmploymentTo()?->format('Y-m-d'),
             Employee::COLUMN_ACTIVE => $employee->getActive(),
             Employee::COLUMN_CREATED_AT => $employee->getcreatedAt()->format('Y-m-d H:i:s'),
@@ -119,8 +119,12 @@ class EmployeeDataTransformer implements DataTransformerInterface
         ];
     }
 
-    private function transformContractType(ContractType $contractType): ?array
+    private function transformContractType(?ContractType $contractType): ?array
     {
+        if (null === $contractType) {
+            return null;
+        }
+
         return [
             ContractTypeEntityFieldEnum::UUID->value => $contractType->getUUID()->toString(),
             ContractTypeEntityFieldEnum::NAME->value => $contractType->getName(),

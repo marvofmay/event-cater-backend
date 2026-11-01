@@ -4,6 +4,9 @@ parameters:
   twilio_from: '%env(TWILIO_FROM)%'
 
 services:
+  app.brevo.http:
+    class: Symfony\Component\HttpClient\NativeHttpClient
+
   _defaults:
     autowire: true
     autoconfigure: true

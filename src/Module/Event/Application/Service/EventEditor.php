@@ -24,9 +24,20 @@ final readonly class EventEditor
         } else {
             $event->assertEditable();
         }
+        $before = $event->toArray();
         $details = $change($event);
         $event->touch();
         $details ??= $event->toArray();
+        $after = $event->toArray();
+        $changes = [];
+        foreach (['title', 'description', 'date', 'timezone', 'readyAt', 'startsAt', 'endsAt', 'location', 'guestCount', 'coordinatorUuid', 'customerName', 'contacts', 'menu'] as $field) {
+            if ($before[$field] !== $after[$field]) {
+                $changes[$field] = ['before' => $before[$field], 'after' => $after[$field]];
+            }
+        }
+        if ($changes !== []) {
+            $details['changes'] = $changes;
+        }
         if (array_key_exists('version', $details)) {
             $details['version'] = $event->version() + 1;
         }

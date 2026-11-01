@@ -129,6 +129,15 @@ final readonly class RoleAuthorizationUpdater
             $result[$accessUuid] = ['access' => $access, 'permissions' => $permissions];
         }
 
+        foreach ($result as $selection) {
+            $access = $selection['access'];
+            $parent = AccessEnum::tryFromModuleAndName($access->getModule()->getName(), $access->getName())?->parent();
+            if ($parent === null) continue;
+            $parentAccess = $this->em->getRepository(Access::class)->findOneBy(['name' => explode('.', $parent->value)[1], 'module' => $access->getModule(), 'active' => true]);
+            if (!$parentAccess) throw new HttpException(422, 'Nadrzędny dostęp do zarządzania jest nieaktywny.');
+            $result[$parentAccess->getUUID()->toString()] ??= ['access' => $parentAccess, 'permissions' => []];
+        }
+
         return $result;
     }
 }

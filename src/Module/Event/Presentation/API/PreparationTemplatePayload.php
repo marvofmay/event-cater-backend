@@ -19,7 +19,7 @@ final class PreparationTemplatePayload
                 throw new BusinessRuleViolation('kind must be equipment or consumable.');
             }
             $input = $line->object('rule');
-            $rule = new PreparationRule($input->text('mode'), $input->quantity('quantity'), $input->integer('perGuests', false), $input->integer('reservePercent', false) ?? 0);
+            $rule = new PreparationRule($input->text('mode'), $input->quantity('quantity'), $input->integer('perGuests', false), $input->integer('reservePercent', false) ?? 0, $input->quantity('reserveQuantity', false));
             return ['kind' => $kind, 'itemUuid' => $line->uuid('itemUuid'), 'rule' => $rule->toArray(), 'sourceLocation' => $line->text('sourceLocation', false), 'instructions' => $line->text('instructions', false)];
         }, $body->list('lines', 100));
     }

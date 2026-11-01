@@ -90,8 +90,8 @@ class Employee
     private Position $position;
 
     #[ORM\ManyToOne(targetEntity: ContractType::class, inversedBy: 'employees')]
-    #[ORM\JoinColumn(name: 'contract_type_uuid', referencedColumnName: 'uuid', nullable: false, onDelete: 'CASCADE')]
-    private ContractType $contractType;
+    #[ORM\JoinColumn(name: 'contract_type_uuid', referencedColumnName: 'uuid', nullable: true, onDelete: 'CASCADE')]
+    private ?ContractType $contractType = null;
 
     #[ORM\ManyToOne(targetEntity: Role::class, inversedBy: 'employees')]
     #[ORM\JoinColumn(name: 'role_uuid', referencedColumnName: 'uuid', nullable: false, onDelete: 'CASCADE')]
@@ -114,8 +114,8 @@ class Employee
     #[ORM\Column(type: Types::STRING, length: 50, nullable: true)]
     private ?string $internalCode;
 
-    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: false)]
-    private ?\DateTimeInterface $employmentFrom;
+    #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $employmentFrom = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $employmentTo = null;
@@ -152,7 +152,7 @@ class Employee
         return $this->user;
     }
 
-    public function setUser(User $user): void
+    public function setUser(?User $user): void
     {
         $this->user = $user;
         if ($user && $user->getEmployee() !== $this) {
@@ -190,12 +190,12 @@ class Employee
         $this->position = $position;
     }
 
-    public function getContractType(): ContractType
+    public function getContractType(): ?ContractType
     {
         return $this->contractType;
     }
 
-    public function setContractType(ContractType $contractType): void
+    public function setContractType(?ContractType $contractType): void
     {
         $this->contractType = $contractType;
     }
@@ -280,12 +280,12 @@ class Employee
         $this->{self::COLUMN_INTERNAL_CODE} = $internalCode;
     }
 
-    public function getEmploymentFrom(): \DateTimeInterface
+    public function getEmploymentFrom(): ?\DateTimeInterface
     {
         return $this->{self::COLUMN_EMPLOYMENT_FROM};
     }
 
-    public function setEmploymentFrom(\DateTimeInterface $employmentFrom): void
+    public function setEmploymentFrom(?\DateTimeInterface $employmentFrom): void
     {
         $this->{self::COLUMN_EMPLOYMENT_FROM} = $employmentFrom;
     }

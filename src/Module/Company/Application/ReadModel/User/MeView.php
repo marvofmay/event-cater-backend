@@ -10,7 +10,7 @@ final readonly class MeView
 {
     public function __construct(
         public string $userUUID,
-        public string $email,
+        public ?string $email,
         public ?EmployeeView $employee
     ) {
     }

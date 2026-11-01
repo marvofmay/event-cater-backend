@@ -6,6 +6,6 @@ namespace App\Module\Event\Application\Port;
 
 interface EquipmentCatalog
 {
-    /** @return array{uuid: string, name: string, code: string, unit: string} */
+    /** @return array{uuid: string, name: string, code: string, unit: string, storageLocation?: ?string} */
     public function requireActive(string $uuid): array;
 }

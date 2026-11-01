@@ -18,6 +18,29 @@ use Ramsey\Uuid\Uuid;
 
 final class PreparationTest extends TestCase
 {
+    public function testFixedReserveIsAddedAfterGuestCalculationAndSurvivesRestoring(): void
+    {
+        $rule = new PreparationRule('per_guest', Quantity::from(1), 1, 0, Quantity::from(5));
+        self::assertSame('55.000', $rule->calculate(50, 'piece')->decimal());
+        self::assertSame('105.000', $rule->calculate(100, 'piece')->decimal());
+        self::assertSame('105.000', PreparationRule::restore($rule->toArray())->calculate(100, 'piece')->decimal());
+        self::assertSame('3.000', (new PreparationRule('per_guest', Quantity::from(1), 50, 0, Quantity::from(1)))->calculate(51, 'piece')->decimal());
+        self::assertSame('0.193', (new PreparationRule('per_guest', Quantity::from('0.125'), 2, 0, Quantity::from('0.005')))->calculate(3, 'kg')->decimal());
+        self::assertSame('55.000', PreparationRule::restore(['mode' => 'per_guest', 'quantity' => '1.000', 'perGuests' => 1, 'reservePercent' => 10])->calculate(50, 'piece')->decimal());
+    }
+
+    public function testFractionalReserveCannotBeAddedToWholePieces(): void
+    {
+        $this->expectException(BusinessRuleViolation::class);
+        (new PreparationRule('per_guest', Quantity::from(1), 1, 0, Quantity::from('0.5')))->calculate(50, 'piece');
+    }
+
+    public function testReserveCannotCombinePercentAndFixedQuantity(): void
+    {
+        $this->expectException(BusinessRuleViolation::class);
+        new PreparationRule('per_guest', Quantity::from(1), 1, 10, Quantity::from(5));
+    }
+
     /** @dataProvider quantities */
     public function testExactQuantities(int|string $input, string $canonical): void
     {

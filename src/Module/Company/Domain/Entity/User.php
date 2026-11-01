@@ -57,10 +57,18 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     #[Assert\NotBlank]
     private ?UuidInterface $employee_uuid = null;
 
-    #[ORM\Column(type: Types::STRING, length: 100, unique: true)]
-    #[Assert\NotBlank]
+    #[ORM\Column(type: Types::STRING, length: 100, unique: true, nullable: true)]
     #[Assert\Email]
-    private string $email;
+    private ?string $email = null;
+
+    #[ORM\Column(type: Types::STRING, length: 15, unique: true, nullable: true)]
+    private ?string $loginPhone = null;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private bool $mustChangePassword = false;
+
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
+    private int $credentialVersion = 0;
 
     #[ORM\Column(type: Types::STRING, length: 255)]
     #[Assert\NotBlank]
@@ -102,7 +110,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
         $this->notificationRecipients = new ArrayCollection();
     }
 
-    public static function create(string $email): self
+    public static function create(?string $email): self
     {
         $self = new self();
         $self->uuid = Uuid::uuid4();
@@ -121,7 +129,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
         return $this->{self::COLUMN_EMPLOYEE_UUID};
     }
 
-    public function getEmail(): string
+    public function getEmail(): ?string
     {
         return $this->{self::COLUMN_EMAIL};
     }
@@ -129,6 +137,27 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
     public function getPassword(): string
     {
         return $this->{self::COLUMN_PASSWORD};
+    }
+
+    public function getLoginPhone(): ?string { return $this->loginPhone; }
+    public function mustChangePassword(): bool { return $this->mustChangePassword; }
+    public function getCredentialVersion(): int { return $this->credentialVersion; }
+
+    public function setLoginPhone(string $phone): void
+    {
+        if ($phone !== $this->loginPhone) {
+            $this->loginPhone = $phone;
+            ++$this->credentialVersion;
+        }
+    }
+
+    public function requirePasswordChange(): void { $this->mustChangePassword = true; }
+
+    public function changePassword(string $hash): void
+    {
+        $this->password = $hash;
+        $this->mustChangePassword = false;
+        ++$this->credentialVersion;
     }
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
@@ -174,6 +203,9 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
 
     public function setEmail(string $email): void
     {
+        if ($this->{self::COLUMN_EMAIL} !== $email) {
+            ++$this->credentialVersion;
+        }
         $this->{self::COLUMN_EMAIL} = $email;
     }
 
@@ -189,7 +221,7 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
 
     public function getUserIdentifier(): string
     {
-        return $this->email;
+        return $this->loginPhone ?? $this->email ?? $this->uuid->toString();
     }
 
     public function getEmployee(): ?Employee

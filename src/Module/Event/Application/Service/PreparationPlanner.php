@@ -31,12 +31,14 @@ final readonly class PreparationPlanner
         return $list->line($uuid) ?? throw new PlanningResourceNotFound('Preparation line not found for this event.');
     }
 
-    public function equipmentChanged(CateringEvent $event, EquipmentRequirement $equipment, ?array $previous): void
+    public function equipmentChanged(CateringEvent $event, EquipmentRequirement $equipment, ?array $previous, ?string $sourceLocation = null): void
     {
         $list = $this->get($event);
         $line = $list->find('equipment', $equipment->equipmentUuid());
         if (!$line) {
-            $list->add(PreparationLine::equipment($list, $equipment));
+            $line = PreparationLine::equipment($list, $equipment);
+            $line->configure(null, null, $sourceLocation, null);
+            $list->add($line);
             return;
         }
         if ($previous !== $equipment->toArray() || $line->calculationRule() !== null) {
@@ -94,11 +96,6 @@ final readonly class PreparationPlanner
         $ids = [];
         if ($list->responsibleUuid() !== null) {
             $ids[] = $list->responsibleUuid();
-        }
-        foreach ($list->lines() as $line) {
-            if ($line->responsibleUuid() !== null) {
-                $ids[] = $line->responsibleUuid();
-            }
         }
         $ids = array_unique($ids);
         sort($ids);

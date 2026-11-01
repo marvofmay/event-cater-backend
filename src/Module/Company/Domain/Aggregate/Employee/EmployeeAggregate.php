@@ -40,12 +40,12 @@ class EmployeeAggregate extends AggregateRootAbstract
     private FirstName      $firstName;
     private LastName       $lastName;
     private PESEL          $pesel;
-    private EmploymentFrom $employmentFrom;
+    private ?EmploymentFrom $employmentFrom;
     private CompanyUUID    $companyUUID;
 
     private DepartmentUUID   $departmentUUID;
     private PositionUUID     $positionUUID;
-    private ContractTypeUUID $contractTypeUUID;
+    private ?ContractTypeUUID $contractTypeUUID;
     private RoleUUID         $roleUUID;
     private Emails           $emails;
     private Address          $address;
@@ -64,11 +64,11 @@ class EmployeeAggregate extends AggregateRootAbstract
         FirstName $firstName,
         LastName $lastName,
         PESEL $pesel,
-        EmploymentFrom $employmentFrom,
+        ?EmploymentFrom $employmentFrom,
         CompanyUUID $companyUUID,
         DepartmentUUID $departmentUUID,
         PositionUUID $positionUUID,
-        ContractTypeUUID $contractTypeUUID,
+        ?ContractTypeUUID $contractTypeUUID,
         RoleUUID $roleUUID,
         Emails $emails,
         Address $address,
@@ -114,11 +114,11 @@ class EmployeeAggregate extends AggregateRootAbstract
         FirstName $firstName,
         LastName $lastName,
         PESEL $pesel,
-        EmploymentFrom $employmentFrom,
+        ?EmploymentFrom $employmentFrom,
         CompanyUUID $companyUUID,
         DepartmentUUID $departmentUUID,
         PositionUUID $positionUUID,
-        ContractTypeUUID $contractTypeUUID,
+        ?ContractTypeUUID $contractTypeUUID,
         RoleUUID $roleUUID,
         Emails $emails,
         Address $address,

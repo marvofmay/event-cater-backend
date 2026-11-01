@@ -28,9 +28,9 @@ class EmploymentToNormalizer implements NormalizerInterface, DenormalizerInterfa
 
     public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): EmploymentTo
     {
-        $from = $context['employmentFrom'] ?? throw new \InvalidArgumentException('Missing "employmentFrom" in context');
+        $from = $context['employmentFrom'] ?? null;
 
-        return EmploymentTo::fromString($data, EmploymentFrom::fromString($from));
+        return EmploymentTo::fromString($data, EmploymentFrom::fromNullableString($from));
     }
 
     public function getSupportedTypes(?string $format): array

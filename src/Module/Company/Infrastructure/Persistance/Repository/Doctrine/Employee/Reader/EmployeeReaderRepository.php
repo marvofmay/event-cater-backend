@@ -76,7 +76,7 @@ final class EmployeeReaderRepository extends ServiceEntityRepository implements 
             ->setParameter('email', $email);
 
         if (null !== $uuid) {
-            $qb->andWhere('u.'.User::COLUMN_EMPLOYEE_UUID.' != :uuid')
+            $qb->andWhere('(u.'.User::COLUMN_EMPLOYEE_UUID.' IS NULL OR u.'.User::COLUMN_EMPLOYEE_UUID.' != :uuid)')
                 ->setParameter('uuid', $uuid);
         }
 
@@ -256,7 +256,16 @@ final class EmployeeReaderRepository extends ServiceEntityRepository implements 
 
         $results = $qb->getQuery()->getArrayResult();
 
-        return new ArrayCollection($results);
+        $accounts = $this->getEntityManager()->createQueryBuilder()
+            ->select('e.pesel, u.email AS email')
+            ->from(User::class, 'u')
+            ->leftJoin('u.employee', 'e')
+            ->where('u.email IN (:emails)')
+            ->setParameter('emails', $emails)
+            ->getQuery()
+            ->getArrayResult();
+
+        return new ArrayCollection(array_merge($results, $accounts));
     }
 
     public function getAvailableParentEmployeeOptions(
@@ -269,19 +278,21 @@ final class EmployeeReaderRepository extends ServiceEntityRepository implements 
         if ($employeeUUID !== null) {
             $sql = <<<SQL
 WITH RECURSIVE employee_tree AS (
-    SELECT uuid
+    SELECT uuid, 0 AS depth
     FROM employee
     WHERE uuid = :employeeUuid
 
     UNION ALL
 
-    SELECT e.uuid
+    SELECT e.uuid, et.depth + 1
     FROM employee e
     INNER JOIN employee_tree et ON e.employee_uuid = et.uuid
+    WHERE et.depth < 63
 )
 SELECT 
     e.uuid,
-    CONCAT(e.last_name, ' ', e.first_name) AS "fullName"
+    TRIM(CONCAT(e.first_name, ' ', e.last_name)) AS "fullName",
+    (SELECT d.name FROM department d WHERE d.uuid = e.department_uuid AND d.deleted_at IS NULL) AS departmentName
 FROM employee e
 WHERE e.company_uuid = :companyUuid
   AND e.active = TRUE
@@ -297,7 +308,8 @@ SQL;
             $sql = <<<SQL
 SELECT 
     e.uuid,
-    CONCAT(e.last_name, ' ', e.first_name) AS "fullName"
+    TRIM(CONCAT(e.first_name, ' ', e.last_name)) AS "fullName",
+    (SELECT d.name FROM department d WHERE d.uuid = e.department_uuid AND d.deleted_at IS NULL) AS departmentName
 FROM employee e
 WHERE e.company_uuid = :companyUuid
   AND e.active = TRUE

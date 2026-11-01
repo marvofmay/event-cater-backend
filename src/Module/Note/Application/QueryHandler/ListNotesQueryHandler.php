@@ -141,6 +141,8 @@ final class ListNotesQueryHandler extends ListQueryHandlerAbstract
             $qbIds->orderBy($field, $orderDirection);
         }
 
+        $qbIds->addOrderBy("$alias.$idField", 'ASC');
+
         $ids = $qbIds
             ->setFirstResult($query->getOffset())
             ->setMaxResults($query->getLimit())
@@ -173,13 +175,7 @@ final class ListNotesQueryHandler extends ListQueryHandlerAbstract
         }
 
         // MUSI być to samo sortowanie
-        if ($orderByField === null || $orderByField === NoteEntityFieldEnum::PRIORITY->value) {
-            $qb
-                ->orderBy($priorityOrderExpr, 'DESC')
-                ->addOrderBy("$alias.createdAt", 'DESC');
-        } else {
-            $qb->orderBy($field, $orderDirection);
-        }
+        $qb->add('orderBy', $qbIds->getDQLPart('orderBy'));
 
         $items = $qb->getQuery()->getResult();
 

@@ -8,6 +8,14 @@
 - Wszystkie dotychczasowe dane biznesowe skopiowano do osobnej bazy Mapy Smaków z zachowaniem powiązań. Baza źródłowa pozostała zachowana; tenant `default` jest nieaktywny.
 - Backup sprzed migracji: lokalny plik `var/backups/before-mapa-smakow-20261025.sql`, wyłączony z Git.
 
+## Uprawnienia katalogu avatarów
+
+Przy podmontowaniu projektu z hosta Apache (`www-data` w kontenerze) musi móc tworzyć katalogi w `public/upload/avatars`. Po nowym wdrożeniu lub przy błędzie `mkdir(): Permission denied` ustaw grupę i dziedziczenie grupy katalogów (bez nadawania zapisu wszystkim użytkownikom):
+
+```bash
+docker exec --user root service-company sh -c 'mkdir -p public/upload/avatars && chgrp www-data public/upload public/upload/avatars && chmod 2775 public/upload public/upload/avatars && find public/upload/avatars -mindepth 1 -type d -exec chgrp www-data {} + -exec chmod 2775 {} +'
+```
+
 ## Poprzednie środowisko chmurowe
 
 Stan sprawdzony: 23.10.2026. Zestawienie dotyczy aktualnie uruchomionego środowiska chmurowego.

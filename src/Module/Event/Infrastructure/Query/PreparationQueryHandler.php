@@ -13,6 +13,7 @@ use App\Module\Event\Application\Query\SearchPreparationOptions;
 use App\Module\Event\Domain\Entity\EventPreparationList;
 use App\Module\Event\Domain\Entity\PreparationTemplate;
 use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
@@ -31,7 +32,15 @@ final readonly class PreparationQueryHandler
         if (!$list) {
             throw new PlanningResourceNotFound('Preparation list not found.');
         }
-        return $list->toArray();
+        $data = $list->toArray();
+        $equipmentIds = array_column(array_filter($data['lines'], static fn (array $line): bool => $line['kind'] === 'equipment' && $line['sourceLocation'] === null), 'itemUuid');
+        if ($equipmentIds !== []) {
+            $locations = $this->db->fetchAllKeyValue('SELECT item.uuid, location.name FROM equipment_item item JOIN equipment_location location ON location.uuid = item.storage_location_uuid WHERE item.uuid IN (?)', [$equipmentIds], [ArrayParameterType::STRING]);
+            foreach ($data['lines'] as &$line) {
+                if ($line['kind'] === 'equipment' && $line['sourceLocation'] === null) $line['sourceLocation'] = $locations[$line['itemUuid']] ?? null;
+            }
+        }
+        return $data;
     }
 
     #[AsMessageHandler(bus: 'query.bus')]
@@ -77,10 +86,12 @@ final readonly class PreparationQueryHandler
             }
             $category = 'category.name';
             $slang = $kind === 'equipment' ? 'item.slang_name' : 'NULL';
+            $location = $kind === 'equipment' ? 'storage.name' : 'NULL';
             $categoryTable = $kind === 'equipment' ? 'equipment_category' : 'consumable_category';
             $join = ' JOIN '.$categoryTable.' category ON category.uuid = item.category_uuid';
+            if ($kind === 'equipment') $join .= ' LEFT JOIN equipment_location storage ON storage.uuid = item.storage_location_uuid';
             $slangSearch = $kind === 'equipment' ? " OR item.slang_name LIKE ? ESCAPE '!'" : '';
-            $parts[] = "SELECT '".$kind."' AS kind, item.uuid AS itemUuid, item.code, item.name, ".$category.' AS category, item.unit, '.$slang.' AS slangName FROM '.$table.' item'.$join." WHERE item.active = 1 AND (item.name LIKE ? ESCAPE '!' OR item.code LIKE ? ESCAPE '!'".$slangSearch.')';
+            $parts[] = "SELECT '".$kind."' AS kind, item.uuid AS itemUuid, item.code, item.name, ".$category.' AS category, item.unit, '.$slang.' AS slangName, '.$location.' AS storageLocation FROM '.$table.' item'.$join." WHERE item.active = 1 AND (item.name LIKE ? ESCAPE '!' OR item.code LIKE ? ESCAPE '!'".$slangSearch.')';
             array_push($params, self::pattern($query->search), self::pattern($query->search));
             if ($kind === 'equipment') {
                 $params[] = self::pattern($query->search);

@@ -17,5 +17,5 @@ interface NotificationMessageCreatorInterface
         string $title,
         string $content,
         array $recipients
-    ): void;
+    ): string;
 }

@@ -23,7 +23,10 @@ final readonly class EmailNotificationChannelHandler implements NotificationChan
 
     public function send(NotificationEventSetting $event, array $recipients, string $title, string $content, array $payload = []): void
     {
-        $emails = array_map(static fn ($user) => $user->getEmail(), $recipients);
+        $emails = array_values(array_filter(array_map(static fn ($user) => $user->getEmail(), $recipients)));
+        if ($emails === []) {
+            return;
+        }
 
         $this->emailService->sendEmail(
             recipients: $emails,

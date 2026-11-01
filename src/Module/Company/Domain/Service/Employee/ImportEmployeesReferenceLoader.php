@@ -16,6 +16,9 @@ use App\Module\Company\Domain\Interface\Role\RoleReaderInterface;
 
 final class ImportEmployeesReferenceLoader
 {
+    public array $duplicateLoginPhones = [];
+    public array $duplicateLoginEmails = [];
+    public array $supervisorRows = [];
     public array $departments = [] {
         get {
             return $this->departments;
@@ -65,8 +68,32 @@ final class ImportEmployeesReferenceLoader
         $contractTypeUUIDs = [];
         $employeePESELs = [];
         $employeeEmails = [];
+        $phoneOwners = [];
+        $emailOwners = [];
+        $this->duplicateLoginEmails = [];
+        $this->supervisorRows = [];
+        $this->duplicateLoginPhones = [];
 
         foreach ($rows as $row) {
+            $this->supervisorRows[(string) ($row[EmployeeImportColumnEnum::PESEL->value] ?? '')] = [
+                'parent' => trim((string) ($row[EmployeeImportColumnEnum::PARENT_EMPLOYEE_PESEL->value] ?? '')),
+                'department' => (string) ($row[EmployeeImportColumnEnum::DEPARTMENT_UUID->value] ?? ''),
+            ];
+            $email = strtolower(trim((string) ($row[EmployeeImportColumnEnum::EMAIL->value] ?? '')));
+            $ownerPesel = (string) ($row[EmployeeImportColumnEnum::PESEL->value] ?? '');
+            if ($email !== '') {
+                if (isset($emailOwners[$email]) && $emailOwners[$email] !== $ownerPesel) $this->duplicateLoginEmails[$email] = true;
+                $emailOwners[$email] = $ownerPesel;
+            }
+            try {
+                $phone = \App\Module\Company\Domain\Service\User\LoginPhone::normalize((string) ($row[EmployeeImportColumnEnum::PHONE->value] ?? ''));
+                $pesel = (string) ($row[EmployeeImportColumnEnum::PESEL->value] ?? '');
+                if (isset($phoneOwners[$phone]) && $phoneOwners[$phone] !== $pesel) {
+                    $this->duplicateLoginPhones[$phone] = true;
+                }
+                $phoneOwners[$phone] = $pesel;
+            } catch (\InvalidArgumentException) {
+            }
             if (!empty($row[EmployeeImportColumnEnum::DEPARTMENT_UUID->value])) {
                 $departmentUUIDs[] = (string) $row[EmployeeImportColumnEnum::DEPARTMENT_UUID->value];
             }
