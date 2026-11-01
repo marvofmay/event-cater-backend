@@ -148,6 +148,24 @@ final class RoleAuthorizationTest extends FunctionalTestBase
         return json_decode($this->client->getResponse()->getContent(), true)['token'];
     }
 
+    public function testFileManagerReadAccessDoesNotGrantFileMutation(): void
+    {
+        $folder = $this->api('POST', '/api/file-manager/folders', ['name' => 'Poufne dokumenty', 'version' => 1], 201)['uuid'];
+        $this->save([$this->selection('file_manager', ['list', 'view'])]);
+        $token = $this->employeeLogin();
+        self::assertCount(0, $this->api('GET', '/api/file-manager')['items']);
+        $this->api('GET', '/api/file-manager/'.$folder.'/download', status: 404);
+        $this->api('POST', '/api/file-manager/folders', ['name' => 'No', 'version' => 2], 403);
+        $this->api('POST', '/api/file-manager/upload', status: 403);
+        $this->api('PATCH', '/api/file-manager/'.$folder.'/rename', ['name' => 'No', 'version' => 2], 403);
+        $this->api('POST', '/api/file-manager/delete', ['uuids' => [$folder], 'version' => 2], 403);
+        foreach (['move', 'copy'] as $operation) $this->api('POST', '/api/file-manager/transfer', ['operation' => $operation, 'uuids' => [$folder], 'version' => 2], 403);
+        $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$this->adminToken);
+        $this->save([$this->selection('file_manager', ['view'])]);
+        $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$token);
+        $this->api('GET', '/api/file-manager', status: 403);
+    }
+
     public function testGrantedActionsAreEnforcedAndRevocationAppliesToExistingTokens(): void
     {
         $this->save([$this->selection('events', ['list']), $this->selection('notes', ['list'])]);
@@ -187,8 +205,13 @@ final class RoleAuthorizationTest extends FunctionalTestBase
         $this->employeeLogin();
         $this->api('GET', '/api/employees');
         $this->api('GET', '/api/company-structure');
+        $this->api('GET', '/api/preferences/employees');
+        $this->api('PUT', '/api/preferences/employees', ['scope' => 'user', 'version' => 0, 'pageSize' => 25]);
         self::getContainer()->get('doctrine')->getConnection()->executeStatement('DELETE FROM role_access WHERE role_uuid = ? AND access_uuid = ?', [$this->roleUuid, $this->accesses['manage']['uuid']]);
         $this->api('GET', '/api/employees', [], 403);
+        $this->api('GET', '/api/preferences/employees', [], 403);
+        $this->api('PUT', '/api/preferences/employees', ['scope' => 'user', 'version' => 1, 'pageSize' => 100], 403);
+        self::assertArrayNotHasKey('employees', $this->api('GET', '/api/preferences')['data']['pageSizes']);
         $this->api('GET', '/api/company-structure');
         $context = $this->api('GET', '/api/auth/authorization');
         self::assertNotContains('employees.list', $context['permissions']);

@@ -18,6 +18,12 @@ doctrine:
         enabled: true
 
     mappings:
+      messaging:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Module/Messaging/Domain/Entity'
+        prefix: 'App\Module\Messaging\Domain\Entity'
+        alias: Messaging
       kitchen:
         is_bundle: false
         type: attribute
@@ -48,6 +54,12 @@ doctrine:
         dir: '%kernel.project_dir%/src/Module/Company/Domain/Entity'
         prefix: 'App\Module\Company\Domain\Entity'
         alias: Company
+      file_manager:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Module/FileManager/Domain/Entity'
+        prefix: 'App\Module\FileManager\Domain\Entity'
+        alias: FileManager
       note:
         is_bundle: false
         type: attribute

@@ -17,6 +17,24 @@ use Symfony\Component\HttpClient\Response\MockResponse;
 
 final class PreferenceApiTest extends FunctionalTestBase
 {
+    public function testPersonalCatalogPreferencesRequireListAccessButNotificationChannelsRemainPersonal(): void
+    {
+        $manager = self::getContainer()->get('doctrine')->getManager();
+        $user = User::create('preferences-restricted@example.test');
+        $user->setPassword(password_hash('TestOnly123!', PASSWORD_BCRYPT));
+        $manager->persist($user);
+        $manager->flush();
+        $this->getAuthenticatedClient('preferences-restricted@example.test', 'TestOnly123!');
+        foreach (['companies', 'departments', 'employees', 'positions', 'roles', 'contractTypes', 'industries'] as $resource) {
+            $this->api('GET', '/'.$resource, [], 403);
+            $this->api('PUT', '/'.$resource, ['scope' => 'user', 'version' => 0, 'pageSize' => 25], 403);
+        }
+        $this->api('PUT', '/notifications', ['scope' => 'user', 'version' => 0, 'pageSize' => 25], 403);
+        $this->api('PUT', '/notifications', ['scope' => 'user', 'version' => 0, 'pageSize' => null, 'channels' => ['email' => false]]);
+        self::assertFalse($this->api('GET', '/notifications')['effective']['channels']['email']);
+        self::assertSame([], $this->api('GET', '')['pageSizes']);
+    }
+
     private function api(string $method, string $resource, array $input = [], int $status = 200): array
     {
         $this->client->jsonRequest($method, '/api/preferences'.$resource, $input);
@@ -85,10 +103,16 @@ final class PreferenceApiTest extends FunctionalTestBase
         self::assertStringNotContainsString('test-secret', $this->client->getResponse()->getContent());
         $cipher = self::getContainer()->get('doctrine')->getConnection()->fetchOne("SELECT payload FROM application_preference WHERE owner = 'tenant' AND resource = 'notifications'");
         self::assertStringNotContainsString('test-secret', $cipher);
-        $this->api('PUT', '/notifications', ['scope' => 'user', 'version' => 0, 'pageSize' => null, 'channels' => ['sms' => true, 'email' => false]]);
+        $this->api('PUT', '/notifications', ['scope' => 'user', 'version' => 0, 'pageSize' => null, 'channels' => ['sms' => true, 'email' => false]], 422);
+        $this->api('PUT', '/notifications', ['scope' => 'user', 'version' => 0, 'pageSize' => null, 'channels' => ['sms' => null, 'email' => false]]);
         $state = $this->api('GET', '/notifications');
         self::assertFalse($state['effective']['channels']['sms']);
         self::assertFalse($state['effective']['channels']['email']);
+        $preferences = self::getContainer()->get(PreferenceService::class);
+        $manager = self::getContainer()->get('doctrine')->getManager();
+        $user = $manager->getRepository(User::class)->findOneBy(['email' => 'admin.ec@gmail.com']);
+        self::assertFalse($preferences->channelEnabled('sms', $user->getUUID()->toString()));
+        self::assertSame([], $preferences->filterRecipients('sms', [$user]));
         $config['version'] = 1;
         $config['channels']['sms'] = true;
         $config['sms']['apiKey'] = '';

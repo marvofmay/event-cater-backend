@@ -42,6 +42,19 @@ final class EventCustomersApiTest extends FunctionalTestBase
         self::assertCount(2, $this->api('GET', '/api/event-customers')['items']);
     }
 
+    public function testLibraryPaginationUsesStableOrderingAndValidatesLimits(): void
+    {
+        $this->getAuthenticatedClient();
+        foreach (['Catering C', 'Catering A', 'Catering B'] as $name) $this->api('POST', '/api/event-customers', ['name' => $name], 201);
+        $first = $this->api('GET', '/api/event-customers?limit=2&page=1');
+        self::assertSame(3, $first['total']);
+        self::assertSame(['Catering A', 'Catering B'], array_column($first['items'], 'name'));
+        $second = $this->api('GET', '/api/event-customers?limit=2&page=2');
+        self::assertSame(['Catering C'], array_column($second['items'], 'name'));
+        self::assertSame(1, $this->api('GET', '/api/event-customers?q=Catering%20B')['total']);
+        foreach (['limit=101', 'page=0', 'limit=abc'] as $invalid) $this->api('GET', '/api/event-customers?'.$invalid, status: 422);
+    }
+
     public function testEventStoresDirectoryReferenceAndTrustedNameAndCanChangeOrClearIt(): void
     {
         $this->getAuthenticatedClient();

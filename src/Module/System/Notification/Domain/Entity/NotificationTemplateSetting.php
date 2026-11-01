@@ -110,7 +110,7 @@ class NotificationTemplateSetting
 
     public function changeTitle(string $title): void
     {
-        if (strtolower($this->title) === strtolower(trim($title))) {
+        if ($this->title === $title) {
             return;
         }
 

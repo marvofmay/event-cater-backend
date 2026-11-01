@@ -31,7 +31,7 @@ final class EventCustomerController extends PlanningController
     public function search(Request $request): JsonResponse
     {
         $this->allow(false);
-        return $this->resource($this->ask(new SearchEventCustomers(PlanningPayload::search($request))));
+        return $this->resource($this->ask(new SearchEventCustomers(PlanningPayload::search($request), PlanningPayload::page($request))));
     }
 
     #[Route('/api/event-customers', methods: ['POST'])]

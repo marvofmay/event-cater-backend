@@ -60,6 +60,10 @@ final class PreferenceController extends AbstractController
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         $user = $this->getUser();
         $admin = $user instanceof User && $user->isTenantAdministrator();
+        $canConfigureList = $this->isGranted(PermissionEnum::LIST, $access);
+        if ($resource !== 'notifications') {
+            $this->denyAccessUnlessGranted(PermissionEnum::LIST, $access);
+        }
         if ($request->isMethod('PUT')) {
             $input = $request->toArray();
             if (!in_array($input['scope'] ?? null, ['tenant', 'user'], true)) {
@@ -69,6 +73,9 @@ final class PreferenceController extends AbstractController
                 throw $this->createAccessDeniedException('Tylko administrator firmy może zmieniać ustawienia nadrzędne.');
             }
             if ('tenant' === $input['scope']) $this->denyAccessUnlessGranted(PermissionEnum::LIST, $access);
+            if ('user' === $input['scope'] && !$canConfigureList && ($input['pageSize'] ?? null) !== null) {
+                throw $this->createAccessDeniedException('Nie masz uprawnienia do ustawień tej listy.');
+            }
             $preferences->save($resource, 'tenant' === $input['scope'] ? 'tenant' : $user->getUUID()->toString(), $input);
         }
 

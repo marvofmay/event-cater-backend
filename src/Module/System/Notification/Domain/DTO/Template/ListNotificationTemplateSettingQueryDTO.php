@@ -11,7 +11,7 @@ final class ListNotificationTemplateSettingQueryDTO extends QueryDTOAbstract
     public ?string $eventName   = null;
     public ?string $channelCode = null;
     public ?string $title       = null;
-    public ?bool   $content     = null;
-    public ?bool   $iDefault   = null;
+    public ?string $content     = null;
+    public ?bool   $isDefault   = null;
     public ?bool   $isActive    = null;
 }

@@ -129,9 +129,13 @@ final readonly class PreferenceService
                 if ('notifications' !== $resource || !is_array($input['channels']) || array_diff(array_keys($input['channels']), self::CHANNELS)) {
                     throw new UnprocessableEntityHttpException('Nieprawidłowe kanały powiadomień.');
                 }
-                foreach ($input['channels'] as $enabled) {
+                $master = 'tenant' === $owner ? [] : $this->masterChannels();
+                foreach ($input['channels'] as $channel => $enabled) {
                     if (!is_bool($enabled) && !(null === $enabled && 'tenant' !== $owner)) {
                         throw new UnprocessableEntityHttpException('Nieprawidłowa wartość kanału.');
+                    }
+                    if ('tenant' !== $owner && $enabled === true && !($master[$channel] ?? false)) {
+                        throw new UnprocessableEntityHttpException('Nie można włączyć kanału wyłączonego przez firmę.');
                     }
                 }
                 $payload['channels'] = array_replace($payload['channels'] ?? [], $input['channels']);

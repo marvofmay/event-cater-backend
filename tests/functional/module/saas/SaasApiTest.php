@@ -62,6 +62,41 @@ final class SaasApiTest extends FunctionalTestBase
         $response=$this->api('POST','/api/login',['email'=>'owner@example.test','password'=>$this->password]);
         return $response['token'];
     }
+    public function testManagedFilesUseSeparateTenantCatalogsAndPrivateStorage(): void
+    {
+        $suffix = bin2hex(random_bytes(3));
+        $first = $this->status($this->tenant('files-a-'.$suffix), 'active');
+        $second = $this->status($this->tenant('files-b-'.$suffix), 'active');
+        $temporary = tempnam(sys_get_temp_dir(), 'tenant-file-test-');
+        $stored = [];
+        try {
+            $uuid = null;
+            foreach ([$first, $second] as $tenant) {
+                $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$this->customerLogin($tenant['slug']));
+                self::assertSame([], $this->api('GET', '/api/file-manager')['items']);
+                if ($uuid !== null) {
+                    $this->api('GET', '/api/file-manager/'.$uuid.'/download', [], 404);
+                    $this->api('PATCH', '/api/file-manager/'.$uuid.'/rename', ['version' => 1, 'name' => 'foreign.txt'], 404);
+                    $this->api('POST', '/api/file-manager/delete', ['version' => 1, 'uuids' => [$uuid]], 404);
+                    self::assertSame(1, $this->api('GET', '/api/file-manager')['version']);
+                }
+                file_put_contents($temporary, 'Private file '.$tenant['slug']);
+                $this->client->request('POST', '/api/file-manager/upload', ['version' => '1'], ['file' => new \Symfony\Component\HttpFoundation\File\UploadedFile($temporary, 'private.txt', test: true)]);
+                self::assertResponseStatusCodeSame(201, $this->client->getResponse()->getContent());
+                $uuid = json_decode($this->client->getResponse()->getContent(), true)['uuid'];
+                $this->client->request('GET', '/api/file-manager/'.$uuid.'/download');
+                self::assertResponseIsSuccessful();
+                $path = $this->client->getResponse()->getFile()->getPathname();
+                $stored[] = $path;
+                self::assertStringContainsString('/'.$tenant['uuid'].'/', $path);
+                self::assertSame('Private file '.$tenant['slug'], file_get_contents($path));
+            }
+            self::assertNotSame(dirname($stored[0]), dirname($stored[1]));
+        } finally {
+            foreach ([$temporary, ...$stored] as $path) if (is_file($path)) unlink($path);
+        }
+    }
+
     public function testTenantIsolationLifecycleAndSeparateAdministratorRealm():void
     {
         $suffix=bin2hex(random_bytes(3)); $a=$this->tenant('test-a-'.$suffix); $b=$this->tenant('test-b-'.$suffix);
@@ -133,6 +168,32 @@ final class SaasApiTest extends FunctionalTestBase
         $event = $this->api('POST', '/api/events', ['title' => 'Własny kontrahent', 'date' => '2026-12-31', 'customerUuid' => $own['uuid']], 201);
         self::assertSame($own['uuid'], $event['customerUuid']);
         self::assertSame($own['name'], $event['customerName']);
+    }
+
+    public function testDirectMessagesAndUnreadCountsAreTenantScoped(): void
+    {
+        $suffix = bin2hex(random_bytes(3));
+        $first = $this->tenant('messages-a-'.$suffix);
+        $second = $this->tenant('messages-b-'.$suffix);
+        $this->status($first, 'active');
+        $this->status($second, 'active');
+        $tokenFirst = $this->customerLogin($first['slug']);
+        $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$tokenFirst);
+        $recipientFirst = $this->api('GET', '/api/messages/recipients')['items'][0];
+        $sent = $this->api('POST', '/api/messages', ['title' => 'Tylko pierwsza firma', 'content' => 'Poufna treść pierwszej firmy', 'recipientUuids' => [$recipientFirst['uuid']]], 201);
+        self::assertSame(1, $this->api('GET', '/api/messages/unread-count')['unreadCount']);
+        $tokenSecond = $this->customerLogin($second['slug']);
+        $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$tokenSecond);
+        self::assertSame(0, $this->api('GET', '/api/messages/unread-count')['unreadCount']);
+        self::assertSame(0, $this->api('GET', '/api/messages')['total']);
+        $this->api('GET', '/api/messages/'.$sent['uuid'], [], 404);
+        $this->api('PATCH', '/api/messages/'.$sent['uuid'].'/read', [], 404);
+        $this->api('POST', '/api/messages', ['title' => 'Obcy odbiorca', 'content' => 'Treść', 'recipientUuids' => [$recipientFirst['uuid']]], 422);
+        $recipientSecond = $this->api('GET', '/api/messages/recipients')['items'][0];
+        $this->api('POST', '/api/messages', ['requestUuid' => $sent['uuid'], 'title' => 'Własna firma', 'content' => 'Treść drugiej firmy', 'recipientUuids' => [$recipientSecond['uuid']]], 201);
+        $this->client->setServerParameter('HTTP_X_TENANT', $first['slug']);
+        $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$tokenFirst);
+        self::assertSame('Poufna treść pierwszej firmy', $this->api('GET', '/api/messages/'.$sent['uuid'])['content']);
     }
 
     public function testQueuedMessagesRequireAnActiveCurrentTenantAndCarryItsIdentity():void

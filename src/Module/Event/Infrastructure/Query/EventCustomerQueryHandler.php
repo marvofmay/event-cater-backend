@@ -27,7 +27,10 @@ final readonly class EventCustomerQueryHandler
     public function search(SearchEventCustomers $query): array
     {
         $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $query->search).'%';
-        return ['items' => array_map(self::project(...), $this->db->fetchAllAssociative("SELECT * FROM event_customer WHERE name LIKE ? ESCAPE '!' OR nip LIKE ? ESCAPE '!' OR regon LIKE ? ESCAPE '!' OR krs LIKE ? ESCAPE '!' OR phone LIKE ? ESCAPE '!' OR email LIKE ? ESCAPE '!' ORDER BY name, uuid LIMIT 20", array_fill(0, 6, $pattern)))];
+        $source = " FROM event_customer WHERE name LIKE ? ESCAPE '!' OR nip LIKE ? ESCAPE '!' OR regon LIKE ? ESCAPE '!' OR krs LIKE ? ESCAPE '!' OR phone LIKE ? ESCAPE '!' OR email LIKE ? ESCAPE '!'";
+        $parameters = array_fill(0, 6, $pattern);
+        $items = array_map(self::project(...), $this->db->fetchAllAssociative('SELECT *'.$source.' ORDER BY name, uuid LIMIT '.$query->page->limit.' OFFSET '.$query->page->offset(), $parameters));
+        return $query->page->result($items, (int) $this->db->fetchOne('SELECT COUNT(*)'.$source, $parameters));
     }
 
     private static function project(array $row): array

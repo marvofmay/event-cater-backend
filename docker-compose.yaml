@@ -42,6 +42,7 @@ services:
       - "81:80"
     volumes:
       - ./:/var/www/html
+      - ./config/php/event-media.ini:/usr/local/etc/php/conf.d/event-media.ini:ro
     environment:
       MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f
       MAILER_DSN: smtp://mailpit:1025

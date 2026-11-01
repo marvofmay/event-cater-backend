@@ -82,7 +82,12 @@ class UpdateNotificationTemplateSettingController extends AbstractController
 
         $this->eventBus->dispatch(new LogFileEvent($message, LogLevel::ERROR, MonologChannelEnum::EVENT_LOG));
 
-        $code = $exception->getCode() ?: Response::HTTP_BAD_REQUEST;
+        $code = match (true) {
+            $exception instanceof \Symfony\Component\Security\Core\Exception\AccessDeniedException => $this->getUser() === null ? Response::HTTP_UNAUTHORIZED : Response::HTTP_FORBIDDEN,
+            $exception instanceof \App\Common\Application\Exception\PlanningResourceNotFound => Response::HTTP_NOT_FOUND,
+            $exception instanceof \App\Common\Domain\Exception\BusinessRuleViolation => Response::HTTP_UNPROCESSABLE_ENTITY,
+            default => Response::HTTP_BAD_REQUEST,
+        };
 
         return new JsonResponse(['message' => $message], $code);
     }

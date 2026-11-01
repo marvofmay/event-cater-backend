@@ -20,6 +20,8 @@ class NotificationTemplateSettingDataTransformer implements DataTransformerInter
     public function transformToArray(NotificationTemplateSetting $notificationTemplateSetting): array
     {
         return [
+            'uuid' => $notificationTemplateSetting->getUUID()->toString(),
+            'eventNane' => $notificationTemplateSetting->getEvent()->getEventName(),
             NotificationTemplateSettingEntityFieldEnum::EVENT_NANE->value => $notificationTemplateSetting->getEvent()->getEventName(),
             NotificationTemplateSettingEntityFieldEnum::CHANNEL_CODE->value => $notificationTemplateSetting->getChannel()->getChannelCode(),
             NotificationTemplateSettingEntityFieldEnum::TITLE->value => $notificationTemplateSetting->getTitle(),

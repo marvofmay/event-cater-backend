@@ -45,6 +45,7 @@ enum AccessEnum: string implements EnumInterface
     public function allowedPermissions(): array
     {
         return match ($this) {
+            self::MESSAGES => [PermissionEnum::LIST, PermissionEnum::VIEW, PermissionEnum::CREATE, PermissionEnum::DELETE],
             self::COMPANY_STRUCTURE => [PermissionEnum::VIEW],
             self::EVENT_VENUES,
             self::CONSUMABLES,
@@ -117,13 +118,18 @@ enum AccessEnum: string implements EnumInterface
                 PermissionEnum::LIST,
                 PermissionEnum::SETTINGS,
             ],
+            self::FILE_MANAGER => [
+                PermissionEnum::LIST,
+                PermissionEnum::VIEW,
+                PermissionEnum::CREATE,
+                PermissionEnum::UPDATE,
+                PermissionEnum::DELETE,
+            ],
             self::MANAGE,
             self::IMPORTS,
             self::SETTINGS,
-            self::MESSAGES,
             self::ACCESSES,
-            self::PERMISSIONS,
-            self::FILE_MANAGER => [],
+            self::PERMISSIONS => [],
         };
     }
 

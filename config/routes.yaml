@@ -4,6 +4,12 @@ app_api_auth_login:
 app_api_system:
   resource: ../src/Module/System/Presentation/API/Controller/
   type: attribute
+app_api_messaging:
+  resource: ../src/Module/Messaging/Presentation/API/Controller/
+  type: attribute
+app_api_file_manager:
+  resource: ../src/Module/FileManager/Presentation/API/Controller/
+  type: attribute
 app_api_system_notification:
   resource: ../src/Module/System/Notification/Presentation/API/Controller/
   type: attribute

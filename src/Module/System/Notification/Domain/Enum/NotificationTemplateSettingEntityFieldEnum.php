@@ -7,7 +7,7 @@ namespace App\Module\System\Notification\Domain\Enum;
 enum NotificationTemplateSettingEntityFieldEnum: string
 {
     case UUID = 'uuid';
-    case EVENT_NANE = 'eventNane';
+    case EVENT_NANE = 'eventName';
     case CHANNEL_CODE = 'channelCode';
     case TITLE = 'title';
     case CONTENT = 'content';

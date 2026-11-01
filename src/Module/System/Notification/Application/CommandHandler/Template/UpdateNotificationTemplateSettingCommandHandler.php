@@ -19,16 +19,31 @@ final class UpdateNotificationTemplateSettingCommandHandler extends CommandHandl
         private readonly NotificationTemplateSettingUpdater $notificationTemplateSettingUpdater,
         private readonly NotificationTemplateSettingReaderInterface $notificationTemplateSettingReader,
         private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly \Doctrine\ORM\EntityManagerInterface $em,
     ) {
     }
 
     public function __invoke(UpdateNotificationTemplateSettingCommand $command): void
     {
+        $event = $this->em->find(\App\Module\System\Notification\Domain\Entity\NotificationEventSetting::class, $command->eventName, \Doctrine\DBAL\LockMode::PESSIMISTIC_WRITE);
+        if ($event === null) {
+            throw new \App\Common\Application\Exception\PlanningResourceNotFound('Nie znaleziono zdarzenia powiadomienia.');
+        }
         $notificationTemplateSetting = $this->notificationTemplateSettingReader->getByEventNameChannelCodeAndDefault(
             $command->eventName,
             $command->channelCode,
             $command->searchDefault
         );
+
+        if ($notificationTemplateSetting === null) {
+            throw new \App\Common\Application\Exception\PlanningResourceNotFound('Nie znaleziono szablonu powiadomienia.');
+        }
+        if ($command->markAsActive) {
+            $other = $this->notificationTemplateSettingReader->getByEventNameChannelCodeAndDefault($command->eventName, $command->channelCode, !$command->searchDefault);
+            if ($other !== null) {
+                $other->deactivate();
+            }
+        }
 
         $this->notificationTemplateSettingUpdater->update(
             notificationTemplateSetting: $notificationTemplateSetting,
