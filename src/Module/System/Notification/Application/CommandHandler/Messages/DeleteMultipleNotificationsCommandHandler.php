@@ -3,11 +3,13 @@
 namespace App\Module\System\Notification\Application\CommandHandler\Messages;
 
 use App\Common\Domain\Service\MessageTranslator\MessageService;
+use App\Module\Company\Domain\Entity\User;
 use App\Module\System\Notification\Application\Command\Message\DeleteMultipleNotificationsCommand;
 use App\Module\System\Notification\Application\Event\Message\NotificationMessageMultipleDeletedEvent;
 use App\Module\System\Notification\Domain\Exception\NotificationMultipleRecipientNotFoundException;
-use App\Module\System\Notification\Domain\Interface\Message\NotificationMessageDeleterInterface;
+use App\Module\System\Notification\Domain\Interface\Recipient\NotificationRecipientDeleterInterface;
 use App\Module\System\Notification\Domain\Interface\Recipient\NotificationRecipientReaderInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -16,9 +18,10 @@ final readonly class DeleteMultipleNotificationsCommandHandler
 {
     public function __construct(
         private NotificationRecipientReaderInterface $notificationRecipientRepository,
-        private NotificationMessageDeleterInterface $notificationMessageDeleter,
+        private NotificationRecipientDeleterInterface $notificationRecipientDeleter,
         private EventDispatcherInterface $eventDispatcher,
         private MessageService $messageService,
+        private Security $security,
     ) {
     }
 
@@ -27,9 +30,20 @@ final readonly class DeleteMultipleNotificationsCommandHandler
      */
     public function __invoke(DeleteMultipleNotificationsCommand $command): void
     {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            throw NotificationMultipleRecipientNotFoundException::fromNotificationUUIDs(
+                $this->messageService,
+                array_values(array_unique($command->notificationsUUIDS)),
+            );
+        }
+
         $notificationUUIDs = array_values(array_unique($command->notificationsUUIDS));
         $notificationRecipients = $this->notificationRecipientRepository
-            ->getUnreadNotificationRecipientsByUUIDs($notificationUUIDs);
+            ->getOwnedNotificationRecipientsByUUIDs(
+                $notificationUUIDs,
+                $user->getUUID()->toString(),
+            );
 
         $foundUUIDs = array_map(
             static fn ($notificationRecipient): string => $notificationRecipient->getUUID()->toString(),
@@ -45,10 +59,9 @@ final readonly class DeleteMultipleNotificationsCommandHandler
         }
 
         foreach ($notificationRecipients as $notificationRecipient) {
-            $notificationMessage = $notificationRecipient->getMessage();
-            $this->notificationMessageDeleter->delete($notificationMessage);
+            $this->notificationRecipientDeleter->delete($notificationRecipient);
         }
-        
+
         $this->eventDispatcher->dispatch(new NotificationMessageMultipleDeletedEvent([
             DeleteMultipleNotificationsCommand::NOTIFICATIONS_UUIDS => $command->notificationsUUIDS,
         ]));

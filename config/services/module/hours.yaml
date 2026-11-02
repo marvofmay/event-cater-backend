@@ -1,0 +1,2 @@
+services:
+  App\Module\Hours\Domain\Repository\WorkHoursRepository: '@App\Module\Hours\Infrastructure\Persistence\DoctrineWorkHoursRepository'

@@ -58,6 +58,12 @@ framework:
                 exchange:
                   name: 'send_email'
                   type: direct
+            push_notification:
+              dsn: '%env(MESSENGER_TRANSPORT_DSN)%/push_notification'
+              options:
+                exchange:
+                  name: 'push_notification'
+                  type: direct
         routing:
             'App\Module\System\Application\Command\Auth\RequestPasswordResetCommand': password_reset
             'App\Module\System\Application\Command\Auth\PasswordChangedNoticeCommand': password_reset
@@ -66,12 +72,16 @@ framework:
             'App\Module\Company\Application\Command\Department\ImportDepartmentsCommand': department_xlsx_import
             'App\Module\Company\Application\Command\Employee\ImportEmployeesCommand': employee_xlsx_import
             'App\Module\System\Application\Command\Email\SendEmailCommand': send_email
+            'App\Module\Messaging\Application\Command\NotifyDirectMessageRecipients': push_notification
+            'App\Module\Messaging\Application\Command\NotifySystemNotificationRecipients': push_notification
 
 when@test:
     framework:
         messenger:
             transports:
                 password_reset: 'in-memory://'
+                # Don't handle push inside the request transaction (TenantMiddleware cannot switch DB mid-tx).
+                push_notification: 'in-memory://'
 
 # when@test:
 #    framework:

@@ -97,6 +97,7 @@ final class PreferenceApiTest extends FunctionalTestBase
     public function testChannelsCannotBypassTenantAndSecretsAreNeverReturned(): void
     {
         $this->getAuthenticatedClient();
+        $this->api('PUT', '/notifications', ['scope' => 'tenant', 'version' => 0, 'pageSize' => 10, 'channels' => ['sms' => true], 'sms' => ['sender' => '', 'limit' => 0, 'quotaMode' => 'monthly', 'apiKey' => '']], 422);
         $config = ['scope' => 'tenant', 'version' => 0, 'pageSize' => 10, 'channels' => ['internal' => true, 'email' => true, 'sms' => false], 'sms' => ['sender' => 'MapaSmakow', 'limit' => 100, 'quotaMode' => 'monthly', 'apiKey' => 'test-secret-not-a-real-key']];
         $saved = $this->api('PUT', '/notifications', $config);
         self::assertTrue($saved['tenant']['sms']['hasApiKey']);
@@ -104,15 +105,20 @@ final class PreferenceApiTest extends FunctionalTestBase
         $cipher = self::getContainer()->get('doctrine')->getConnection()->fetchOne("SELECT payload FROM application_preference WHERE owner = 'tenant' AND resource = 'notifications'");
         self::assertStringNotContainsString('test-secret', $cipher);
         $this->api('PUT', '/notifications', ['scope' => 'user', 'version' => 0, 'pageSize' => null, 'channels' => ['sms' => true, 'email' => false]], 422);
+        $this->api('PUT', '/notifications', ['scope' => 'user', 'version' => 0, 'pageSize' => null, 'channels' => ['sms' => null, 'email' => false, 'internal' => false]], 422);
         $this->api('PUT', '/notifications', ['scope' => 'user', 'version' => 0, 'pageSize' => null, 'channels' => ['sms' => null, 'email' => false]]);
         $state = $this->api('GET', '/notifications');
         self::assertFalse($state['effective']['channels']['sms']);
         self::assertFalse($state['effective']['channels']['email']);
+        self::assertTrue($state['effective']['channels']['internal']);
+        self::assertNull($state['user']['channels']['internal']);
         $preferences = self::getContainer()->get(PreferenceService::class);
         $manager = self::getContainer()->get('doctrine')->getManager();
         $user = $manager->getRepository(User::class)->findOneBy(['email' => 'admin.ec@gmail.com']);
         self::assertFalse($preferences->channelEnabled('sms', $user->getUUID()->toString()));
         self::assertSame([], $preferences->filterRecipients('sms', [$user]));
+        self::assertTrue($preferences->channelEnabled('internal', $user->getUUID()->toString()));
+        self::assertSame([$user], $preferences->filterRecipients('internal', [$user]));
         $config['version'] = 1;
         $config['channels']['sms'] = true;
         $config['sms']['apiKey'] = '';

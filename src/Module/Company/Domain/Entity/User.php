@@ -126,7 +126,9 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
 
     public function getEmployeeUUID(): ?string
     {
-        return $this->{self::COLUMN_EMPLOYEE_UUID};
+        $employeeUuid = $this->{self::COLUMN_EMPLOYEE_UUID};
+
+        return $employeeUuid instanceof UuidInterface ? $employeeUuid->toString() : null;
     }
 
     public function getEmail(): ?string

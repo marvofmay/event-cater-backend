@@ -64,6 +64,40 @@ final class NotificationRecipientReaderRepository extends ServiceEntityRepositor
             ->getResult();
     }
 
+    public function getOwnedNotificationRecipientByUUID(string $uuid, string $userUUID): NotificationRecipient
+    {
+        return $this->createQueryBuilder(NotificationRecipient::ALIAS)
+            ->innerJoin(NotificationRecipient::ALIAS.'.message', 'nm')
+            ->innerJoin('nm.channel', 'ncs')
+            ->andWhere(NotificationRecipient::ALIAS.'.uuid = :uuid')
+            ->andWhere('IDENTITY('.NotificationRecipient::ALIAS.'.user) = :userUUID')
+            ->andWhere('ncs.channelCode = :channelCode')
+            ->setParameter('uuid', $uuid)
+            ->setParameter('userUUID', $userUUID)
+            ->setParameter('channelCode', InternalNotificationChannel::getChanelCode())
+            ->getQuery()
+            ->getSingleResult();
+    }
+
+    public function getOwnedNotificationRecipientsByUUIDs(array $uuids, string $userUUID): array
+    {
+        if (empty($uuids)) {
+            return [];
+        }
+
+        return $this->createQueryBuilder(NotificationRecipient::ALIAS)
+            ->innerJoin(NotificationRecipient::ALIAS.'.message', 'nm')
+            ->innerJoin('nm.channel', 'ncs')
+            ->andWhere(NotificationRecipient::ALIAS.'.uuid IN (:uuids)')
+            ->andWhere('IDENTITY('.NotificationRecipient::ALIAS.'.user) = :userUUID')
+            ->andWhere('ncs.channelCode = :channelCode')
+            ->setParameter('uuids', $uuids)
+            ->setParameter('userUUID', $userUUID)
+            ->setParameter('channelCode', InternalNotificationChannel::getChanelCode())
+            ->getQuery()
+            ->getResult();
+    }
+
     public function countUnreadNotificationMessagesForUser(string $userUUID): int
     {
         return (int) $this->createQueryBuilder(NotificationRecipient::ALIAS)

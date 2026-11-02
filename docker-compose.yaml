@@ -222,3 +222,18 @@ services:
     restart: unless-stopped
     networks:
       - hr-network
+
+  worker-push-notification:
+    container_name: worker-push-notification
+    image: event-cater-backend-service-company
+    command: ["php", "bin/console", "messenger:consume", "push_notification", "--verbose", "--no-interaction", "--memory-limit=256M"]
+    depends_on:
+      - rabbitmq
+      - service-company
+    environment:
+      MESSENGER_TRANSPORT_DSN: amqp://guest:guest@rabbitmq:5672/%2f
+    volumes:
+      - .:/var/www/html
+    restart: unless-stopped
+    networks:
+      - hr-network

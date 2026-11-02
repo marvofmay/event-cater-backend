@@ -1,0 +1,5 @@
+parameters:
+  facebook_graph_version_default: 'v21.0'
+
+services:
+  App\Module\Facebook\Domain\Repository\FacebookPageConnectionRepository: '@App\Module\Facebook\Infrastructure\Persistence\DoctrineFacebookPageConnectionRepository'

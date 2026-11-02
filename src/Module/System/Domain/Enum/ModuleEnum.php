@@ -20,4 +20,7 @@ enum ModuleEnum: string implements EnumInterface
     case NOTES = 'notes';
     case DOCUMENTS = 'documents';
     case FILE_MANAGER = 'file_manager';
+    case MY_HOURS = 'my_hours';
+    case EMPLOYEE_HOURS = 'employee_hours';
+    case COMPANY_NOTICES = 'company_notices';
 }

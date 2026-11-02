@@ -53,3 +53,7 @@ access.events.preparation_templates.description: "Szablony kompletacji cateringu
 access.kitchen.orders.description: "Karty produkcyjne kuchni"
 
 access.events.venues.description: "Baza miejsc obsługi cateringu"
+access.my_hours.my_hours.description: "Moje godziny pracy — podgląd i raportowanie własnego czasu"
+access.employee_hours.employee_hours.description: "Godziny pracowników — podgląd czasu pracy zespołu"
+access.company_notices.company_notices.description: "Ogłoszenia firmowe — odczyt i zarządzanie tablicą informacji"
+access.documents.documents.description: "Biblioteka dokumentów firmowych — odczyt i zarządzanie"

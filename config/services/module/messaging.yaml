@@ -1,3 +1,4 @@
 services:
   App\Module\Messaging\Domain\Repository\MessageRepository: '@App\Module\Messaging\Infrastructure\Persistence\DoctrineMessageRepository'
+  App\Module\Messaging\Domain\Repository\PushTokenRepository: '@App\Module\Messaging\Infrastructure\Persistence\DoctrinePushTokenRepository'
   App\Module\Messaging\Application\Port\RecipientDirectory: '@App\Module\Messaging\Infrastructure\Directory\TenantRecipientDirectory'

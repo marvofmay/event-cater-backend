@@ -17,12 +17,15 @@ use App\Module\Event\Application\Command\RecordPreparationProgress;
 use App\Module\Event\Application\Command\RemoveEventConsumable;
 use App\Module\Event\Application\Command\SetEventConsumable;
 use App\Module\Event\Application\Command\StartEventPreparation;
+use App\Module\Event\Application\Query\GetEvent;
 use App\Module\Event\Application\Query\GetEventPreparation;
 use App\Module\Event\Application\Query\GetPreparationTemplate;
+use App\Module\Event\Infrastructure\PDF\PreparationPdfRenderer;
 use App\Module\System\Domain\Enum\Access\AccessEnum;
 use App\Module\System\Domain\Enum\Permission\PermissionEnum;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/events/{uuid}/preparation', requirements: ['uuid' => '[0-9a-fA-F-]{36}', 'itemUuid' => '[0-9a-fA-F-]{36}', 'lineUuid' => '[0-9a-fA-F-]{36}'])]
@@ -45,6 +48,24 @@ final class EventPreparationController extends PlanningController
         $this->allow(PermissionEnum::PLAN_EVENT_PREPARATION);
         return $this->resource(['items' => $this->ask(new \App\Module\Event\Application\Query\SearchEventEmployees(PlanningPayload::search($request)))]);
     }
+
+    #[Route('/pdf', methods: ['GET'], priority: 10)]
+    public function pdf(string $uuid, PreparationPdfRenderer $pdf): Response
+    {
+        $this->denyAccessUnlessGranted(PermissionEnum::VIEW, AccessEnum::EVENTS);
+        $uuid = PlanningPayload::identifier($uuid);
+        $event = $this->ask(new GetEvent($uuid));
+        $preparation = $this->ask(new GetEventPreparation($uuid));
+        $filename = preg_replace('/[^A-Za-z0-9._-]+/', '-', (string) ($event['number'] ?? 'event')).'-kompletacja.pdf';
+
+        return new Response($pdf->render($event, $preparation), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="'.$filename.'"',
+            'Cache-Control' => 'private, no-store',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
     #[Route('', methods: ['GET'])]
     public function get(string $uuid): JsonResponse
     {

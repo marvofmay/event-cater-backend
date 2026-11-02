@@ -54,7 +54,7 @@ final class EventController extends PlanningController
         $body = PlanningPayload::json($request);
         $uuid = Uuid::uuid4()->toString();
         $this->execute(new CreateEvent($uuid, EventPayloadMapper::details($body), $this->actor()));
-        return $this->resource($this->ask(new GetEvent($uuid)), 201);
+        return $this->eventResource($uuid, 201);
     }
 
     #[Route('', methods: ['GET'])]
@@ -75,7 +75,26 @@ final class EventController extends PlanningController
         if ($status !== '' && !EventStatus::tryFrom($status)) {
             throw new BusinessRuleViolation('Unknown event status.');
         }
-        return $this->resource($this->ask(new ListEvents(PlanningPayload::page($request), $from, $to, $status ?: null, PlanningPayload::search($request))));
+        $viewerEmployeeUuid = null;
+        $staffEmployeeUuid = null;
+        $packerEmployeeUuid = null;
+        $user = $this->getUser();
+        if ($user instanceof \App\Module\Company\Domain\Entity\User) {
+            $viewerEmployeeUuid = $user->getEmployeeUUID();
+        }
+        if ($request->query->getBoolean('mine')) {
+            if ($viewerEmployeeUuid === null) {
+                return $this->resource(PlanningPayload::page($request)->result([], 0));
+            }
+            $staffEmployeeUuid = $viewerEmployeeUuid;
+        }
+        if ($request->query->getBoolean('packing')) {
+            if ($viewerEmployeeUuid === null) {
+                return $this->resource(PlanningPayload::page($request)->result([], 0));
+            }
+            $packerEmployeeUuid = $viewerEmployeeUuid;
+        }
+        return $this->resource($this->ask(new ListEvents(PlanningPayload::page($request), $from, $to, $status ?: null, PlanningPayload::search($request), $staffEmployeeUuid, $packerEmployeeUuid, $viewerEmployeeUuid)));
     }
 
     #[Route('/functions', methods: ['GET'], priority: 10)]
@@ -97,7 +116,40 @@ final class EventController extends PlanningController
     public function get(string $uuid): JsonResponse
     {
         $this->denyAccessUnlessGranted(PermissionEnum::VIEW, AccessEnum::EVENTS);
-        return $this->resource($this->ask(new GetEvent(PlanningPayload::identifier($uuid))));
+        return $this->eventResource(PlanningPayload::identifier($uuid));
+    }
+
+    private function eventResource(string $uuid, int $status = 200): JsonResponse
+    {
+        $data = $this->ask(new GetEvent($uuid));
+        $data['involvement'] = $this->viewerInvolvement($data);
+
+        return $this->resource($data, $status);
+    }
+
+    /**
+     * @param array<string, mixed> $event
+     * @return array{onStaff: bool, isPacker: bool, myFunctions: list<string>}
+     */
+    private function viewerInvolvement(array $event): array
+    {
+        $user = $this->getUser();
+        $employeeUuid = $user instanceof \App\Module\Company\Domain\Entity\User ? $user->getEmployeeUUID() : null;
+        if ($employeeUuid === null) {
+            return ['onStaff' => false, 'isPacker' => false, 'myFunctions' => []];
+        }
+        $functions = [];
+        $onStaff = false;
+        foreach ($event['staff'] ?? [] as $person) {
+            if (($person['employeeUuid'] ?? null) === $employeeUuid) {
+                $onStaff = true;
+                $functions = is_array($person['functions'] ?? null) ? $person['functions'] : [];
+                break;
+            }
+        }
+        $isPacker = ($event['preparation']['responsibleUuid'] ?? null) === $employeeUuid;
+
+        return ['onStaff' => $onStaff, 'isPacker' => $isPacker, 'myFunctions' => $functions];
     }
 
     #[Route('/{uuid}', methods: ['PUT'])]
@@ -107,7 +159,7 @@ final class EventController extends PlanningController
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
         $this->execute(new UpdateEvent($uuid, $body->version(), EventPayloadMapper::details($body), $this->actor()));
-        return $this->resource($this->ask(new GetEvent($uuid)));
+        return $this->eventResource($uuid);
     }
 
     #[Route('/{uuid}/contacts', methods: ['PUT'])]
@@ -117,7 +169,7 @@ final class EventController extends PlanningController
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
         $this->execute(new ReplaceEventContacts($uuid, $body->version(), EventPayloadMapper::contacts($body), $this->actor()));
-        return $this->resource($this->ask(new GetEvent($uuid)));
+        return $this->eventResource($uuid);
     }
 
     #[Route('/{uuid}/menu', methods: ['PUT'])]
@@ -127,7 +179,7 @@ final class EventController extends PlanningController
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
         $this->execute(new ReplaceEventMenu($uuid, $body->version(), EventPayloadMapper::menu($body), $this->actor()));
-        return $this->resource($this->ask(new GetEvent($uuid)));
+        return $this->eventResource($uuid);
     }
 
     #[Route('/{uuid}/status', methods: ['POST'])]
@@ -144,7 +196,7 @@ final class EventController extends PlanningController
             $this->denyAccessUnlessGranted(PermissionEnum::DELETE, AccessEnum::EVENTS);
         }
         $this->execute(new ChangeEventStatus($uuid, $body->version(), $status, $this->actor()));
-        return $this->resource($this->ask(new GetEvent($uuid)));
+        return $this->eventResource($uuid);
     }
 
     #[Route('/{uuid}/staff/{employeeUuid}', methods: ['PUT'])]
@@ -160,7 +212,7 @@ final class EventController extends PlanningController
             return $function;
         }, $body->list('functions', count(EventFunction::cases())));
         $this->execute(new AssignEventStaff($uuid, $body->version(), PlanningPayload::identifier($employeeUuid), $functions, $body->dateTime('startsAt', true), $body->dateTime('endsAt', true), $body->text('notes', false), $this->actor()));
-        return $this->resource($this->ask(new GetEvent($uuid)));
+        return $this->eventResource($uuid);
     }
 
     #[Route('/{uuid}/staff/{employeeUuid}', methods: ['DELETE'])]
@@ -170,7 +222,7 @@ final class EventController extends PlanningController
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
         $this->execute(new RemoveEventStaff($uuid, $body->version(), PlanningPayload::identifier($employeeUuid), $this->actor()));
-        return $this->resource($this->ask(new GetEvent($uuid)));
+        return $this->eventResource($uuid);
     }
 
     #[Route('/{uuid}/equipment/{equipmentUuid}', methods: ['PUT'])]
@@ -180,7 +232,7 @@ final class EventController extends PlanningController
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
         $this->execute(new SetEventEquipment($uuid, $body->version(), PlanningPayload::identifier($equipmentUuid), $body->integer('quantity'), $body->text('notes', false), $this->actor()));
-        return $this->resource($this->ask(new GetEvent($uuid)));
+        return $this->eventResource($uuid);
     }
 
     #[Route('/{uuid}/equipment/{equipmentUuid}', methods: ['DELETE'])]
@@ -190,7 +242,7 @@ final class EventController extends PlanningController
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
         $this->execute(new RemoveEventEquipment($uuid, $body->version(), PlanningPayload::identifier($equipmentUuid), $this->actor()));
-        return $this->resource($this->ask(new GetEvent($uuid)));
+        return $this->eventResource($uuid);
     }
 
     #[Route('/{uuid}/history', methods: ['GET'])]
@@ -224,7 +276,7 @@ final class EventController extends PlanningController
             $storage->discard($stored['storedName']);
             throw $error;
         }
-        return $this->resource($this->ask(new GetEvent($uuid)), 201);
+        return $this->eventResource($uuid, 201);
     }
 
     #[Route('/{uuid}/attachments/{attachmentUuid}', methods: ['GET'])]
@@ -247,6 +299,6 @@ final class EventController extends PlanningController
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
         $this->execute(new RemoveEventMedia($uuid, $body->version(), PlanningPayload::identifier($attachmentUuid), $this->actor()));
-        return $this->resource($this->ask(new GetEvent($uuid)));
+        return $this->eventResource($uuid);
     }
 }

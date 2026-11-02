@@ -36,8 +36,11 @@ enum AccessEnum: string implements EnumInterface
     case ACCESSES = ModuleEnum::SYSTEM->value . '.accesses';
     case PERMISSIONS = ModuleEnum::SYSTEM->value . '.permissions';
     case NOTES = ModuleEnum::NOTES->value . '.notes';
-    //case DOCUMENTS = ModuleEnum::DOCUMENTS->value . '.documents';
+    case DOCUMENTS = ModuleEnum::DOCUMENTS->value . '.documents';
     case FILE_MANAGER = ModuleEnum::DOCUMENTS->value . '.file_manager';
+    case MY_HOURS = ModuleEnum::MY_HOURS->value . '.my_hours';
+    case EMPLOYEE_HOURS = ModuleEnum::EMPLOYEE_HOURS->value . '.employee_hours';
+    case COMPANY_NOTICES = ModuleEnum::COMPANY_NOTICES->value . '.company_notices';
 
     /**
      * @return PermissionEnum[]
@@ -46,6 +49,9 @@ enum AccessEnum: string implements EnumInterface
     {
         return match ($this) {
             self::MESSAGES => [PermissionEnum::LIST, PermissionEnum::VIEW, PermissionEnum::CREATE, PermissionEnum::DELETE],
+            self::MY_HOURS => [PermissionEnum::LIST, PermissionEnum::VIEW, PermissionEnum::CREATE, PermissionEnum::UPDATE, PermissionEnum::DELETE],
+            self::EMPLOYEE_HOURS => [PermissionEnum::LIST, PermissionEnum::VIEW],
+            self::COMPANY_NOTICES => [PermissionEnum::LIST, PermissionEnum::VIEW, PermissionEnum::CREATE, PermissionEnum::UPDATE, PermissionEnum::DELETE],
             self::COMPANY_STRUCTURE => [PermissionEnum::VIEW],
             self::EVENT_VENUES,
             self::CONSUMABLES,
@@ -69,6 +75,7 @@ enum AccessEnum: string implements EnumInterface
                 PermissionEnum::PLAN_EVENT_MENU,
                 PermissionEnum::PLAN_EVENT_EQUIPMENT,
                 PermissionEnum::MANAGE_EVENT_MEDIA,
+                PermissionEnum::PUBLISH_FACEBOOK,
                 PermissionEnum::PLAN_EVENT_PREPARATION,
                 PermissionEnum::PREPARE_EVENT_CATERING,
                 PermissionEnum::LOAD_EVENT_CATERING,
@@ -105,6 +112,13 @@ enum AccessEnum: string implements EnumInterface
                 PermissionEnum::VIEW,
                 PermissionEnum::LIST,
                 PermissionEnum::PDF,
+            ],
+            self::DOCUMENTS => [
+                PermissionEnum::LIST,
+                PermissionEnum::VIEW,
+                PermissionEnum::CREATE,
+                PermissionEnum::UPDATE,
+                PermissionEnum::DELETE,
             ],
             self::NOTIFICATION_MESSAGES => [
                 PermissionEnum::LIST,
@@ -191,7 +205,11 @@ enum AccessEnum: string implements EnumInterface
             self::ACCESSES => 'Accesses',
             self::PERMISSIONS => 'Permissions',
             self::NOTES => 'Notes',
+            self::DOCUMENTS => 'Documents',
             self::FILE_MANAGER => 'File Manager',
+            self::MY_HOURS => 'My hours',
+            self::EMPLOYEE_HOURS => 'Employee hours',
+            self::COMPANY_NOTICES => 'Company notices',
         };
     }
 

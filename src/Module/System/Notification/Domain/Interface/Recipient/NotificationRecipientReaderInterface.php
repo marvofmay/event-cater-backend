@@ -11,5 +11,14 @@ interface NotificationRecipientReaderInterface
     public function getUnreadNotificationRecipientByUUID(string $uuid): NotificationRecipient;
     public function getUnreadNotificationRecipientsByUUIDs(array $uuids): array;
 
+    public function getOwnedNotificationRecipientByUUID(string $uuid, string $userUUID): NotificationRecipient;
+
+    /**
+     * @param list<string> $uuids
+     *
+     * @return list<NotificationRecipient>
+     */
+    public function getOwnedNotificationRecipientsByUUIDs(array $uuids, string $userUUID): array;
+
     public function countUnreadNotificationMessagesForUser(string $userUUID): int;
 }

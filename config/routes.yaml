@@ -7,6 +7,18 @@ app_api_system:
 app_api_messaging:
   resource: ../src/Module/Messaging/Presentation/API/Controller/
   type: attribute
+app_api_hours:
+  resource: ../src/Module/Hours/Presentation/API/Controller/
+  type: attribute
+app_api_facebook:
+  resource: ../src/Module/Facebook/Presentation/API/Controller/
+  type: attribute
+app_api_company_notices:
+  resource: ../src/Module/CompanyNotice/Presentation/API/Controller/
+  type: attribute
+app_api_company_documents:
+  resource: ../src/Module/CompanyDocument/Presentation/API/Controller/
+  type: attribute
 app_api_file_manager:
   resource: ../src/Module/FileManager/Presentation/API/Controller/
   type: attribute

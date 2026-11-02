@@ -6,7 +6,7 @@ module:
   notes:
     description: "Moduł notatek pracownika."
   documents:
-    description: "Moduł dokumentów."
+    description: "Wspólna biblioteka dokumentów firmy (umowy, HACCP, instrukcje)."
   file_manager:
     description: "Moduł zarządzania plikami i folderami."
 module.events.description: "Organizacja wydarzeń cateringowych"
@@ -15,3 +15,6 @@ module.equipment.description: "Katalog sprzętu cateringowego"
 module.supplies.description: "Produkty i materiały zużywalne"
 
 module.kitchen.description: "Kuchnia"
+module.my_hours.description: "Podgląd i raportowanie własnych godzin pracy"
+module.employee_hours.description: "Podgląd godzin pracy pracowników firmy"
+module.company_notices.description: "Tablica ogłoszeń firmowych na stronie Informacje"

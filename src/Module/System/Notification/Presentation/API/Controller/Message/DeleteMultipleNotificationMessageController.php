@@ -55,7 +55,7 @@ final class DeleteMultipleNotificationMessageController extends AbstractControll
         }
 
         return new JsonResponse(
-            ['message' => $this->messageService->get('note.delete.multiple.success', [], 'notes')],
+            ['message' => $this->messageService->get('notification.delete.multiple.success', [], 'notifications')],
             Response::HTTP_OK
         );
     }

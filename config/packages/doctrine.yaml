@@ -24,6 +24,30 @@ doctrine:
         dir: '%kernel.project_dir%/src/Module/Messaging/Domain/Entity'
         prefix: 'App\Module\Messaging\Domain\Entity'
         alias: Messaging
+      hours:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Module/Hours/Domain/Entity'
+        prefix: 'App\Module\Hours\Domain\Entity'
+        alias: Hours
+      facebook:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Module/Facebook/Domain/Entity'
+        prefix: 'App\Module\Facebook\Domain\Entity'
+        alias: Facebook
+      company_notice:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Module/CompanyNotice/Domain/Entity'
+        prefix: 'App\Module\CompanyNotice\Domain\Entity'
+        alias: CompanyNotice
+      company_document:
+        is_bundle: false
+        type: attribute
+        dir: '%kernel.project_dir%/src/Module/CompanyDocument/Domain/Entity'
+        prefix: 'App\Module\CompanyDocument\Domain\Entity'
+        alias: CompanyDocument
       kitchen:
         is_bundle: false
         type: attribute

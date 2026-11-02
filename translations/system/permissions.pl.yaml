@@ -29,6 +29,7 @@ permission.assign_event_staff.description: "Zarządzanie obsługą wydarzeń"
 permission.plan_event_menu.description: "Planowanie menu wydarzeń"
 permission.plan_event_equipment.description: "Planowanie sprzętu na wydarzenia"
 permission.manage_event_media.description: "Zarządzanie materiałami z wydarzeń"
+permission.publish_facebook.description: "Publikowanie postów wydarzeń na Facebooku"
 
 permission.plan_event_preparation.description: "Planowanie kompletacji cateringu"
 permission.prepare_event_catering.description: "Kompletowanie cateringu"

@@ -65,6 +65,14 @@ final readonly class EventQueryHandler
             $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $query->search).'%';
             array_push($params, $pattern, $pattern);
         }
+        if ($query->staffEmployeeUuid !== null) {
+            $where[] = 'EXISTS (SELECT 1 FROM event_staff_assignment sa WHERE sa.event_uuid = catering_event.uuid AND sa.employee_uuid = ?)';
+            $params[] = $query->staffEmployeeUuid;
+        }
+        if ($query->packerEmployeeUuid !== null) {
+            $where[] = 'EXISTS (SELECT 1 FROM event_preparation_list pl WHERE pl.event_uuid = catering_event.uuid AND pl.responsible_uuid = ?)';
+            $params[] = $query->packerEmployeeUuid;
+        }
         $condition = implode(' AND ', $where);
         $total = (int) $this->db->fetchOne('SELECT COUNT(*) FROM catering_event WHERE '.$condition, $params);
         $rows = $this->db->fetchAllAssociative('SELECT uuid, number, title, event_date, timezone, starts_at, ends_at, status, guest_count, version FROM catering_event WHERE '.$condition.' ORDER BY event_date, uuid LIMIT '.$query->page->limit.' OFFSET '.$query->page->offset(), $params);
@@ -73,7 +81,46 @@ final readonly class EventQueryHandler
             'timezone' => $r['timezone'], 'startsAt' => self::dateTime($r['starts_at']), 'endsAt' => self::dateTime($r['ends_at']),
             'status' => $r['status'], 'guestCount' => $r['guest_count'] === null ? null : (int) $r['guest_count'], 'version' => (int) $r['version'],
         ], $rows);
+        if ($query->viewerEmployeeUuid !== null && $items !== []) {
+            $items = $this->attachInvolvement($items, $query->viewerEmployeeUuid);
+        }
         return $query->page->result($items, $total);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $items
+     * @return list<array<string, mixed>>
+     */
+    private function attachInvolvement(array $items, string $employeeUuid): array
+    {
+        $uuids = array_column($items, 'uuid');
+        $placeholders = implode(',', array_fill(0, count($uuids), '?'));
+
+        $staffRows = $this->db->fetchAllAssociative(
+            'SELECT event_uuid, functions FROM event_staff_assignment WHERE employee_uuid = ? AND event_uuid IN ('.$placeholders.')',
+            [$employeeUuid, ...$uuids],
+        );
+        $staffByEvent = [];
+        foreach ($staffRows as $row) {
+            $staffByEvent[$row['event_uuid']] = json_decode((string) $row['functions'], true, flags: JSON_THROW_ON_ERROR);
+        }
+
+        $packerRows = $this->db->fetchFirstColumn(
+            'SELECT event_uuid FROM event_preparation_list WHERE responsible_uuid = ? AND event_uuid IN ('.$placeholders.')',
+            [$employeeUuid, ...$uuids],
+        );
+        $packerSet = array_fill_keys($packerRows, true);
+
+        return array_map(static function (array $item) use ($staffByEvent, $packerSet): array {
+            $functions = $staffByEvent[$item['uuid']] ?? [];
+            $item['involvement'] = [
+                'onStaff' => array_key_exists($item['uuid'], $staffByEvent),
+                'isPacker' => isset($packerSet[$item['uuid']]),
+                'myFunctions' => is_array($functions) ? $functions : [],
+            ];
+
+            return $item;
+        }, $items);
     }
 
     #[AsMessageHandler(bus: 'query.bus')]

@@ -24,6 +24,7 @@ enum PermissionEnum: string implements EnumInterface
     case PLAN_EVENT_MENU = 'plan_event_menu';
     case PLAN_EVENT_EQUIPMENT = 'plan_event_equipment';
     case MANAGE_EVENT_MEDIA = 'manage_event_media';
+    case PUBLISH_FACEBOOK = 'publish_facebook';
     case CREATE = 'create';
     case UPDATE = 'update';
     case DELETE = 'delete';

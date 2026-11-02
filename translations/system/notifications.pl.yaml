@@ -31,3 +31,14 @@ notification:
   markAsRead:
     success: "Powiadomienie zostało oznaczone jako przeczytane."
     error: "Wystąpił błąd podczas oznaczania powiadomienia jako przeczytane."
+    multiple:
+      success: "Wybrane powiadomienia zostały oznaczone jako przeczytane."
+      error: "Wystąpił błąd podczas oznaczania powiadomień jako przeczytane."
+  delete:
+    success: "Powiadomienie zostało usunięte."
+    error: "Wystąpił błąd - powiadomienie nie zostało usunięte."
+    multiple:
+      success: "Wybrane powiadomienia zostały usunięte."
+      error: "Wystąpił błąd - powiadomienia nie zostały usunięte."
+      selectedUUIDsRequired: "Wybierz co najmniej jedno powiadomienie do usunięcia."
+    invalidUUID: "Nieprawidłowy identyfikator powiadomienia."

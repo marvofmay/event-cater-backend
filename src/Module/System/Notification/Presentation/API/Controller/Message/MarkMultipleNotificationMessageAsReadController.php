@@ -57,7 +57,7 @@ final class MarkMultipleNotificationMessageAsReadController extends AbstractCont
         }
 
         return new JsonResponse(
-            ['message' => $this->messageService->get('note.delete.multiple.success', [], 'notes')],
+            ['message' => $this->messageService->get('notification.markAsRead.multiple.success', [], 'notifications')],
             Response::HTTP_OK
         );
     }

@@ -6,16 +6,23 @@ namespace App\Module\Messaging\Application\CommandHandler;
 
 use App\Common\Domain\Exception\PlanningConflict;
 use App\Module\Messaging\Application\Command\MarkMessageRead;
+use App\Module\Messaging\Application\Command\NotifyDirectMessageRecipients;
 use App\Module\Messaging\Application\Command\SendMessage;
 use App\Module\Messaging\Application\Port\RecipientDirectory;
 use App\Module\Messaging\Domain\Entity\DirectMessage;
 use App\Module\Messaging\Domain\Repository\MessageRepository;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Messenger\Stamp\DispatchAfterCurrentBusStamp;
 
 final readonly class MessageCommandHandler
 {
-    public function __construct(private MessageRepository $messages, private RecipientDirectory $recipients)
-    {
+    public function __construct(
+        private MessageRepository $messages,
+        private RecipientDirectory $recipients,
+        #[Autowire(service: 'command.bus')] private MessageBusInterface $commandBus,
+    ) {
     }
 
     #[AsMessageHandler(bus: 'command.bus')]
@@ -34,6 +41,21 @@ final readonly class MessageCommandHandler
         }
         $recipients = $this->recipients->resolve($recipientUuids);
         $this->messages->add(new DirectMessage($command->uuid, $command->senderUuid, $this->recipients->senderName($command->senderUuid), $command->title, $command->content, $recipients, $command->replyToUuid));
+
+        $preview = trim(preg_replace('/\s+/u', ' ', $command->content) ?? $command->content);
+        if (mb_strlen($preview) > 120) {
+            $preview = mb_substr($preview, 0, 117).'...';
+        }
+
+        $this->commandBus->dispatch(
+            new NotifyDirectMessageRecipients(
+                $command->uuid,
+                $command->title,
+                $preview,
+                array_values(array_map(static fn (array $recipient): string => $recipient['uuid'], $recipients)),
+            ),
+            [new DispatchAfterCurrentBusStamp()],
+        );
     }
 
     #[AsMessageHandler(bus: 'command.bus')]

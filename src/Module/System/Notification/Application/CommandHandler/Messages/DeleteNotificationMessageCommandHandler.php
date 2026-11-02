@@ -3,12 +3,14 @@
 namespace App\Module\System\Notification\Application\CommandHandler\Messages;
 
 use App\Common\Domain\Service\MessageTranslator\MessageService;
+use App\Module\Company\Domain\Entity\User;
 use App\Module\System\Notification\Application\Command\Message\DeleteNotificationCommand;
 use App\Module\System\Notification\Application\Event\Message\NotificationMessageDeletedEvent;
 use App\Module\System\Notification\Domain\Exception\NotificationRecipientNotFoundException;
-use App\Module\System\Notification\Domain\Interface\Message\NotificationMessageDeleterInterface;
+use App\Module\System\Notification\Domain\Interface\Recipient\NotificationRecipientDeleterInterface;
 use App\Module\System\Notification\Domain\Interface\Recipient\NotificationRecipientReaderInterface;
 use Doctrine\ORM\NoResultException;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -17,9 +19,10 @@ final readonly class DeleteNotificationMessageCommandHandler
 {
     public function __construct(
         private NotificationRecipientReaderInterface $notificationRecipientRepository,
-        private NotificationMessageDeleterInterface $notificationMessageDeleter,
+        private NotificationRecipientDeleterInterface $notificationRecipientDeleter,
         private EventDispatcherInterface $eventDispatcher,
         private MessageService $messageService,
+        private Security $security,
     ) {
     }
 
@@ -28,10 +31,20 @@ final readonly class DeleteNotificationMessageCommandHandler
      */
     public function __invoke(DeleteNotificationCommand $command): void
     {
+        $user = $this->security->getUser();
+        if (!$user instanceof User) {
+            throw NotificationRecipientNotFoundException::fromNotificationUUID(
+                $this->messageService,
+                $command->notificationUUID
+            );
+        }
+
         try {
             $notificationRecipient = $this->notificationRecipientRepository
-                ->getUnreadNotificationRecipientByUUID($command->notificationUUID);
-            $notificationMessage = $notificationRecipient->getMessage();
+                ->getOwnedNotificationRecipientByUUID(
+                    $command->notificationUUID,
+                    $user->getUUID()->toString(),
+                );
         } catch (NoResultException $exception) {
             throw NotificationRecipientNotFoundException::fromNotificationUUID(
                 $this->messageService,
@@ -40,7 +53,8 @@ final readonly class DeleteNotificationMessageCommandHandler
             );
         }
 
-        $this->notificationMessageDeleter->delete($notificationMessage);
+        // Usuwamy wpis w skrzynce użytkownika (przeczytany albo nie), nie całą wspólną wiadomość.
+        $this->notificationRecipientDeleter->delete($notificationRecipient);
 
         $this->eventDispatcher->dispatch(new NotificationMessageDeletedEvent([
             DeleteNotificationCommand::NOTIFICATION_UUID => $command->notificationUUID,

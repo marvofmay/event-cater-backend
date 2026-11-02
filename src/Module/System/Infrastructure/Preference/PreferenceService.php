@@ -13,6 +13,8 @@ final readonly class PreferenceService
     public const array RESOURCES = ['companies', 'departments', 'employees', 'positions', 'roles', 'contractTypes', 'industries', 'notifications'];
     public const array PAGE_SIZES = [5, 10, 25, 50, 100];
     public const array CHANNELS = ['sms', 'email', 'internal'];
+    /** Kanał systemowy — użytkownik nie może go wyłączyć, gdy firma go ma włączonego. */
+    public const string MANDATORY_USER_CHANNEL = 'internal';
 
     public function __construct(private Connection $connection, private PreferenceSecrets $secrets)
     {
@@ -40,15 +42,24 @@ final readonly class PreferenceService
     public function channelEnabled(string $channel, string $userUuid): bool
     {
         $master = $this->masterChannels();
+        if (!($master[$channel] ?? false)) {
+            return false;
+        }
+        if (self::MANDATORY_USER_CHANNEL === $channel) {
+            return true;
+        }
         $own = $this->row($userUuid, 'notifications')['payload']['channels'] ?? [];
 
-        return ($master[$channel] ?? false) && ($own[$channel] ?? true);
+        return $own[$channel] ?? true;
     }
 
     public function filterRecipients(string $channel, array $users): array
     {
         if (!($this->masterChannels()[$channel] ?? false) || [] === $users) {
             return [];
+        }
+        if (self::MANDATORY_USER_CHANNEL === $channel) {
+            return array_values($users);
         }
         $overrides = $this->connection->fetchAllAssociative("SELECT owner, payload FROM application_preference WHERE resource = 'notifications' AND owner IN (?)", [array_map(static fn ($user): string => $user->getUUID()->toString(), $users)], [\Doctrine\DBAL\ArrayParameterType::STRING]);
         $disabled = [];
@@ -89,7 +100,8 @@ final readonly class PreferenceService
             $user['channels'] = array_replace(array_fill_keys(self::CHANNELS, null), $own['payload']['channels'] ?? []);
             $effective['channels'] = [];
             foreach (self::CHANNELS as $channel) {
-                $effective['channels'][$channel] = $tenant['channels'][$channel] && ($user['channels'][$channel] ?? true);
+                $effective['channels'][$channel] = $tenant['channels'][$channel]
+                    && (self::MANDATORY_USER_CHANNEL === $channel || ($user['channels'][$channel] ?? true));
             }
             if ($administrator) {
                 $sms = $master['payload']['sms'] ?? [];
@@ -134,11 +146,19 @@ final readonly class PreferenceService
                     if (!is_bool($enabled) && !(null === $enabled && 'tenant' !== $owner)) {
                         throw new UnprocessableEntityHttpException('Nieprawidłowa wartość kanału.');
                     }
+                    if ('tenant' !== $owner && self::MANDATORY_USER_CHANNEL === $channel && false === $enabled) {
+                        throw new UnprocessableEntityHttpException('Nie można wyłączyć kanału systemowego.');
+                    }
                     if ('tenant' !== $owner && $enabled === true && !($master[$channel] ?? false)) {
                         throw new UnprocessableEntityHttpException('Nie można włączyć kanału wyłączonego przez firmę.');
                     }
                 }
-                $payload['channels'] = array_replace($payload['channels'] ?? [], $input['channels']);
+                $channels = array_replace($payload['channels'] ?? [], $input['channels']);
+                if ('tenant' !== $owner) {
+                    // Wymuszamy dziedziczenie — użytkownik nie trzyma lokalnego wyłączenia internal.
+                    $channels[self::MANDATORY_USER_CHANNEL] = null;
+                }
+                $payload['channels'] = $channels;
             }
             if (isset($input['sms'])) {
                 $sms = $input['sms'];
