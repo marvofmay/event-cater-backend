@@ -7,6 +7,7 @@ namespace App\Module\Event\Presentation\API\Controller;
 use App\Common\Domain\Exception\PlanningConflict;
 use App\Common\Presentation\Http\PlanningController;
 use App\Common\Presentation\Http\PlanningPayload;
+use App\Module\Event\Application\Command\AmendEventPreparation;
 use App\Module\Event\Application\Command\ApplyPreparationTemplate;
 use App\Module\Event\Application\Command\ApproveEventPreparation;
 use App\Module\Event\Application\Command\ConfigureEventPreparation;
@@ -17,15 +18,19 @@ use App\Module\Event\Application\Command\RecordPreparationProgress;
 use App\Module\Event\Application\Command\RemoveEventConsumable;
 use App\Module\Event\Application\Command\SetEventConsumable;
 use App\Module\Event\Application\Command\StartEventPreparation;
+use App\Module\Equipment\Application\Query\GetEquipmentPhoto;
+use App\Module\Equipment\Infrastructure\Storage\EquipmentPhotoStorage;
 use App\Module\Event\Application\Query\GetEvent;
 use App\Module\Event\Application\Query\GetEventPreparation;
 use App\Module\Event\Application\Query\GetPreparationTemplate;
 use App\Module\Event\Infrastructure\PDF\PreparationPdfRenderer;
 use App\Module\System\Domain\Enum\Access\AccessEnum;
 use App\Module\System\Domain\Enum\Permission\PermissionEnum;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\Routing\Attribute\Route;
 
 #[Route('/api/events/{uuid}/preparation', requirements: ['uuid' => '[0-9a-fA-F-]{36}', 'itemUuid' => '[0-9a-fA-F-]{36}', 'lineUuid' => '[0-9a-fA-F-]{36}'])]
@@ -64,6 +69,43 @@ final class EventPreparationController extends PlanningController
             'Cache-Control' => 'private, no-store',
             'X-Content-Type-Options' => 'nosniff',
         ]);
+    }
+
+    #[Route(
+        '/equipment/{itemUuid}/photos/{photoUuid}',
+        methods: ['GET'],
+        priority: 10,
+        requirements: ['itemUuid' => '[0-9a-fA-F-]{36}', 'photoUuid' => '[0-9a-fA-F-]{36}'],
+    )]
+    public function equipmentPhoto(
+        string $uuid,
+        string $itemUuid,
+        string $photoUuid,
+        EquipmentPhotoStorage $storage,
+    ): BinaryFileResponse {
+        $this->denyAccessUnlessGranted(PermissionEnum::VIEW, AccessEnum::EVENTS);
+        $uuid = PlanningPayload::identifier($uuid);
+        $itemUuid = PlanningPayload::identifier($itemUuid);
+        $photoUuid = PlanningPayload::identifier($photoUuid);
+        $preparation = $this->ask(new GetEventPreparation($uuid));
+        $onList = false;
+        foreach ($preparation['lines'] as $line) {
+            if (($line['kind'] ?? null) === 'equipment' && ($line['itemUuid'] ?? null) === $itemUuid) {
+                $onList = true;
+                break;
+            }
+        }
+        if (!$onList) {
+            throw new \App\Common\Application\Exception\PlanningResourceNotFound('Equipment photo is not linked to this preparation list.');
+        }
+        $photo = $this->ask(new GetEquipmentPhoto($itemUuid, $photoUuid));
+        $response = new BinaryFileResponse($storage->path($itemUuid, $photo['stored_name']));
+        $response->headers->set('Content-Type', $photo['mime_type']);
+        $response->headers->set('X-Content-Type-Options', 'nosniff');
+        $response->headers->set('Cache-Control', 'private, no-store');
+        $response->setContentDisposition(ResponseHeaderBag::DISPOSITION_INLINE, $photo['name'], 'equipment-photo');
+
+        return $response;
     }
 
     #[Route('', methods: ['GET'])]
@@ -135,6 +177,32 @@ final class EventPreparationController extends PlanningController
         return $this->result($uuid);
     }
 
+    #[Route('/amendments', methods: ['POST'], priority: 10)]
+    public function amend(string $uuid, Request $request): JsonResponse
+    {
+        $this->allow(PermissionEnum::PREPARE_EVENT_CATERING);
+        $uuid = PlanningPayload::identifier($uuid);
+        $body = PlanningPayload::json($request);
+        $kind = $body->text('kind');
+        $action = $body->text('action');
+        $comment = $body->text('comment');
+        if ($comment === null) {
+            throw new \App\Common\Domain\Exception\BusinessRuleViolation('comment is required.');
+        }
+        $this->execute(new AmendEventPreparation(
+            $uuid,
+            $body->version(),
+            (string) $action,
+            (string) $kind,
+            PlanningPayload::identifier((string) $body->text('itemUuid')),
+            $comment,
+            $this->actor(),
+            $body->quantity('requiredQuantity', false),
+            $body->integer('equipmentQuantity', false),
+        ));
+        return $this->result($uuid);
+    }
+
     #[Route('/approve', methods: ['POST'])]
     public function approve(string $uuid, Request $request): JsonResponse
     {
@@ -161,7 +229,7 @@ final class EventPreparationController extends PlanningController
         $this->allow(PermissionEnum::PREPARE_EVENT_CATERING);
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
-        $this->execute(new MarkPreparationReady($uuid, $body->version(), $this->actor()));
+        $this->execute(new MarkPreparationReady($uuid, $body->version(), $this->actor(), $body->text('comment', false)));
         return $this->result($uuid);
     }
 

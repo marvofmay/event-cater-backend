@@ -51,6 +51,14 @@ class EventPreparationList
     private ?string $acceptedShortagesReason = null;
     #[ORM\Column(type: 'json')]
     private array $acceptedShortages = [];
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $deadlineReminderSentAt = null;
+    #[ORM\Column(type: 'text', nullable: true)]
+    private ?string $readyComment = null;
+    #[ORM\Column(length: 36, nullable: true)]
+    private ?string $readyBy = null;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $readyAt = null;
 
     public function __construct(CateringEvent $event)
     {
@@ -82,7 +90,7 @@ class EventPreparationList
         }
     }
 
-    public function add(PreparationLine $line): void
+    public function add(PreparationLine $line, bool $executionAmendment = false): void
     {
         if ($line->eventUuid() !== $this->eventUuid()) {
             throw new BusinessRuleViolation('Preparation line belongs to another event.');
@@ -91,14 +99,53 @@ class EventPreparationList
             throw new BusinessRuleViolation('Preparation supports up to 500 unique catalog items.');
         }
         $this->lines->add($line);
+        if ($executionAmendment) {
+            $this->markExecutionAmended();
+            return;
+        }
         $this->invalidatePlan();
     }
 
-    public function remove(PreparationLine $line): void
+    public function remove(PreparationLine $line, bool $executionAmendment = false): void
     {
         $line->assertRemovable();
         $this->lines->removeElement($line);
+        if ($executionAmendment) {
+            $this->markExecutionAmended();
+            return;
+        }
         $this->invalidatePlan();
+    }
+
+    public function amendRequiredQuantity(PreparationLine $line, \App\Common\Domain\ValueObject\Quantity $quantity, string $comment): void
+    {
+        $this->assertExecutionAmendment($comment);
+        if ($line->kind() === 'equipment') {
+            throw new BusinessRuleViolation('Equipment demand is edited through event equipment.');
+        }
+        $line->setRequiredQuantity($quantity);
+        $this->markExecutionAmended();
+    }
+
+    public function assertExecutionAmendment(string $comment): void
+    {
+        if (!in_array($this->status, [PreparationStatus::APPROVED, PreparationStatus::IN_PREPARATION, PreparationStatus::READY_FOR_LOADING], true)) {
+            throw new BusinessRuleViolation('Amendments during packing require an approved preparation list.');
+        }
+        if (mb_strlen(trim($comment)) < 10 || mb_strlen($comment) > 2000) {
+            throw new BusinessRuleViolation('Amendment comment must be 10..2000 characters.');
+        }
+    }
+
+    public function markExecutionAmended(): void
+    {
+        if ($this->status === PreparationStatus::READY_FOR_LOADING || $this->status === PreparationStatus::LOADED) {
+            $this->clearDispatch();
+            $this->clearReadyConfirmation();
+            $this->status = PreparationStatus::IN_PREPARATION;
+        } elseif ($this->status === PreparationStatus::APPROVED) {
+            $this->status = PreparationStatus::IN_PREPARATION;
+        }
     }
 
     public function find(string $kind, string $itemUuid): ?PreparationLine
@@ -128,6 +175,7 @@ class EventPreparationList
         $this->approvedRevision = null;
         $this->approvedBy = null;
         $this->approvedAt = null;
+        $this->clearReadyConfirmation();
         $this->clearDispatch();
     }
 
@@ -160,14 +208,34 @@ class EventPreparationList
         $this->clearDispatch();
         $this->status = in_array($previous, [PreparationStatus::READY_FOR_LOADING, PreparationStatus::LOADED], true) && $this->allPrepared()
             ? PreparationStatus::READY_FOR_LOADING : PreparationStatus::IN_PREPARATION;
+        if ($this->status !== PreparationStatus::READY_FOR_LOADING) {
+            $this->clearReadyConfirmation();
+        }
     }
 
-    public function markReady(): void
+    public function markReady(string $actorUuid, ?string $comment = null): void
     {
         if (!in_array($this->status, [PreparationStatus::APPROVED, PreparationStatus::IN_PREPARATION], true) || !$this->allPrepared()) {
             throw new BusinessRuleViolation('All required quantities must be prepared before marking the list ready.');
         }
+        $normalized = $comment !== null ? trim($comment) : null;
+        if ($normalized === '') {
+            $normalized = null;
+        }
+        if ($normalized !== null && mb_strlen($normalized) > 2000) {
+            throw new BusinessRuleViolation('Ready comment exceeds 2000 characters.');
+        }
         $this->status = PreparationStatus::READY_FOR_LOADING;
+        $this->readyComment = $normalized;
+        $this->readyBy = $actorUuid;
+        $this->readyAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+    }
+
+    private function clearReadyConfirmation(): void
+    {
+        $this->readyComment = null;
+        $this->readyBy = null;
+        $this->readyAt = null;
     }
 
     public function confirmLoaded(string $actorUuid, ?string $acceptShortagesReason): void
@@ -226,6 +294,27 @@ class EventPreparationList
     {
         return $this->responsibleUuid;
     }
+
+    public function deadlineAt(): ?\DateTimeImmutable
+    {
+        return $this->deadlineAt;
+    }
+
+    public function event(): CateringEvent
+    {
+        return $this->event;
+    }
+
+    public function deadlineReminderSentAt(): ?\DateTimeImmutable
+    {
+        return $this->deadlineReminderSentAt;
+    }
+
+    public function markDeadlineReminderSent(\DateTimeImmutable $at): void
+    {
+        $this->deadlineReminderSentAt = $at->setTimezone(new \DateTimeZone('UTC'));
+    }
+
     /** @return list<PreparationLine> */
     public function lines(): array
     {
@@ -247,6 +336,7 @@ class EventPreparationList
             'deadlineAt' => ($this->deadlineAt ?? $this->event->schedule()->readyAt)?->format(DATE_ATOM), 'configuredDeadlineAt' => $this->deadlineAt?->format(DATE_ATOM), 'notes' => $this->notes,
             'approvedRevision' => $this->approvedRevision, 'approvedBy' => $this->approvedBy, 'approvedAt' => $this->approvedAt?->format(DATE_ATOM),
             'dispatchedBy' => $this->dispatchedBy, 'dispatchedAt' => $this->dispatchedAt?->format(DATE_ATOM),
+            'readyComment' => $this->readyComment, 'readyBy' => $this->readyBy, 'readyAt' => $this->readyAt?->format(DATE_ATOM),
             'acceptedShortagesReason' => $this->acceptedShortagesReason, 'acceptedShortages' => $this->acceptedShortages,
             'summary' => ['totalLines' => count($lines), 'missingPreparationLines' => $missingPreparation, 'missingLoadingLines' => $missingLoading,
                 'fullyPreparedLines' => count($lines) - $missingPreparation, 'fullyLoadedLines' => count($lines) - $missingLoading,

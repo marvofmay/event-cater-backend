@@ -33,13 +33,55 @@ final readonly class PreparationQueryHandler
             throw new PlanningResourceNotFound('Preparation list not found.');
         }
         $data = $list->toArray();
-        $equipmentIds = array_column(array_filter($data['lines'], static fn (array $line): bool => $line['kind'] === 'equipment' && $line['sourceLocation'] === null), 'itemUuid');
+        $equipmentIds = array_values(array_unique(array_column(
+            array_filter($data['lines'], static fn (array $line): bool => $line['kind'] === 'equipment'),
+            'itemUuid',
+        )));
+        $locations = [];
+        $photos = [];
         if ($equipmentIds !== []) {
-            $locations = $this->db->fetchAllKeyValue('SELECT item.uuid, location.name FROM equipment_item item JOIN equipment_location location ON location.uuid = item.storage_location_uuid WHERE item.uuid IN (?)', [$equipmentIds], [ArrayParameterType::STRING]);
-            foreach ($data['lines'] as &$line) {
-                if ($line['kind'] === 'equipment' && $line['sourceLocation'] === null) $line['sourceLocation'] = $locations[$line['itemUuid']] ?? null;
+            $missingLocationIds = array_column(
+                array_filter(
+                    $data['lines'],
+                    static fn (array $line): bool => $line['kind'] === 'equipment' && $line['sourceLocation'] === null,
+                ),
+                'itemUuid',
+            );
+            if ($missingLocationIds !== []) {
+                $locations = $this->db->fetchAllKeyValue(
+                    'SELECT item.uuid, location.name FROM equipment_item item JOIN equipment_location location ON location.uuid = item.storage_location_uuid WHERE item.uuid IN (?)',
+                    [$missingLocationIds],
+                    [ArrayParameterType::STRING],
+                );
+            }
+            $photoRows = $this->db->fetchAllAssociative(
+                'SELECT uuid, equipment_uuid, name FROM equipment_photo WHERE equipment_uuid IN (?) ORDER BY created_at ASC, uuid ASC',
+                [$equipmentIds],
+                [ArrayParameterType::STRING],
+            );
+            foreach ($photoRows as $photo) {
+                $equipmentUuid = (string) $photo['equipment_uuid'];
+                $photos[$equipmentUuid][] = [
+                    'uuid' => (string) $photo['uuid'],
+                    'name' => (string) $photo['name'],
+                ];
             }
         }
+        foreach ($data['lines'] as &$line) {
+            if ($line['kind'] !== 'equipment') {
+                $line['photos'] = [];
+                $line['photo'] = null;
+                continue;
+            }
+            if ($line['sourceLocation'] === null) {
+                $line['sourceLocation'] = $locations[$line['itemUuid']] ?? null;
+            }
+            $linePhotos = $photos[$line['itemUuid']] ?? [];
+            $line['photos'] = $linePhotos;
+            $line['photo'] = $linePhotos[0] ?? null;
+        }
+        unset($line);
+
         return $data;
     }
 

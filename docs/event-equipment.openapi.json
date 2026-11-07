@@ -1788,7 +1788,7 @@
         "tags": [
           "Events"
         ],
-        "summary": "Upload image/video; completed events allow media (manage_event_media permission)",
+        "summary": "Upload image/video; completed events allow media (add_event_media permission)",
         "responses": {
           "201": {
             "description": "Success",
@@ -1956,7 +1956,7 @@
         "tags": [
           "Events"
         ],
-        "summary": "Detach media; file retained privately for audit (manage_event_media permission)",
+        "summary": "Detach media; file retained privately for audit (delete_event_media permission)",
         "responses": {
           "200": {
             "description": "Success",

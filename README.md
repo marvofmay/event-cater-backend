@@ -8,6 +8,21 @@
 - Wszystkie dotychczasowe dane biznesowe skopiowano do osobnej bazy Mapy Smaków z zachowaniem powiązań. Baza źródłowa pozostała zachowana; tenant `default` jest nieaktywny.
 - Backup sprzed migracji: lokalny plik `var/backups/before-mapa-smakow-20261025.sql`, wyłączony z Git.
 
+## Przypomnienia o terminach (kompletacja / kuchnia)
+
+Komenda: `docker exec service-company php bin/console app:notify-event-deadlines`  
+(okno domyślne 24 h; flaga `--within-hours=`). W `docker-compose` działa usługa `worker-event-deadline-reminders` (co godzinę). Szczegóły: [docs/notification-settings.md](docs/notification-settings.md).
+
+## Logowanie nowego pracownika
+
+Po utworzeniu pracownika (formularz lub import) powstaje konto użytkownika:
+
+- **Login:** pierwszy numer telefonu pracownika (znormalizowany).
+- **Hasło startowe:** PESEL (także fikcyjny, jeśli tak oznaczono).
+- Przy pierwszym logowaniu system wymaga **zmiany hasła** (`must_change_password`).
+
+Zmiana telefonu, e-maila lub PESEL u istniejącego pracownika **nie resetuje** hasła. Szczegóły: [docs/employees-import.md](docs/employees-import.md).
+
 ## Uprawnienia katalogu avatarów
 
 Przy podmontowaniu projektu z hosta Apache (`www-data` w kontenerze) musi móc tworzyć katalogi w `public/upload/avatars`. Po nowym wdrożeniu lub przy błędzie `mkdir(): Permission denied` ustaw grupę i dziedziczenie grupy katalogów (bez nadawania zapisu wszystkim użytkownikom):

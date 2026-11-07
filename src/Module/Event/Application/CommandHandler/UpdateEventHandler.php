@@ -6,7 +6,9 @@ namespace App\Module\Event\Application\CommandHandler;
 
 use App\Module\Event\Application\Command\UpdateEvent;
 use App\Module\Event\Application\Port\EmployeeDirectory;
+use App\Module\Event\Application\Service\EventCustomerDirectory;
 use App\Module\Event\Application\Service\EventEditor;
+use App\Module\Event\Application\Service\EventFanOutNotifier;
 use App\Module\Event\Application\Service\PreparationPlanner;
 use App\Module\Event\Domain\Entity\CateringEvent;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -14,12 +16,21 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler(bus: 'command.bus')]
 final readonly class UpdateEventHandler
 {
-    public function __construct(private EventEditor $editor, private PreparationPlanner $preparation, private EmployeeDirectory $employees, private \App\Module\Event\Application\Service\EventCustomerDirectory $customers)
-    {
+    private const NOTIFY_FIELDS = ['date', 'timezone', 'readyAt', 'startsAt', 'endsAt', 'location', 'guestCount', 'coordinatorUuid'];
+
+    public function __construct(
+        private EventEditor $editor,
+        private PreparationPlanner $preparation,
+        private EmployeeDirectory $employees,
+        private EventCustomerDirectory $customers,
+        private EventFanOutNotifier $notifier,
+    ) {
     }
+
     public function __invoke(UpdateEvent $command): void
     {
-        $this->editor->edit($command->uuid, $command->version, $command->actorUuid, 'details_replaced', function (CateringEvent $event) use ($command): void {
+        $changed = [];
+        $this->editor->edit($command->uuid, $command->version, $command->actorUuid, 'details_replaced', function (CateringEvent $event) use ($command, &$changed): void {
             $before = $event->toArray();
             $d = $command->details;
             if ($d->coordinatorUuid) {
@@ -28,6 +39,13 @@ final readonly class UpdateEventHandler
             $event->replaceDetails($d->title, $d->description, $d->schedule, $d->location, $d->guestCount, $d->coordinatorUuid, $this->customers->name($d->customerUuid, $d->customerName));
             $event->assignCustomer($d->customerUuid);
             $this->preparation->contextChanged($event, $before);
+            $after = $event->toArray();
+            foreach (self::NOTIFY_FIELDS as $field) {
+                if (($before[$field] ?? null) !== ($after[$field] ?? null)) {
+                    $changed[] = $field;
+                }
+            }
         });
+        $this->notifier->eventUpdated($command->uuid, $changed);
     }
 }

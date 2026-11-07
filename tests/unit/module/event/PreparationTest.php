@@ -117,9 +117,9 @@ final class PreparationTest extends TestCase
         $list->add($line);
         $list->configure($actor, 'Anna', null, null);
         $list->approve($actor);
-        $line->recordProgress(Quantity::from(22), Quantity::from(20), $actor, null, true);
+        $line->recordProgress(Quantity::from(22), Quantity::from(20), $actor, 'Zabrano 2 kartony zapasu', true);
         $list->afterProgressChanged();
-        $list->markReady();
+        $list->markReady('00000000-0000-4000-8000-000000000001', 'Złożone w magazynie');
         $list->confirmLoaded($actor, null);
         self::assertTrue($list->toArray()['summary']['hasSurplus']);
         self::assertSame('2.000', $line->toArray()['extraPrepared']);

@@ -66,7 +66,7 @@ final readonly class AssignEventStaffHandler
         });
 
         if ($isNew) {
-            $this->notifier->staffAssigned($command->employeeUuid, $eventTitle, $eventDate, $functionLabels);
+            $this->notifier->staffAssigned($command->employeeUuid, $eventTitle, $eventDate, $functionLabels, $command->uuid);
         }
     }
 }

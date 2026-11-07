@@ -57,7 +57,7 @@ final readonly class ConfigureEventPreparationHandler
             $command->responsibleUuid !== null
             && $command->responsibleUuid !== $previousResponsible
         ) {
-            $this->notifier->packerAssigned($command->responsibleUuid, $eventTitle, $eventDate, $alsoOnStaff);
+            $this->notifier->packerAssigned($command->responsibleUuid, $eventTitle, $eventDate, $alsoOnStaff, $command->uuid);
         }
     }
 }

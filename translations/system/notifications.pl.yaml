@@ -13,6 +13,28 @@ notification:
       error: "Błąd przy pobieraniu listy kanałów powiadomień."
   event:
     invalidChoice: ":invalidEvent - nie ma takiego zdarzenia wywołującego powiadomienie"
+    import:
+      company: "Import firm"
+      department: "Import oddziałów / departamentów"
+      employee: "Import pracowników"
+    EventStaffAssigned: "Przypisanie do obsady wydarzenia"
+    EventStaffRemoved: "Usunięcie z obsady wydarzenia"
+    EventPackerAssigned: "Wyznaczenie do kompletacji"
+    KitchenResponsibleAssigned: "Wyznaczenie odpowiedzialnego kuchni"
+    EventCreated: "Utworzenie wydarzenia"
+    EventUpdated: "Aktualizacja wydarzenia"
+    EventStatusChanged: "Zmiana statusu wydarzenia"
+    EventMenuChanged: "Zmiana menu wydarzenia"
+    PreparationStatusChanged: "Zmiana statusu kompletacji"
+    PreparationPacked: "Potwierdzenie złożenia listy kompletacji"
+    KitchenOrderReleased: "Wydanie karty kuchni"
+    KitchenOrderReady: "Gotowość kuchni"
+    KitchenOrderHandedOver: "Przekazanie produkcji kuchni"
+    KitchenRevisionProposed: "Propozycja rewizji kuchni"
+    KitchenRevisionAccepted: "Akceptacja rewizji kuchni"
+    KitchenRevisionRejected: "Odrzucenie rewizji kuchni"
+    PreparationDeadlineReminder: "Przypomnienie o terminie kompletacji"
+    KitchenDueReminder: "Przypomnienie o terminie kuchni"
   events:
     notFound: "Nie znaleziono żadnych zdarzeń wywołujacych powiadomienia."
     update:
@@ -20,6 +42,16 @@ notification:
       success: "Aktualizacja zdarzeń wywołujących powiadomienia zakończona sukcesem."
     list:
       error: "Błąd przy pobieraniu listy zdarzeń wywołujących powiadomienia."
+    channels:
+      update:
+        error: "Aktualizacja kanałów zdarzenia zakończona niepowodzeniem."
+        success: "Zapisano kanały zdarzenia powiadomienia."
+  templates:
+    update:
+      error: "Aktualizacja szablonów powiadomień zakończona niepowodzeniem."
+      success: "Zapisano szablon powiadomienia."
+    list:
+      error: "Błąd przy pobieraniu listy szablonów powiadomień."
   unread:
     notExists: "Nie istnieje nieprzeczytane powiadomienie o uuid :uuid"
     multiple:

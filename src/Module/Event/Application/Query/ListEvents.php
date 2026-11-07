@@ -20,6 +20,12 @@ final readonly class ListEvents
         public ?string $packerEmployeeUuid = null,
         /** Gdy ustawione — do każdego wydarzenia doklej involvement bieżącego pracownika. */
         public ?string $viewerEmployeeUuid = null,
+        /**
+         * Faza kompletacji przy filtrze packing:
+         * pending = do złożenia (approved/in_preparation),
+         * confirmed = potwierdzone (ready_for_loading/loaded).
+         */
+        public ?string $preparationPhase = null,
     ) {
     }
 }

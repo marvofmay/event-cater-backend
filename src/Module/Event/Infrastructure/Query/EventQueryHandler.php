@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Module\Event\Infrastructure\Query;
 
 use App\Common\Application\Exception\PlanningResourceNotFound;
+use App\Module\Company\Infrastructure\ReadModel\EmployeeAvatarReader;
 use App\Module\Event\Application\Query\GetEvent;
 use App\Module\Event\Application\Query\GetEventHistory;
 use App\Module\Event\Application\Query\GetEventMedia;
@@ -17,8 +18,13 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 final readonly class EventQueryHandler
 {
-    public function __construct(private Connection $db, private EntityManagerInterface $em, private PreparationQueryHandler $preparation, private \App\Common\Infrastructure\Query\HistoryActors $historyActors)
-    {
+    public function __construct(
+        private Connection $db,
+        private EntityManagerInterface $em,
+        private PreparationQueryHandler $preparation,
+        private \App\Common\Infrastructure\Query\HistoryActors $historyActors,
+        private EmployeeAvatarReader $avatars,
+    ) {
     }
 
     #[AsMessageHandler(bus: 'query.bus')]
@@ -26,11 +32,38 @@ final readonly class EventQueryHandler
     {
         $row = $this->requireEvent($query->uuid);
         $data = $this->eventRow($row);
-        $data['staff'] = array_map(static fn (array $r) => [
-            'uuid' => $r['uuid'], 'employeeUuid' => $r['employee_uuid'], 'employeeName' => $r['employee_name'],
-            'functions' => json_decode($r['functions'], true, flags: JSON_THROW_ON_ERROR),
-            'startsAt' => self::dateTime($r['starts_at']), 'endsAt' => self::dateTime($r['ends_at']), 'notes' => $r['notes'],
-        ], $this->db->fetchAllAssociative('SELECT * FROM event_staff_assignment WHERE event_uuid = ? ORDER BY employee_name, uuid', [$query->uuid]));
+        $staffRows = $this->db->fetchAllAssociative(
+            "SELECT sa.*, account.uuid AS user_uuid, account.login_phone,
+                (SELECT contact.data FROM contact
+                    WHERE contact.employee_uuid = sa.employee_uuid
+                      AND contact.type = 'phone'
+                      AND contact.deleted_at IS NULL
+                      AND contact.active = 1
+                    ORDER BY contact.created_at
+                    LIMIT 1) AS contact_phone
+             FROM event_staff_assignment sa
+             LEFT JOIN user account ON account.employee_uuid = sa.employee_uuid AND account.deleted_at IS NULL
+             WHERE sa.event_uuid = ?
+             ORDER BY sa.employee_name, sa.uuid",
+            [$query->uuid]
+        );
+        $avatars = $this->avatars->forEmployees(array_column($staffRows, 'employee_uuid'));
+        $data['staff'] = array_map(static function (array $r) use ($avatars): array {
+            $phone = $r['login_phone'] ?: $r['contact_phone'];
+
+            return [
+                'uuid' => $r['uuid'],
+                'employeeUuid' => $r['employee_uuid'],
+                'employeeName' => $r['employee_name'],
+                'functions' => json_decode($r['functions'], true, flags: JSON_THROW_ON_ERROR),
+                'startsAt' => self::dateTime($r['starts_at']),
+                'endsAt' => self::dateTime($r['ends_at']),
+                'notes' => $r['notes'],
+                'userUuid' => $r['user_uuid'],
+                'phone' => $phone !== null && $phone !== '' ? (string) $phone : null,
+                'avatar' => $avatars[$r['employee_uuid']] ?? null,
+            ];
+        }, $staffRows);
         $data['equipment'] = array_map(static fn (array $r) => [
             'uuid' => $r['uuid'], 'equipmentUuid' => $r['equipment_uuid'], 'name' => $r['name'], 'code' => $r['code'],
             'unit' => $r['unit'], 'quantity' => (int) $r['quantity'], 'notes' => $r['notes'],
@@ -70,8 +103,18 @@ final readonly class EventQueryHandler
             $params[] = $query->staffEmployeeUuid;
         }
         if ($query->packerEmployeeUuid !== null) {
-            $where[] = 'EXISTS (SELECT 1 FROM event_preparation_list pl WHERE pl.event_uuid = catering_event.uuid AND pl.responsible_uuid = ?)';
+            $phaseSql = '';
+            $phaseParams = [];
+            if ($query->preparationPhase === 'pending') {
+                $phaseSql = ' AND pl.status IN (?, ?)';
+                $phaseParams = ['approved', 'in_preparation'];
+            } elseif ($query->preparationPhase === 'confirmed') {
+                $phaseSql = ' AND pl.status IN (?, ?)';
+                $phaseParams = ['ready_for_loading', 'loaded'];
+            }
+            $where[] = 'EXISTS (SELECT 1 FROM event_preparation_list pl WHERE pl.event_uuid = catering_event.uuid AND pl.responsible_uuid = ?'.$phaseSql.')';
             $params[] = $query->packerEmployeeUuid;
+            array_push($params, ...$phaseParams);
         }
         $condition = implode(' AND ', $where);
         $total = (int) $this->db->fetchOne('SELECT COUNT(*) FROM catering_event WHERE '.$condition, $params);
@@ -83,6 +126,9 @@ final readonly class EventQueryHandler
         ], $rows);
         if ($query->viewerEmployeeUuid !== null && $items !== []) {
             $items = $this->attachInvolvement($items, $query->viewerEmployeeUuid);
+        }
+        if ($query->packerEmployeeUuid !== null && $items !== []) {
+            $items = $this->attachPreparationStatus($items);
         }
         return $query->page->result($items, $total);
     }
@@ -118,6 +164,30 @@ final readonly class EventQueryHandler
                 'isPacker' => isset($packerSet[$item['uuid']]),
                 'myFunctions' => is_array($functions) ? $functions : [],
             ];
+
+            return $item;
+        }, $items);
+    }
+
+    /**
+     * @param list<array<string, mixed>> $items
+     * @return list<array<string, mixed>>
+     */
+    private function attachPreparationStatus(array $items): array
+    {
+        $uuids = array_column($items, 'uuid');
+        $placeholders = implode(',', array_fill(0, count($uuids), '?'));
+        $rows = $this->db->fetchAllAssociative(
+            'SELECT event_uuid, status FROM event_preparation_list WHERE event_uuid IN ('.$placeholders.')',
+            $uuids,
+        );
+        $byEvent = [];
+        foreach ($rows as $row) {
+            $byEvent[(string) $row['event_uuid']] = (string) $row['status'];
+        }
+
+        return array_map(static function (array $item) use ($byEvent): array {
+            $item['preparationStatus'] = $byEvent[$item['uuid']] ?? null;
 
             return $item;
         }, $items);

@@ -17,23 +17,23 @@ final readonly class EventSchedule
     ) {
         foreach ([$readyAt, $startsAt, $endsAt] as $time) {
             if ($time !== null && $time->format('u') !== '000000') {
-                throw new BusinessRuleViolation('Event times require whole-second precision.');
+                throw new BusinessRuleViolation('Godziny wydarzenia muszą mieć dokładność do pełnych sekund.');
             }
         }
         $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d', $date);
         if (!$parsed || $parsed->format('Y-m-d') !== $date) {
-            throw new BusinessRuleViolation('date must be a valid YYYY-MM-DD date.');
+            throw new BusinessRuleViolation('Data musi mieć format RRRR-MM-DD.');
         }
         if (!in_array($timezone, \DateTimeZone::listIdentifiers(), true)) {
-            throw new BusinessRuleViolation('Unknown IANA timezone.');
+            throw new BusinessRuleViolation('Nieznana strefa czasowa.');
         }
         if (($readyAt && $startsAt && $readyAt > $startsAt)
             || ($startsAt && $endsAt && $startsAt >= $endsAt)
             || ($readyAt && $endsAt && $readyAt >= $endsAt)) {
-            throw new BusinessRuleViolation('Required order: readyAt <= startsAt < endsAt.');
+            throw new BusinessRuleViolation('Wymagana kolejność: gotowość ≤ start < koniec.');
         }
         if ($startsAt && $startsAt->setTimezone(new \DateTimeZone($timezone))->format('Y-m-d') !== $date) {
-            throw new BusinessRuleViolation('startsAt must fall on the event date in its timezone.');
+            throw new BusinessRuleViolation('Godzina startu musi wypadać w dniu wydarzenia (w jego strefie czasowej).');
         }
     }
 

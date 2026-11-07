@@ -80,6 +80,10 @@ class CateringEvent
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $updatedAt;
 
+    /** @var array<string, bool>|null null = dziedzicz globalne kanały typu zdarzenia */
+    #[ORM\Column(type: 'json', nullable: true)]
+    private ?array $notificationChannels = null;
+
     private function __construct()
     {
     }
@@ -209,6 +213,47 @@ class CateringEvent
         $this->customerUuid = $uuid;
     }
 
+    /**
+     * @return array<string, bool>|null
+     */
+    public function notificationChannels(): ?array
+    {
+        return $this->notificationChannels;
+    }
+
+    /**
+     * @param array<string, bool>|null $channels
+     */
+    public function replaceNotificationChannels(?array $channels): void
+    {
+        if ($channels === null) {
+            $this->notificationChannels = null;
+
+            return;
+        }
+        $allowed = ['internal', 'email', 'sms'];
+        $normalized = [];
+        foreach ($allowed as $code) {
+            if (!array_key_exists($code, $channels) || !is_bool($channels[$code])) {
+                throw new BusinessRuleViolation('notificationChannels must define boolean internal, email and sms.');
+            }
+            $normalized[$code] = $channels[$code];
+        }
+        $this->notificationChannels = $normalized;
+    }
+
+    /**
+     * @return list<string>|null null = bez filtra (globalne aktywne szablony)
+     */
+    public function allowedNotificationChannels(): ?array
+    {
+        if ($this->notificationChannels === null) {
+            return null;
+        }
+
+        return array_values(array_keys(array_filter($this->notificationChannels)));
+    }
+
     public function toArray(): array
     {
         return [
@@ -217,6 +262,7 @@ class CateringEvent
             ...$this->schedule()->toArray(), 'location' => $this->location,
             'guestCount' => $this->guestCount, 'coordinatorUuid' => $this->coordinatorUuid,
             'customerName' => $this->customerName, 'customerUuid' => $this->customerUuid, 'contacts' => $this->contacts, 'menu' => $this->menu,
+            'notificationChannels' => $this->notificationChannels,
             'version' => $this->version, 'createdAt' => $this->createdAt->format(DATE_ATOM),
             'updatedAt' => $this->updatedAt->format(DATE_ATOM),
         ];

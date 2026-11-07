@@ -19,7 +19,9 @@ Dostępy: `events.events`, `equipment.equipment`. Zwykłe operacje używają `cr
 - `assign_event_staff` — wybór i przypisywanie pracowników;
 - `plan_event_menu` — edycja menu;
 - `plan_event_equipment` — edycja zapotrzebowania;
-- `manage_event_media` — dodawanie i odpinanie załączników.
+- `view_event_media` — przeglądanie / pobieranie załączników.
+- `add_event_media` — dodawanie załączników.
+- `delete_event_media` — odpinanie załączników.
 
 Wybór sprzętu przez autocomplete wymaga `list` dla katalogu sprzętu. Odczyt wydarzeń i materiałów wymaga `view`. Edycja istniejącego wydarzenia i jego elementów wymaga również `view`, oprócz uprawnienia do danej operacji. Obowiązuje istniejący globalny model uprawnień aplikacji; przypisanie do wydarzenia samo nie przyznaje dostępu systemowego ani dostępu ograniczonego do konkretnej firmy.
 

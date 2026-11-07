@@ -30,8 +30,8 @@ final class ListNotificationTemplateSettingQueryHandler extends ListQueryHandler
     {
         $this->eventDispatcher->dispatch(new NotificationTemplateSettingListedEvent([$query]));
         $dto = $query->getQueryDTO();
-        if ($query->getPage() < 1 || $query->getLimit() < 1 || $query->getLimit() > 100) {
-            throw new \App\Common\Domain\Exception\BusinessRuleViolation('Dozwolony rozmiar strony to 1–100 rekordów, a numer strony musi być dodatni.');
+        if ($query->getPage() < 1 || $query->getLimit() < 1 || $query->getLimit() > 500) {
+            throw new \App\Common\Domain\Exception\BusinessRuleViolation('Dozwolony rozmiar strony to 1–500 rekordów, a numer strony musi być dodatni.');
         }
         $alias = $this->getAlias();
         $builder = $this->createBaseQueryBuilder()

@@ -35,6 +35,7 @@ class KitchenOrder
     #[ORM\Column(type: 'text', nullable: true)] private ?string $cancellationReason = null;
     #[ORM\Column(type: 'datetime_immutable')] private \DateTimeImmutable $createdAt;
     #[ORM\Column(type: 'datetime_immutable')] private \DateTimeImmutable $updatedAt;
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)] private ?\DateTimeImmutable $dueReminderSentAt = null;
 
     private function __construct()
     {
@@ -316,6 +317,31 @@ class KitchenOrder
     {
         return $this->plan;
     }
+
+    public function dueAt(): ?\DateTimeImmutable
+    {
+        $raw = $this->plan['dueAt'] ?? null;
+        if (!is_string($raw) || $raw === '') {
+            return null;
+        }
+        try {
+            return new \DateTimeImmutable($raw);
+        } catch (\Exception) {
+            return null;
+        }
+    }
+
+    public function dueReminderSentAt(): ?\DateTimeImmutable
+    {
+        return $this->dueReminderSentAt;
+    }
+
+    public function markDueReminderSent(\DateTimeImmutable $at): void
+    {
+        $this->dueReminderSentAt = $at->setTimezone(new \DateTimeZone('UTC'));
+        $this->updatedAt = self::now();
+    }
+
     public function pending(): ?array
     {
         return $this->pendingRevision;

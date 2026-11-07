@@ -67,6 +67,16 @@ class StaffAssignment
         $this->notes = $notes;
     }
 
+    public function employeeUuid(): string
+    {
+        return $this->employeeUuid;
+    }
+
+    public function employeeName(): string
+    {
+        return $this->employeeName;
+    }
+
     public function toArray(): array
     {
         return ['uuid' => $this->uuid, 'employeeUuid' => $this->employeeUuid, 'employeeName' => $this->employeeName,

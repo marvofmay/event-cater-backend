@@ -58,6 +58,17 @@ final readonly class PreparationPlanner
         $this->em->remove($line);
     }
 
+    public function equipmentRemovedAmendment(CateringEvent $event, EquipmentRequirement $equipment): void
+    {
+        $list = $this->get($event);
+        $line = $list->find('equipment', $equipment->equipmentUuid());
+        if (!$line) {
+            throw new PlanningResourceNotFound('Preparation equipment line not found.');
+        }
+        $list->remove($line, true);
+        $this->em->remove($line);
+    }
+
     public function contextChanged(CateringEvent $event, array $previous): void
     {
         $current = $event->toArray();

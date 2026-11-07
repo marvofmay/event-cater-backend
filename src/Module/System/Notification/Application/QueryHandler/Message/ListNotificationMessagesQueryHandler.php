@@ -11,6 +11,7 @@ use App\Common\Domain\Interface\ListQueryInterface;
 use App\Module\System\Notification\Application\Event\Message\NotificationMessageListedEvent;
 use App\Module\System\Notification\Application\Query\Message\ListNotificationMessagesQuery;
 use App\Module\System\Notification\Domain\Channel\InternalNotificationChannel;
+use App\Module\System\Notification\Domain\DTO\Message\ListNotificationMessageQueryDTO;
 use App\Module\System\Notification\Domain\Entity\NotificationChannelSetting;
 use App\Module\System\Notification\Domain\Entity\NotificationMessage;
 use App\Module\System\Notification\Domain\Entity\NotificationRecipient;
@@ -112,6 +113,14 @@ final class ListNotificationMessagesQueryHandler extends ListQueryHandlerAbstrac
                 'channelCode',
                 InternalNotificationChannel::getChanelCode()
             );
+
+        $dto = $query->getQueryDTO();
+        $unread = $dto instanceof ListNotificationMessageQueryDTO ? $dto->unread : null;
+        if ($unread === 'true' || $unread === '1') {
+            $baseQb->andWhere("$alias.readAt IS NULL");
+        } elseif ($unread === 'false' || $unread === '0') {
+            $baseQb->andWhere("$alias.readAt IS NOT NULL");
+        }
 
         $total = (clone $baseQb)
             ->resetDQLPart('orderBy')

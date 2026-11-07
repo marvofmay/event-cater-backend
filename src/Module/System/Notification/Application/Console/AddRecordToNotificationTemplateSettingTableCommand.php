@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Module\System\Notification\Application\Console;
 
 use App\Module\System\Notification\Application\Event\Template\NotificationTemplateSettingCreatedEvent;
+use App\Module\System\Notification\Domain\Catalog\NotificationDefaultContent;
 use App\Module\System\Notification\Domain\Enum\NotificationChannelSettingEntityFieldEnum;
 use App\Module\System\Notification\Domain\Enum\NotificationEventSettingEntityFieldEnum;
 use App\Module\System\Notification\Domain\Enum\NotificationTemplateSettingEntityFieldEnum;
@@ -94,11 +95,15 @@ final class AddRecordToNotificationTemplateSettingTableCommand extends Command
                         continue;
                     }
 
+                    $defaults = NotificationDefaultContent::forEvent($event->getEventName());
+                    $title = $template->isDefault() && $defaults !== null ? $defaults['title'] : $template->getTitle();
+                    $content = $template->isDefault() && $defaults !== null ? $defaults['content'] : $template->getContent();
+
                     $this->notificationTemplateSettingCreator->create(
                         $event,
                         $channel,
-                        $template->getTitle(),
-                        $template->getContent(),
+                        $title,
+                        $content,
                         $template->isDefault(),
                         $template->isDefault()
                     );
@@ -106,8 +111,8 @@ final class AddRecordToNotificationTemplateSettingTableCommand extends Command
                     $this->eventDispatcher->dispatch(new NotificationTemplateSettingCreatedEvent([
                         NotificationEventSettingEntityFieldEnum::EVENT_NAME->value => $event->getEventName(),
                         NotificationChannelSettingEntityFieldEnum::CHANNEL_CODE->value => $channel->getChannelCode(),
-                        NotificationTemplateSettingEntityFieldEnum::TITLE->value => $template->getTitle(),
-                        NotificationTemplateSettingEntityFieldEnum::CONTENT->value => $template->getContent(),
+                        NotificationTemplateSettingEntityFieldEnum::TITLE->value => $title,
+                        NotificationTemplateSettingEntityFieldEnum::CONTENT->value => $content,
                         NotificationTemplateSettingEntityFieldEnum::IS_DEFAULT->value => $template->isDefault(),
                         NotificationTemplateSettingEntityFieldEnum::IS_ACTIVE->value => $template->isDefault(),
                     ]));
@@ -131,21 +136,47 @@ final class AddRecordToNotificationTemplateSettingTableCommand extends Command
 
         $defaultTemplate = $this->notificationTemplateFactory->getTemplate(true);
         $updatedDefaults = 0;
-        if (null !== $defaultTemplate) {
-            foreach ($this->notificationTemplateSettingReaderRepository->getAll() as $setting) {
-                if (!$setting->isDefault() || 'default title' !== $setting->getTitle()) {
+        foreach ($this->notificationTemplateSettingReaderRepository->getAll() as $setting) {
+            if (!$setting->isDefault()) {
+                continue;
+            }
+            $defaults = NotificationDefaultContent::forEvent($setting->getEvent()->getEventName());
+            if ($defaults === null) {
+                if (null === $defaultTemplate || 'default title' !== $setting->getTitle()) {
                     continue;
                 }
-
-                $this->notificationTemplateSettingUpdater->update(
-                    $setting,
-                    $defaultTemplate->getTitle(),
-                    $defaultTemplate->getContent(),
-                    true,
-                    true
-                );
-                ++$updatedDefaults;
+                $title = $defaultTemplate->getTitle();
+                $content = $defaultTemplate->getContent();
+            } else {
+                $alreadyCorrect = $setting->getTitle() === $defaults['title'] && $setting->getContent() === $defaults['content'];
+                if ($alreadyCorrect) {
+                    continue;
+                }
+                $shouldRewrite = 'default title' === $setting->getTitle()
+                    || (
+                        !str_starts_with($setting->getEvent()->getEventName(), 'Company')
+                        && !str_starts_with($setting->getEvent()->getEventName(), 'Department')
+                        && !str_starts_with($setting->getEvent()->getEventName(), 'Employee')
+                        && (
+                            str_contains($setting->getTitle(), 'Import {{importKind}}')
+                            || str_contains($setting->getContent(), '{{importStatus}}')
+                        )
+                    );
+                if (!$shouldRewrite) {
+                    continue;
+                }
+                $title = $defaults['title'];
+                $content = $defaults['content'];
             }
+
+            $this->notificationTemplateSettingUpdater->update(
+                $setting,
+                $title,
+                $content,
+                true,
+                $setting->isActive()
+            );
+            ++$updatedDefaults;
         }
 
         if ($updatedDefaults > 0) {

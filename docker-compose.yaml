@@ -237,3 +237,16 @@ services:
     restart: unless-stopped
     networks:
       - hr-network
+
+  worker-event-deadline-reminders:
+    container_name: worker-event-deadline-reminders
+    image: event-cater-backend-service-company
+    command: ["sh", "-c", "while true; do php bin/console app:notify-event-deadlines --within-hours=24; sleep 3600; done"]
+    depends_on:
+      - service-company-db
+      - service-company
+    volumes:
+      - .:/var/www/html
+    restart: unless-stopped
+    networks:
+      - hr-network

@@ -23,6 +23,8 @@ use App\Module\Event\Application\Query\GetEventHistory;
 use App\Module\Event\Application\Query\GetEventMedia;
 use App\Module\Event\Application\Query\ListEvents;
 use App\Module\Event\Application\Query\SearchEventEmployees;
+use App\Module\Event\Application\Service\EventNotificationAudienceResolver;
+use App\Module\Event\Domain\Entity\CateringEvent;
 use App\Module\Event\Domain\Enum\EventFunction;
 use App\Module\Event\Domain\Enum\EventStatus;
 use App\Module\Event\Domain\ValueObject\EventSchedule;
@@ -30,6 +32,7 @@ use App\Module\Event\Infrastructure\Storage\EventMediaStorage;
 use App\Module\Event\Presentation\API\EventPayloadMapper;
 use App\Module\System\Domain\Enum\Access\AccessEnum;
 use App\Module\System\Domain\Enum\Permission\PermissionEnum;
+use Doctrine\ORM\EntityManagerInterface;
 use Ramsey\Uuid\Uuid;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -88,13 +91,20 @@ final class EventController extends PlanningController
             }
             $staffEmployeeUuid = $viewerEmployeeUuid;
         }
+        $preparationPhase = null;
         if ($request->query->getBoolean('packing')) {
             if ($viewerEmployeeUuid === null) {
                 return $this->resource(PlanningPayload::page($request)->result([], 0));
             }
             $packerEmployeeUuid = $viewerEmployeeUuid;
+            $phase = $request->query->getString('preparationPhase');
+            if (in_array($phase, ['pending', 'confirmed'], true)) {
+                $preparationPhase = $phase;
+            } elseif ($phase !== '') {
+                throw new BusinessRuleViolation('Unknown preparationPhase. Use pending or confirmed.');
+            }
         }
-        return $this->resource($this->ask(new ListEvents(PlanningPayload::page($request), $from, $to, $status ?: null, PlanningPayload::search($request), $staffEmployeeUuid, $packerEmployeeUuid, $viewerEmployeeUuid)));
+        return $this->resource($this->ask(new ListEvents(PlanningPayload::page($request), $from, $to, $status ?: null, PlanningPayload::search($request), $staffEmployeeUuid, $packerEmployeeUuid, $viewerEmployeeUuid, $preparationPhase)));
     }
 
     #[Route('/functions', methods: ['GET'], priority: 10)]
@@ -170,6 +180,53 @@ final class EventController extends PlanningController
         $body = PlanningPayload::json($request);
         $this->execute(new ReplaceEventContacts($uuid, $body->version(), EventPayloadMapper::contacts($body), $this->actor()));
         return $this->eventResource($uuid);
+    }
+
+    #[Route('/{uuid}/notification-recipients', methods: ['GET'])]
+    public function notificationRecipients(string $uuid, EventNotificationAudienceResolver $audience, EntityManagerInterface $em): JsonResponse
+    {
+        $this->denyAccessUnlessGranted(PermissionEnum::VIEW, AccessEnum::EVENTS);
+        $uuid = PlanningPayload::identifier($uuid);
+        $event = $em->find(CateringEvent::class, $uuid);
+        if (!$event instanceof CateringEvent) {
+            throw new \App\Common\Application\Exception\PlanningResourceNotFound('Event not found.');
+        }
+
+        return $this->resource($audience->describe($event));
+    }
+
+    #[Route('/{uuid}/notification-recipients', methods: ['PUT'])]
+    public function updateNotificationRecipients(string $uuid, Request $request, EventNotificationAudienceResolver $audience, EntityManagerInterface $em): JsonResponse
+    {
+        $this->allowChange(PermissionEnum::UPDATE);
+        $uuid = PlanningPayload::identifier($uuid);
+        $body = PlanningPayload::json($request);
+        $event = $em->find(CateringEvent::class, $uuid);
+        if (!$event instanceof CateringEvent) {
+            throw new \App\Common\Application\Exception\PlanningResourceNotFound('Event not found.');
+        }
+        $excluded = array_map(
+            static fn (mixed $value): string => PlanningPayload::identifier(is_string($value) ? $value : ''),
+            $body->list('excludedEmployeeUuids', 200),
+        );
+        $extra = array_map(
+            static fn (mixed $value): string => PlanningPayload::identifier(is_string($value) ? $value : ''),
+            $body->list('extraEmployeeUuids', 200),
+        );
+        $channels = $event->notificationChannels();
+        if ($body->has('channelsInherited') && $body->boolean('channelsInherited')) {
+            $channels = null;
+        } elseif ($body->has('channels')) {
+            $channelBody = $body->object('channels');
+            $channels = [
+                'internal' => $channelBody->boolean('internal'),
+                'email' => $channelBody->boolean('email'),
+                'sms' => $channelBody->boolean('sms'),
+            ];
+        }
+        $audience->replaceOverrides($event, $excluded, $extra, $channels);
+
+        return $this->resource($audience->describe($event));
     }
 
     #[Route('/{uuid}/menu', methods: ['PUT'])]
@@ -255,7 +312,7 @@ final class EventController extends PlanningController
     #[Route('/{uuid}/attachments', methods: ['POST'])]
     public function upload(string $uuid, Request $request, EventMediaStorage $storage): JsonResponse
     {
-        $this->allowChange(PermissionEnum::MANAGE_EVENT_MEDIA);
+        $this->allowChange(PermissionEnum::ADD_EVENT_MEDIA);
         $uuid = PlanningPayload::identifier($uuid);
         $version = $request->request->getString('version');
         if (!ctype_digit($version) || (int) $version < 1) {
@@ -283,6 +340,7 @@ final class EventController extends PlanningController
     public function download(string $uuid, string $attachmentUuid, EventMediaStorage $storage): BinaryFileResponse
     {
         $this->denyAccessUnlessGranted(PermissionEnum::VIEW, AccessEnum::EVENTS);
+        $this->denyAccessUnlessGranted(PermissionEnum::VIEW_EVENT_MEDIA, AccessEnum::EVENTS);
         $media = $this->ask(new GetEventMedia(PlanningPayload::identifier($uuid), PlanningPayload::identifier($attachmentUuid)));
         $response = new BinaryFileResponse($storage->path($media['file_path']));
         $response->headers->set('Content-Type', $media['mime_type']);
@@ -295,7 +353,7 @@ final class EventController extends PlanningController
     #[Route('/{uuid}/attachments/{attachmentUuid}', methods: ['DELETE'])]
     public function removeMedia(string $uuid, string $attachmentUuid, Request $request): JsonResponse
     {
-        $this->allowChange(PermissionEnum::MANAGE_EVENT_MEDIA);
+        $this->allowChange(PermissionEnum::DELETE_EVENT_MEDIA);
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
         $this->execute(new RemoveEventMedia($uuid, $body->version(), PlanningPayload::identifier($attachmentUuid), $this->actor()));

@@ -13,6 +13,8 @@ use App\Module\Kitchen\Application\Command\RecordKitchenProgress;
 use App\Module\Kitchen\Application\Command\RejectKitchenRevision;
 use App\Module\Kitchen\Application\Command\TransitionKitchenOrder;
 use App\Module\Kitchen\Application\Command\UpdateKitchenDraft;
+use App\Module\Event\Application\Service\EventAssignmentNotifier;
+use App\Module\Event\Application\Service\EventFanOutNotifier;
 use App\Module\Kitchen\Application\Port\EventProductionSource;
 use App\Module\Kitchen\Application\Service\KitchenPlanResolver;
 use App\Module\Kitchen\Domain\Entity\KitchenHistoryEntry;
@@ -24,8 +26,14 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 
 final readonly class KitchenCommandHandler
 {
-    public function __construct(private KitchenOrderRepository $orders, private EventProductionSource $events, private KitchenPlanResolver $plans, private EntityManagerInterface $em)
-    {
+    public function __construct(
+        private KitchenOrderRepository $orders,
+        private EventProductionSource $events,
+        private KitchenPlanResolver $plans,
+        private EntityManagerInterface $em,
+        private EventFanOutNotifier $fanOut,
+        private EventAssignmentNotifier $assignmentNotifier,
+    ) {
     }
     #[AsMessageHandler(bus: 'command.bus')]
     public function create(CreateKitchenOrder $c): void
@@ -37,6 +45,14 @@ final readonly class KitchenCommandHandler
         $order = KitchenOrder::create($c->uuid, $source, $plan);
         $this->orders->add($order);
         $this->audit($order, 'created', $order->revisionSnapshot(), $c->actorUuid);
+        if (is_string($c->responsibleUuid) && $c->responsibleUuid !== '') {
+            $this->assignmentNotifier->kitchenResponsibleAssigned(
+                $c->responsibleUuid,
+                (string) ($source['title'] ?? 'wydarzenie'),
+                $c->dueAt?->format('Y-m-d H:i') ?? '',
+                $c->eventUuid,
+            );
+        }
     }
     #[AsMessageHandler(bus: 'command.bus')]
     public function update(UpdateKitchenDraft $c): void
@@ -44,8 +60,19 @@ final readonly class KitchenCommandHandler
         [$order, $source] = $this->load($c->uuid, $c->version);
         $this->assertEventVersion($source, $c->eventVersion);
         $before = $order->revisionSnapshot();
+        $previousResponsible = $before['plan']['responsibleUuid'] ?? null;
         $order->replaceDraft($this->plans->resolve($c->plan), $source);
-        $this->audit($order, 'draft_updated', ['before' => $before, 'after' => $order->revisionSnapshot()], $c->actorUuid);
+        $after = $order->revisionSnapshot();
+        $this->audit($order, 'draft_updated', ['before' => $before, 'after' => $after], $c->actorUuid);
+        $nextResponsible = $after['plan']['responsibleUuid'] ?? null;
+        if (is_string($nextResponsible) && $nextResponsible !== '' && $nextResponsible !== $previousResponsible) {
+            $this->assignmentNotifier->kitchenResponsibleAssigned(
+                $nextResponsible,
+                (string) ($source['title'] ?? 'wydarzenie'),
+                (string) ($after['plan']['dueAt'] ?? ''),
+                $order->eventUuid(),
+            );
+        }
     }
     #[AsMessageHandler(bus: 'command.bus')]
     public function propose(ProposeKitchenRevision $c): void
@@ -54,6 +81,7 @@ final readonly class KitchenCommandHandler
         $this->assertEventVersion($source, $c->eventVersion);
         $order->propose($this->plans->resolve($c->plan), $source, $c->reason, $c->actorUuid);
         $this->audit($order, 'revision_proposed', $order->pending(), $c->actorUuid);
+        $this->fanOut->kitchenRevisionProposed($order->eventUuid(), $c->reason);
     }
     #[AsMessageHandler(bus: 'command.bus')]
     public function accept(AcceptKitchenRevision $c): void
@@ -64,6 +92,7 @@ final readonly class KitchenCommandHandler
         $order->acceptRevision($source, $c->actorUuid);
         $this->saveRevision($order, $c->actorUuid);
         $this->audit($order, 'revision_accepted', ['revision' => $order->revision(), 'reason' => $pending['reason'], 'proposedBy' => $pending['proposedBy']], $c->actorUuid);
+        $this->fanOut->kitchenRevisionAccepted($order->eventUuid());
     }
     #[AsMessageHandler(bus: 'command.bus')]
     public function reject(RejectKitchenRevision $c): void
@@ -72,6 +101,7 @@ final readonly class KitchenCommandHandler
         $pending = $order->pending();
         $order->rejectRevision($c->reason);
         $this->audit($order, 'revision_rejected', ['proposal' => $pending, 'reason' => $c->reason], $c->actorUuid);
+        $this->fanOut->kitchenRevisionRejected($order->eventUuid(), $c->reason);
     }
     #[AsMessageHandler(bus: 'command.bus')]
     public function progress(RecordKitchenProgress $c): void
@@ -105,6 +135,12 @@ final readonly class KitchenCommandHandler
             default: throw new BusinessRuleViolation('Unknown kitchen action.');
         }
         $this->audit($order, $c->action, ['from' => $before, 'to' => $order->status()->value, 'revision' => $order->revision(), 'reason' => $c->reason], $c->actorUuid);
+        $this->fanOut->kitchenTransition(
+            $order->eventUuid(),
+            $c->action,
+            $order->status()->value,
+            $order->plan()['responsibleUuid'] ?? null,
+        );
     }
     private function load(string $uuid, int $version, bool $allowClosed = false): array
     {

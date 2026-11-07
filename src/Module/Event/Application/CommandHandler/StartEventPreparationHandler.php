@@ -6,6 +6,7 @@ namespace App\Module\Event\Application\CommandHandler;
 
 use App\Module\Event\Application\Command\StartEventPreparation;
 use App\Module\Event\Application\Service\EventEditor;
+use App\Module\Event\Application\Service\EventFanOutNotifier;
 use App\Module\Event\Application\Service\PreparationPlanner;
 use App\Module\Event\Domain\Entity\CateringEvent;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -13,15 +14,24 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler(bus: 'command.bus')]
 final readonly class StartEventPreparationHandler
 {
-    public function __construct(private EventEditor $editor, private PreparationPlanner $planner)
-    {
+    public function __construct(
+        private EventEditor $editor,
+        private PreparationPlanner $planner,
+        private EventFanOutNotifier $notifier,
+    ) {
     }
+
     public function __invoke(StartEventPreparation $command): void
     {
-        $this->editor->edit($command->uuid, $command->version, $command->actorUuid, 'preparation_started', function (CateringEvent $event): array {
+        $status = '';
+        $this->editor->edit($command->uuid, $command->version, $command->actorUuid, 'preparation_started', function (CateringEvent $event) use (&$status): array {
             $list = $this->planner->get($event);
             $list->start();
-            return $this->planner->checkpoint($list);
+            $checkpoint = $this->planner->checkpoint($list);
+            $status = (string) ($checkpoint['status'] ?? 'in_preparation');
+
+            return $checkpoint;
         });
+        $this->notifier->preparationStatusChanged($command->uuid, $status);
     }
 }

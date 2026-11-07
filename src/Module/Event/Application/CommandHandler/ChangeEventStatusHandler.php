@@ -6,6 +6,7 @@ namespace App\Module\Event\Application\CommandHandler;
 
 use App\Module\Event\Application\Command\ChangeEventStatus;
 use App\Module\Event\Application\Service\EventEditor;
+use App\Module\Event\Application\Service\EventFanOutNotifier;
 use App\Module\Event\Application\Service\PreparationPlanner;
 use App\Module\Event\Application\Service\StaffPlanner;
 use App\Module\Event\Domain\Entity\CateringEvent;
@@ -15,9 +16,14 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 #[AsMessageHandler(bus: 'command.bus')]
 final readonly class ChangeEventStatusHandler
 {
-    public function __construct(private EventEditor $editor, private PreparationPlanner $preparation, private StaffPlanner $staff)
-    {
+    public function __construct(
+        private EventEditor $editor,
+        private PreparationPlanner $preparation,
+        private StaffPlanner $staff,
+        private EventFanOutNotifier $notifier,
+    ) {
     }
+
     public function __invoke(ChangeEventStatus $command): void
     {
         $this->editor->edit($command->uuid, $command->version, $command->actorUuid, 'status_changed', function (CateringEvent $event) use ($command): array {
@@ -29,7 +35,9 @@ final readonly class ChangeEventStatusHandler
             }
             $previous = $event->status()->value;
             $event->transitionTo($command->status);
+
             return ['from' => $previous, 'to' => $command->status->value];
         });
+        $this->notifier->eventStatusChanged($command->uuid, $command->status->value);
     }
 }

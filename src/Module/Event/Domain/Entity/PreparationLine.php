@@ -135,27 +135,35 @@ class PreparationLine
         if (!$approved && ($oldPrepared->lessThan($prepared) || $oldLoaded->lessThan($loaded))) {
             throw new BusinessRuleViolation('Approve the current plan before preparing or loading more items.');
         }
-        if (($prepared->lessThan($oldPrepared) || $loaded->lessThan($oldLoaded)) && mb_strlen(trim($correctionReason ?? '')) < 10) {
-            throw new BusinessRuleViolation('Reducing physical quantities requires a correctionReason of at least 10 characters.');
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $preparedChanged = $prepared->decimal() !== $this->preparedQuantity;
+        $loadedChanged = $loaded->decimal() !== $this->loadedQuantity;
+        if (!$preparedChanged && !$loadedChanged) {
+            return false;
+        }
+
+        $completingRequired = $preparedChanged
+            && $prepared->decimal() === $this->required()->decimal()
+            && $oldPrepared->lessThan($prepared);
+        $reason = trim((string) $correctionReason);
+        if (!$completingRequired && mb_strlen($reason) < 10) {
+            throw new BusinessRuleViolation('Zmiana ilości wymaga komentarza (min. 10 znaków).');
         }
         if ($correctionReason !== null && mb_strlen($correctionReason) > 2000) {
             throw new BusinessRuleViolation('Correction reason exceeds 2000 characters.');
         }
-        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $changed = false;
-        if ($prepared->decimal() !== $this->preparedQuantity) {
+
+        if ($preparedChanged) {
             $this->preparedQuantity = $prepared->decimal();
             $this->preparedBy = $actorUuid;
             $this->preparedAt = $now;
-            $changed = true;
         }
-        if ($loaded->decimal() !== $this->loadedQuantity) {
+        if ($loadedChanged) {
             $this->loadedQuantity = $loaded->decimal();
             $this->loadedBy = $actorUuid;
             $this->loadedAt = $now;
-            $changed = true;
         }
-        return $changed;
+        return true;
     }
 
     public function assertRemovable(): void
