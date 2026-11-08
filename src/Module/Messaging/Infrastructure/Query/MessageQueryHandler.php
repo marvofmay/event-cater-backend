@@ -44,7 +44,7 @@ final readonly class MessageQueryHandler
         if (!isset($sort[$query->sortBy]) || !in_array($query->sortDirection, ['asc', 'desc'], true)) {
             throw new BusinessRuleViolation('Nieprawidłowe sortowanie wiadomości.');
         }
-        $rows = $this->db->fetchAllAssociative('SELECT message.uuid, message.title, message.sender_uuid, message.sender_name, message.reply_to_uuid, message.created_at, SUBSTRING(message.content, 1, 160) AS preview, '.$read.' AS read_at, (SELECT COUNT(*) FROM direct_message_receipt recipients WHERE recipients.message_uuid = message.uuid) AS recipient_count'.$source.' ORDER BY '.$sort[$query->sortBy].' '.$query->sortDirection.', message.uuid '.$query->sortDirection.' LIMIT '.$query->page->limit.' OFFSET '.$query->page->offset(), $params);
+        $rows = $this->db->fetchAllAssociative('SELECT message.uuid, message.title, message.sender_uuid, message.sender_name, message.reply_to_uuid, message.created_at, SUBSTRING(message.content, 1, 160) AS preview, '.$read.' AS read_at, (SELECT COUNT(*) FROM direct_message_receipt recipients WHERE recipients.message_uuid = message.uuid) AS recipient_count, (SELECT GROUP_CONCAT(recipients.recipient_name ORDER BY recipients.recipient_name SEPARATOR \', \') FROM direct_message_receipt recipients WHERE recipients.message_uuid = message.uuid) AS recipient_names'.$source.' ORDER BY '.$sort[$query->sortBy].' '.$query->sortDirection.', message.uuid '.$query->sortDirection.' LIMIT '.$query->page->limit.' OFFSET '.$query->page->offset(), $params);
         return $query->page->result(array_map(self::project(...), $rows), $total);
     }
 
@@ -76,7 +76,20 @@ final readonly class MessageQueryHandler
 
     private static function project(array $row): array
     {
-        return ['uuid' => $row['uuid'], 'title' => $row['title'], 'senderUuid' => $row['sender_uuid'], 'senderName' => $row['sender_name'], 'replyToUuid' => $row['reply_to_uuid'], 'createdAt' => self::date($row['created_at']), 'readAt' => self::date($row['read_at']), 'preview' => $row['preview'] ?? '', 'recipientCount' => isset($row['recipient_count']) ? (int) $row['recipient_count'] : null];
+        return [
+            'uuid' => $row['uuid'],
+            'title' => $row['title'],
+            'senderUuid' => $row['sender_uuid'],
+            'senderName' => $row['sender_name'],
+            'replyToUuid' => $row['reply_to_uuid'],
+            'createdAt' => self::date($row['created_at']),
+            'readAt' => self::date($row['read_at']),
+            'preview' => $row['preview'] ?? '',
+            'recipientCount' => isset($row['recipient_count']) ? (int) $row['recipient_count'] : null,
+            'recipientNames' => isset($row['recipient_names']) && is_string($row['recipient_names']) && $row['recipient_names'] !== ''
+                ? $row['recipient_names']
+                : null,
+        ];
     }
 
     private static function date(?string $date): ?string
