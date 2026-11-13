@@ -9,14 +9,21 @@ use App\Module\System\Application\Console\DefaultData\AddRecordToUserTableComman
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Input\ArrayInput;
 use Symfony\Component\Console\Output\NullOutput;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
 
 final readonly class TenantProvisioner
 {
-    public function __construct(private ControlPlane $control, private Connection $connection, private EntityManagerInterface $em, private UserFactory $users, #[AutowireIterator('app.command.initialize-system-default-data')] private iterable $seeders)
-    {
+    public function __construct(
+        private ControlPlane $control,
+        private Connection $connection,
+        private EntityManagerInterface $em,
+        private UserFactory $users,
+        private LoggerInterface $logger,
+        #[AutowireIterator('app.command.initialize-system-default-data')] private iterable $seeders,
+    ) {
     }
 
     public function provision(array $tenant, string $email, #[\SensitiveParameter] string $password): void
@@ -35,7 +42,7 @@ final readonly class TenantProvisioner
                     continue;
                 }
                 if (0 !== $command->run(new ArrayInput([]), new NullOutput())) {
-                    throw new \RuntimeException('Reference data initialization failed.');
+                    throw new \RuntimeException('Reference data initialization failed: '.$command::class);
                 }
             }
             $owner = $this->users->create($email, $password);
@@ -49,6 +56,13 @@ final readonly class TenantProvisioner
             }
             $this->control->db()->update('saas_tenant', ['provisioning' => 'ready', 'updated_at' => date('Y-m-d H:i:s')], ['uuid' => $tenant['uuid']]);
         } catch (\Throwable $error) {
+            $this->logger->error('TenantProvisioner failed.', [
+                'tenantUuid' => $tenant['uuid'] ?? null,
+                'database' => $database,
+                'errorType' => $error::class,
+                'errorMessage' => $error->getMessage(),
+                'errorFile' => $error->getFile().':'.$error->getLine(),
+            ]);
             $this->control->db()->update('saas_tenant', ['provisioning' => 'failed', 'updated_at' => date('Y-m-d H:i:s')], ['uuid' => $tenant['uuid']]);
             throw $error;
         } finally {

@@ -69,4 +69,19 @@ abstract class FunctionalTestBase extends WebTestCase
 
         return $this->client;
     }
+
+    protected function tearDown(): void
+    {
+        if (null !== static::$kernel) {
+            $container = static::getContainer();
+            if ($container->has('doctrine')) {
+                foreach ($container->get('doctrine')->getConnections() as $connection) {
+                    if ($connection->isConnected()) {
+                        $connection->close();
+                    }
+                }
+            }
+        }
+        parent::tearDown();
+    }
 }

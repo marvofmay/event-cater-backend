@@ -381,6 +381,7 @@ final class KitchenApiTest extends FunctionalTestBase
         self::assertSame($event['title'], $db->fetchOne('SELECT title FROM catering_event WHERE uuid = ?', [$event['uuid']]));
         self::assertSame(1, (int)$db->fetchOne('SELECT COUNT(*) FROM event_preparation_list WHERE event_uuid = ?', [$event['uuid']]));
         self::assertSame(0, (int)$db->fetchOne('SELECT COUNT(*) FROM kitchen_order'));
+        $db->executeStatement('ALTER TABLE kitchen_order ADD due_reminder_sent_at DATETIME DEFAULT NULL');
         $order = $this->order($event, $this->employee());
         self::assertSame('draft', $order['status']);
     }

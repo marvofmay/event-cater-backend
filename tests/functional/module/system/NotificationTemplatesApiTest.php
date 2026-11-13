@@ -22,8 +22,8 @@ final class NotificationTemplatesApiTest extends FunctionalTestBase
     {
         $this->getAuthenticatedClient();
         $page = $this->api('GET', query: '?pageSize=100')['data'];
-        self::assertSame(18, $page['total']);
-        self::assertCount(18, $page['items']);
+        self::assertSame(126, $page['total']);
+        self::assertCount(100, $page['items']);
         self::assertArrayHasKey('uuid', $page['items'][0]);
         self::assertSame($page['items'][0]['eventName'], $page['items'][0]['eventNane']);
         $filtered = $this->api('GET', query: '?eventName=EmployeeImportedEvent&channelCode=internal&isDefault=true')['data'];
@@ -32,13 +32,13 @@ final class NotificationTemplatesApiTest extends FunctionalTestBase
         self::assertSame('EmployeeImportedEvent', $filtered['items'][0]['eventName']);
         self::assertSame('internal', $filtered['items'][0]['channelCode']);
         self::assertSame(6, $this->api('GET', query: '?phrase=EmployeeImportedEvent')['data']['total']);
-        self::assertSame(9, $this->api('GET', query: '?isActive=false')['data']['total']);
-        self::assertSame(9, $this->api('GET', query: '?isDefault=false')['data']['total']);
+        self::assertSame(63, $this->api('GET', query: '?isActive=false')['data']['total']);
+        self::assertSame(63, $this->api('GET', query: '?isDefault=false')['data']['total']);
         $first = $this->api('GET', query: '?pageSize=2&page=1&sortBy=eventName&sortDirection=asc')['data'];
         $second = $this->api('GET', query: '?pageSize=2&page=2&sortBy=eventName&sortDirection=asc')['data'];
         self::assertCount(2, $first['items']);
         self::assertNotSame($first['items'][0]['uuid'], $second['items'][0]['uuid']);
-        $this->api('GET', status: 422, query: '?pageSize=101');
+        $this->api('GET', status: 422, query: '?pageSize=501');
         $this->api('GET', status: 422, query: '?sortBy=unknown');
         $rendered = self::getContainer()->get(NotificationResolver::class)->renderTemplate('Import {{importKind}}: {{importStatus}}', ['importKind' => 'pracowników', 'importStatus' => 'zakończony']);
         self::assertSame('Import pracowników: zakończony', $rendered);
