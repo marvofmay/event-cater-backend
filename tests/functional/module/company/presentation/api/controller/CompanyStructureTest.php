@@ -213,6 +213,10 @@ final class CompanyStructureTest extends FunctionalTestBase
             $permission = $manager->getRepository(Permission::class)->findOneBy(['name' => $name === 'company_structure' ? 'view' : 'list']);
             $manager->persist(new RoleAccess($role, $access));
             $manager->persist(new RoleAccessPermission($role, $access, $permission));
+            if ('companies' === $name) {
+                $manage = $manager->getRepository(Access::class)->findOneBy(['name' => 'manage']);
+                $manager->persist(new RoleAccess($role, $manage));
+            }
             $manager->flush();
             if ('companies' === $name) {
                 $this->branch([], 403);
