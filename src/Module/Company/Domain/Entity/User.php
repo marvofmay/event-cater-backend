@@ -191,7 +191,11 @@ class User implements PasswordAuthenticatedUserInterface, UserInterface
             return ['Administrator techniczny SaaS'];
         }
         if (null === $this->employee) {
-            return ['Pracownik techniczny systemu HRApp - nie powiązany z pracownikiem firmy'];
+            if ($this->tenantAdministrator) {
+                return ['Pracownik techniczny firmy'];
+            }
+
+            return ['Pracownik techniczny systemu EventCater - nie powiązany z pracownikiem firmy'];
         }
 
         return [$this->employee->getRole()->getName()];

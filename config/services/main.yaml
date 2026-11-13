@@ -1,6 +1,13 @@
 parameters:
   password_reset_url: 'http://localhost:3000/reset-password'
-  password_reset_sender: 'noreply@hrapp.com'
+  password_reset_sender: 'noreply@eventcater.pl'
+  trial_notify_email: 'kontakt@eventcater.pl'
+  app_public_url: 'https://eventcater.pl'
+  tpay_env_default: 'sandbox'
+  tpay_client_id_default: ''
+  tpay_client_secret_default: ''
+  tpay_merchant_id_default: ''
+  tpay_security_code_default: ''
   doctrine.orm.enable_native_lazy_objects: true
   public_upload_path: '%env(PUBLIC_UPLOAD_PATH)%'
   upload_path: '%env(UPLOAD_PATH)%'
