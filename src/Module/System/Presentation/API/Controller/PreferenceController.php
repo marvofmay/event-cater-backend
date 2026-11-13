@@ -59,7 +59,7 @@ final class PreferenceController extends AbstractController
         $access = $this->access($resource);
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
         $user = $this->getUser();
-        $roleName = $user instanceof User ? $user->getEmployee()?->getRole()->getName() : null;
+        $roleName = $user instanceof User ? $user->getEmployee()?->getRole()?->getName() : null;
         $admin = $user instanceof User && ($user->isTenantAdministrator() || $roleName === 'Superadministrator');
         $canConfigureList = $this->isGranted(PermissionEnum::LIST, $access);
         if ($resource !== 'notifications') {

@@ -4,7 +4,6 @@ declare(strict_types=1);
 namespace App\tests\functional\module\saas;
 
 use App\tests\functional\FunctionalTestBase;
-use DoctrineMigrations\Version20261023130000;
 use Doctrine\DBAL\Schema\Schema;
 use Psr\Log\NullLogger;
 use Ramsey\Uuid\Uuid;
@@ -18,11 +17,23 @@ final class SaasApiTest extends FunctionalTestBase
     {
         parent::setUp();
         $db=$this->em->getConnection();
-        require_once dirname(__DIR__,4).'/migrations/Version20261023130000.php';
-        $migration=new Version20261023130000($db,new NullLogger()); $migration->up(new Schema());
-        foreach ($migration->getSql() as $query) {
-            if (str_starts_with($query->getStatement(),'ALTER TABLE user')) { continue; }
-            $db->executeStatement($query->getStatement(),$query->getParameters(),$query->getTypes());
+        $migrationDirectory = dirname(__DIR__, 4).'/migrations/';
+        foreach ([
+            'Version20261023130000.php',
+            'Version20261109150000.php',
+            'Version20261112170000.php',
+            'Version20261113100000.php',
+        ] as $index => $file) {
+            require_once $migrationDirectory.$file;
+            $class = 'DoctrineMigrations\\'.basename($file, '.php');
+            $migration = new $class($db, new NullLogger());
+            $migration->up(new Schema());
+            foreach ($migration->getSql() as $query) {
+                if (0 === $index && str_starts_with($query->getStatement(), 'ALTER TABLE user')) {
+                    continue;
+                }
+                $db->executeStatement($query->getStatement(), $query->getParameters(), $query->getTypes());
+            }
         }
         $db->executeStatement('ALTER TABLE saas_administrator ADD technical_access BOOLEAN NOT NULL DEFAULT 0');
         $this->password=bin2hex(random_bytes(12));
