@@ -38,7 +38,7 @@ final class NotificationTemplatesApiTest extends FunctionalTestBase
         $second = $this->api('GET', query: '?pageSize=2&page=2&sortBy=eventName&sortDirection=asc')['data'];
         self::assertCount(2, $first['items']);
         self::assertNotSame($first['items'][0]['uuid'], $second['items'][0]['uuid']);
-        $this->api('GET', status: 422, query: '?pageSize=101');
+        $this->api('GET', status: 422, query: '?pageSize=501');
         $this->api('GET', status: 422, query: '?sortBy=unknown');
         $rendered = self::getContainer()->get(NotificationResolver::class)->renderTemplate('Import {{importKind}}: {{importStatus}}', ['importKind' => 'pracowników', 'importStatus' => 'zakończony']);
         self::assertSame('Import pracowników: zakończony', $rendered);
