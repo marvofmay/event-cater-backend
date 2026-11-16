@@ -6,6 +6,7 @@ namespace App\Module\Facebook\Infrastructure\Persistence;
 
 use App\Module\Facebook\Domain\Entity\FacebookPageConnection;
 use App\Module\Facebook\Domain\Repository\FacebookPageConnectionRepository;
+use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
 
 final readonly class DoctrineFacebookPageConnectionRepository implements FacebookPageConnectionRepository
@@ -18,7 +19,17 @@ final readonly class DoctrineFacebookPageConnectionRepository implements Faceboo
 
     public function get(): ?FacebookPageConnection
     {
-        $connection = $this->em->find(FacebookPageConnection::class, self::SINGLETON);
+        try {
+            $connection = $this->em->find(FacebookPageConnection::class, self::SINGLETON);
+        } catch (TableNotFoundException) {
+            return null;
+        } catch (\Throwable $error) {
+            // Missing migration / schema on older tenants should not 500 the settings page.
+            if (str_contains($error->getMessage(), 'facebook_page_connection') || str_contains($error->getMessage(), "doesn't exist")) {
+                return null;
+            }
+            throw $error;
+        }
         if ($connection === null || $connection->pageId() === '') {
             return null;
         }
@@ -34,7 +45,11 @@ final readonly class DoctrineFacebookPageConnectionRepository implements Faceboo
 
     public function clear(): void
     {
-        $connection = $this->em->find(FacebookPageConnection::class, self::SINGLETON);
+        try {
+            $connection = $this->em->find(FacebookPageConnection::class, self::SINGLETON);
+        } catch (TableNotFoundException) {
+            return;
+        }
         if ($connection === null) {
             return;
         }

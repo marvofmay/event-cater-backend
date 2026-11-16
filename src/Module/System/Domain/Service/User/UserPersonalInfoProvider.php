@@ -15,6 +15,7 @@ final readonly class UserPersonalInfoProvider
             'email' => $user->getEmail(),
             'loginPhone' => $user->getLoginPhone(),
             'technicalAdministrator' => $user->getSaasAdministratorUuid() !== null,
+            'tenantAdministrator' => $user->isTenantAdministrator(),
         ];
     }
 

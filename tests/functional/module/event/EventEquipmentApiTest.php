@@ -357,6 +357,7 @@ final class EventEquipmentApiTest extends FunctionalTestBase
         require_once self::getContainer()->getParameter('kernel.project_dir').'/migrations/Version20261023090000.php';
         require_once self::getContainer()->getParameter('kernel.project_dir').'/migrations/Version20261023100000.php';
         require_once self::getContainer()->getParameter('kernel.project_dir').'/migrations/Version20261024100000.php';
+        $db->executeStatement('SET FOREIGN_KEY_CHECKS=0');
         $photos = new \DoctrineMigrations\Version20261024100000($db, new \Psr\Log\NullLogger());
         $photos->down(new \Doctrine\DBAL\Schema\Schema());
         foreach ($photos->getSql() as $query) {
@@ -372,6 +373,7 @@ final class EventEquipmentApiTest extends FunctionalTestBase
         foreach ($migration->getSql() as $query) {
             $db->executeStatement($query->getStatement());
         }
+        $db->executeStatement('SET FOREIGN_KEY_CHECKS=1');
         self::assertFalse($db->createSchemaManager()->tablesExist(['catering_event']));
         self::assertTrue($db->createSchemaManager()->tablesExist(['employee', 'user', 'role']));
         $migration = new \DoctrineMigrations\Version20261023090000($db, new \Psr\Log\NullLogger());

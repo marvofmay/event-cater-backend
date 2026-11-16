@@ -41,6 +41,9 @@ final readonly class PreferenceService
 
     public function channelEnabled(string $channel, string $userUuid): bool
     {
+        if ('sms' === $channel && !$this->smsConfigured()) {
+            return false;
+        }
         $master = $this->masterChannels();
         if (!($master[$channel] ?? false)) {
             return false;
@@ -55,7 +58,7 @@ final readonly class PreferenceService
 
     public function filterRecipients(string $channel, array $users): array
     {
-        if (!($this->masterChannels()[$channel] ?? false) || [] === $users) {
+        if (('sms' === $channel && !$this->smsConfigured()) || !($this->masterChannels()[$channel] ?? false) || [] === $users) {
             return [];
         }
         if (self::MANDATORY_USER_CHANNEL === $channel) {
@@ -97,6 +100,10 @@ final readonly class PreferenceService
         $effective = ['pageSize' => $user['pageSize'] ?? $tenant['pageSize']];
         if ('notifications' === $resource) {
             $tenant['channels'] = $this->masterChannels();
+            $tenant['smsReady'] = $this->smsConfigured();
+            if (!$tenant['smsReady']) {
+                $tenant['channels']['sms'] = false;
+            }
             $user['channels'] = array_replace(array_fill_keys(self::CHANNELS, null), $own['payload']['channels'] ?? []);
             $effective['channels'] = [];
             foreach (self::CHANNELS as $channel) {
@@ -111,6 +118,13 @@ final readonly class PreferenceService
         }
 
         return ['tenant' => $tenant, 'user' => $user, 'effective' => $effective, 'tenantVersion' => $master['version'], 'userVersion' => $own['version'], 'canManageTenant' => $administrator];
+    }
+
+    private function smsConfigured(): bool
+    {
+        $sms = $this->row('tenant', 'notifications')['payload']['sms'] ?? [];
+
+        return !empty($sms['apiKey']) && is_string($sms['sender'] ?? null) && '' !== $sms['sender'] && !empty($sms['limit']);
     }
 
     public static function period(): string

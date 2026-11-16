@@ -251,7 +251,7 @@ final class PreparationApiTest extends FunctionalTestBase
         $list = $this->progress($list, $milkLine['uuid'], ['preparedQuantity' => 20, 'loadedQuantity' => 20]);
         $list = $this->workflow($list, 'ready');
         $this->workflow($list, 'confirm-loaded', [], 422);
-        $list = $this->progress($list, $gearLine['uuid'], ['loadedQuantity' => 100]);
+        $list = $this->progress($list, $gearLine['uuid'], ['loadedQuantity' => 100, 'correctionReason' => 'Załadunek pozostałych sztuk.']);
         $list = $this->workflow($list, 'confirm-loaded');
         self::assertSame('loaded', $list['status']);
         self::assertFalse($list['summary']['hasShortages']);
@@ -332,7 +332,7 @@ final class PreparationApiTest extends FunctionalTestBase
         self::assertSame('2.000', $this->line($list, 'consumable', $coffee['uuid'])['requiredQuantity']);
         $list = $this->configure($list, $owner);
         $list = $this->workflow($list, 'approve');
-        $list = $this->progress($list, $this->line($list, 'equipment', $gear['uuid'])['uuid'], ['preparedQuantity' => 100]);
+        $list = $this->progress($list, $this->line($list, 'equipment', $gear['uuid'])['uuid'], ['preparedQuantity' => 100, 'correctionReason' => 'Przygotowano część przed zmianą gości.']);
         $this->api('PUT', '/api/events/'.$event['uuid'], ['version' => $list['version'], 'title' => 'Kompletacja', 'date' => '2026-12-31', 'guestCount' => 150]);
         $list = $this->list($event['uuid']);
         self::assertSame('draft', $list['status']);
@@ -402,6 +402,14 @@ final class PreparationApiTest extends FunctionalTestBase
             foreach ($migration->getSql() as $query) {
                 $db->executeStatement($query->getStatement());
             }
+        }
+        foreach ([
+            'ALTER TABLE event_preparation_list ADD deadline_reminder_sent_at DATETIME DEFAULT NULL',
+            'ALTER TABLE event_preparation_list ADD ready_comment LONGTEXT DEFAULT NULL',
+            'ALTER TABLE event_preparation_list ADD ready_by CHAR(36) DEFAULT NULL',
+            'ALTER TABLE event_preparation_list ADD ready_at DATETIME DEFAULT NULL',
+        ] as $statement) {
+            $db->executeStatement($statement);
         }
         $list = $this->list($event['uuid']);
         self::assertCount(1, $list['lines']);
@@ -473,7 +481,7 @@ final class PreparationApiTest extends FunctionalTestBase
         $this->progress($list, $lineUuid, ['loadedQuantity' => 10], 403);
         $this->workflow($list, 'confirm-loaded', [], 403);
         $this->getAuthenticatedClient('loader@example.test', 'TestOnly123!');
-        $list = $this->progress($list, $lineUuid, ['loadedQuantity' => 10]);
+        $list = $this->progress($list, $lineUuid, ['loadedQuantity' => 10, 'correctionReason' => 'Załadunek części kartonów mleka.']);
         $this->workflow($list, 'confirm-loaded', [], 422);
         $this->workflow($list, 'confirm-loaded', ['acceptShortagesReason' => 'Kierownik akceptuje brak dziesięciu kartonów.'], 403);
         $this->getAuthenticatedClient();
