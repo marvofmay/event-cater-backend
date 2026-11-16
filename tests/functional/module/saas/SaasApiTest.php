@@ -226,7 +226,7 @@ final class SaasApiTest extends FunctionalTestBase
     public function testTechnicalAdministratorUsesCentralCredentialsAndTenantBoundRevocableTokens(): void
     {
         $db = $this->em->getConnection();
-        $db->executeStatement('UPDATE saas_administrator SET technical_access=1 WHERE email=?', ['operator@example.test']);
+        $db->executeStatement('UPDATE saas_administrator SET technical_access=0 WHERE email=?', ['operator@example.test']);
         $suffix = bin2hex(random_bytes(3));
         $tenantA = $this->status($this->tenant('technical-a-'.$suffix), 'active');
         $tenantB = $this->status($this->tenant('technical-b-'.$suffix), 'active');
@@ -249,12 +249,16 @@ final class SaasApiTest extends FunctionalTestBase
         $newPassword = bin2hex(random_bytes(12));
         $control->executeStatement('UPDATE saas_administrator SET password=? WHERE email=?', [password_hash($newPassword, PASSWORD_DEFAULT), 'operator@example.test']);
         $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $this->password], 401);
-        $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $newPassword]);
+        $renewed = $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $newPassword]);
         $this->password = $newPassword;
+        $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$renewed['token']);
         $control->executeStatement('UPDATE saas_administrator SET technical_access=0 WHERE email=?', ['operator@example.test']);
+        $this->api('GET', '/api/events');
+        $rights = $this->api('GET', '/api/auth/authorization');
+        self::assertNotEmpty($rights['modules']);
+        self::assertNotEmpty(array_filter($rights['permissions'], static fn (string $permission): bool => str_ends_with($permission, '.*')));
+        $control->executeStatement('UPDATE saas_administrator SET active=0 WHERE email=?', ['operator@example.test']);
         $this->api('GET', '/api/events', [], 401);
-        $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $this->password], 401);
-        $control->executeStatement('UPDATE saas_administrator SET technical_access=1, active=0 WHERE email=?', ['operator@example.test']);
         $this->api('POST', '/api/login', ['email' => 'operator@example.test', 'password' => $this->password], 401);
         $control->executeStatement('UPDATE saas_administrator SET active=1 WHERE email=?', ['operator@example.test']);
         $this->status($tenantB, 'suspended');

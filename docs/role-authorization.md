@@ -50,6 +50,6 @@ Votery sprawdzają aktualną bazę firmy, aktywność słowników, dostęp roli 
 
 `GET /api/auth/authorization` zwraca bieżące moduły, dostępy i czynności zalogowanego użytkownika. Frontend odświeża te dane po zalogowaniu, po zapisaniu praw i po powrocie do karty, dzięki czemu nie opiera widoczności przycisków wyłącznie na starych danych JWT. API nadal sprawdza każdą operację niezależnie od interfejsu.
 
-Konto techniczne SaaS i indywidualne konta właścicieli oznaczone jako administratorzy tenanta zachowują jawny dostęp administracyjny. Rola pracownicza „Superadministrator” nie oznacza dostępu do panelu SaaS ani do innych firm. Zmiany konfiguracji rejestrują istniejące zdarzenia przypisywania dostępów i uprawnień.
+Aktywne konto z panelu SaaS, zalogowane w firmie, oraz indywidualne konta właścicieli oznaczone jako administratorzy tenanta mają pełny dostęp. Nie zależy on od adresu `admin.ec@gmail.com`. Rola pracownicza „Superadministrator” nie oznacza dostępu do panelu SaaS ani do innych firm. Zmiany konfiguracji rejestrują istniejące zdarzenia przypisywania dostępów i uprawnień.
 
 Wdrożenie formularza nie nadaje automatycznie praw istniejącym rolom. Operator wybiera je zgodnie z obowiązkami pracowników.
