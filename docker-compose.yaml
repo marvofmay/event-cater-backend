@@ -13,6 +13,7 @@ services:
   service-company-db:
     container_name: service-company-db
     image: mysql:9.3.0
+    command: ["--max-connections=500"]
     restart: always
     ports:
       - "3306:3306"
