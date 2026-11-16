@@ -4,7 +4,7 @@
 
 - Logowanie: http://localhost:3000/login?tenant=mapa-smakow — wybierz firmę **Mapa Smaków**, kod `mapa-smakow`.
 - Stanowiska: http://localhost:3000/manage/positions/list — 25 aktywnych stanowisk cateringowych przypisanych do pięciu działów.
-- Konto techniczne SaaS: `admin.ec@gmail.com`, dotychczasowe hasło; dostęp do każdej aktywnej firmy po jej wybraniu. Panel SaaS: http://localhost:3000/saas.
+- Konto z panelu SaaS loguje się tym samym adresem i hasłem do każdej aktywnej firmy jako pracownik techniczny z pełnymi uprawnieniami. Panel: http://localhost:3000/saas.
 - Wszystkie dotychczasowe dane biznesowe skopiowano do osobnej bazy Mapy Smaków z zachowaniem powiązań. Baza źródłowa pozostała zachowana; tenant `default` jest nieaktywny.
 - Backup sprzed migracji: lokalny plik `var/backups/before-mapa-smakow-20261025.sql`, wyłączony z Git.
 

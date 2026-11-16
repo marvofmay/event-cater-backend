@@ -38,6 +38,9 @@ class EventStore
     #[ORM\Column(name: 'created_at', type: 'datetime_immutable')]
     private \DateTimeImmutable $createdAt;
 
+    #[ORM\Column(name: 'created_at_us', type: 'integer', options: ['unsigned' => true])]
+    private int $createdAtUs;
+
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'user_uuid', referencedColumnName: 'uuid', nullable: true)]
     private UserInterface $user;
@@ -55,6 +58,7 @@ class EventStore
         $this->payload = $payload;
         $this->user = $user;
         $this->createdAt = new \DateTimeImmutable();
+        $this->createdAtUs = (int) $this->createdAt->format('u');
     }
 
     public function getUUID(): UuidInterface

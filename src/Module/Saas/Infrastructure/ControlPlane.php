@@ -34,7 +34,7 @@ final class ControlPlane
             return null;
         }
 
-        return $this->db()->fetchAssociative('SELECT uuid,email,password,active FROM saas_administrator WHERE email=? AND technical_access=1', [$email]) ?: null;
+        return $this->db()->fetchAssociative('SELECT uuid,email,password,active FROM saas_administrator WHERE LOWER(email)=? AND active=1', [strtolower(trim($email))]) ?: null;
     }
 
     public function tenant(string $slug): ?array

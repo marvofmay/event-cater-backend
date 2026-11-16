@@ -38,7 +38,7 @@ final class CreateSaasAdministratorCommand extends Command
             return Command::FAILURE;
         }
         try {
-            $this->control->db()->insert('saas_administrator', ['uuid' => Uuid::uuid4()->toString(), 'email' => $email, 'password' => password_hash($password, PASSWORD_DEFAULT), 'active' => true]);
+            $this->control->db()->insert('saas_administrator', ['uuid' => Uuid::uuid4()->toString(), 'email' => $email, 'password' => password_hash($password, PASSWORD_DEFAULT), 'active' => true, 'technical_access' => true]);
         } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
             $io->error('Administrator już istnieje.');
 
