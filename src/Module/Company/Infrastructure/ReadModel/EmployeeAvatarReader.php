@@ -22,7 +22,7 @@ final readonly class EmployeeAvatarReader
             'aggregateUUID' => $employeeUUIDs,
             'aggregateClass' => EmployeeAggregate::class,
             'aggregateType' => EmployeeChangedAvatarEvent::class,
-        ], ['createdAt' => 'ASC']);
+        ], ['createdAt' => 'ASC', 'createdAtUs' => 'ASC']);
         $avatars = [];
         foreach ($events as $event) {
             $payload = json_decode($event->getPayload(), true, flags: JSON_THROW_ON_ERROR);

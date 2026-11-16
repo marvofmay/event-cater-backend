@@ -28,7 +28,7 @@ final class EmployeeAggregateReaderRepository extends ServiceEntityRepository im
         $events = $this->findBy([
             'aggregateUUID' => $uuid->toString(),
             'aggregateClass' => EmployeeAggregate::class,
-        ], ['createdAt' => 'ASC']);
+        ], ['createdAt' => 'ASC', 'createdAtUs' => 'ASC']);
 
         if (empty($events)) {
             throw new \RuntimeException(

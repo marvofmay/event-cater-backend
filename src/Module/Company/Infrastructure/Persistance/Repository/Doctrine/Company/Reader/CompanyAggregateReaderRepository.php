@@ -24,7 +24,7 @@ final class CompanyAggregateReaderRepository extends ServiceEntityRepository imp
         $events = $this->findBy([
             'aggregateUUID' => $uuid->toString(),
             'aggregateClass' => CompanyAggregate::class,
-        ], ['createdAt' => 'ASC']);
+        ], ['createdAt' => 'ASC', 'createdAtUs' => 'ASC']);
 
         if (empty($events)) {
             throw new \RuntimeException('Aggregate company not found: '.$uuid->toString());

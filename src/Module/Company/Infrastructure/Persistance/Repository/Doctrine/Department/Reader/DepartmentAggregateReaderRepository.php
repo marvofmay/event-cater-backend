@@ -24,7 +24,7 @@ final class DepartmentAggregateReaderRepository extends ServiceEntityRepository 
         $events = $this->findBy([
             'aggregateUUID' => $uuid->toString(),
             'aggregateClass' => DepartmentAggregate::class,
-        ], ['createdAt' => 'ASC']);
+        ], ['createdAt' => 'ASC', 'createdAtUs' => 'ASC']);
 
         if (empty($events)) {
             throw new \RuntimeException('Aggregate not found: '.$uuid->toString());
