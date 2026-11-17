@@ -66,7 +66,7 @@ final readonly class DbalTicketStore implements TicketStore
         return $this->hydrate($row ?: null);
     }
 
-    public function listForOperator(?string $status, ?string $category, ?string $search): array
+    public function listForOperator(?string $status, ?string $category, ?string $search, ?string $tenantSlug = null): array
     {
         $where = ['1=1'];
         $params = [];
@@ -77,6 +77,10 @@ final readonly class DbalTicketStore implements TicketStore
         if ($category !== null) {
             $where[] = 't.category=?';
             $params[] = $category;
+        }
+        if ($tenantSlug !== null) {
+            $where[] = 't.tenant_slug=?';
+            $params[] = $tenantSlug;
         }
         if ($search !== null) {
             $like = '%'.addcslashes($search, '%_\\').'%';

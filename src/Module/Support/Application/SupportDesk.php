@@ -112,7 +112,7 @@ final readonly class SupportDesk
     }
 
     /** @return list<array<string, mixed>> */
-    public function listForOperator(?string $status, ?string $category, ?string $search): array
+    public function listForOperator(?string $status, ?string $category, ?string $search, ?string $tenantSlug = null): array
     {
         if ($status !== null && $status !== '') {
             TicketPolicy::assertStatus($status);
@@ -128,8 +128,14 @@ final readonly class SupportDesk
         if (mb_strlen($search) > 80) {
             throw new BusinessRuleViolation('Szukana fraza może mieć najwyżej 80 znaków.');
         }
+        $tenantSlug = strtolower(trim((string) $tenantSlug));
+        if ($tenantSlug === '') {
+            $tenantSlug = null;
+        } elseif (!preg_match('/^[a-z0-9][a-z0-9-]{1,62}$/D', $tenantSlug)) {
+            throw new BusinessRuleViolation('Wybierz firmę z listy.');
+        }
 
-        return array_map($this->listItem(...), $this->tickets->listForOperator($status, $category, $search === '' ? null : $search));
+        return array_map($this->listItem(...), $this->tickets->listForOperator($status, $category, $search === '' ? null : $search, $tenantSlug));
     }
 
     /** @return array<string, mixed> */

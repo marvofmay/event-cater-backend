@@ -21,7 +21,7 @@ interface TicketStore
     public function find(string $ticketUuid): ?array;
 
     /** @return list<array<string, mixed>> */
-    public function listForOperator(?string $status, ?string $category, ?string $search): array;
+    public function listForOperator(?string $status, ?string $category, ?string $search, ?string $tenantSlug = null): array;
 
     /** @return array<string, int> */
     public function summary(): array;
