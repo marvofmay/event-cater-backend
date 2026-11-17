@@ -68,4 +68,23 @@ Nowe zdjęcia wydarzeń mają katalog UUID firmy poza `public`; metadane i pobra
 
 Po wdrożeniu kolejnych migracji biznesowych: najpierw kopie zapasowe, potem migracja centralnej bazy, `php bin/console app:saas:migrate-tenants` (lista oczekujących zmian), następnie `--execute`. Opcjonalnie `--tenant kod-firmy`. Klienci zawieszeni i nieaktywni również otrzymują migracje; logicznie usunięci są pomijani. Nie kierować zwykłego polecenia migracji na dowolnie wskazaną bazę z panelu. Nowe bazy mają zapisany punkt startowy aktualnych migracji. Przyszłe migracje dotyczące wyłącznie tabel `saas_*` muszą warunkowo pomijać bazy biznesowe. Przy generowaniu diff nie usuwać ręcznie zarządzanych tabel kontrolnych `saas_*`.
 
+## Zgłoszenia pomocy
+
+Pracownik firmy wysyła zgłoszenie z menu avatara („Pomoc”). Kategoria i temat są wymagane. Wiadomość jest wymagana, gdy nie ma załącznika. Dozwolone są PNG, JPG, JPEG i WebP, najwyżej 5 plików po 8 MB. Zgłoszenie zapisuje się w centralnej bazie (`support_ticket`, `support_message`, `support_attachment`), a nie w bazie firmy, więc właściciel SaaS widzi skrzynkę wszystkich klientów. Pliki leżą poza katalogiem publicznym, w `storage/support-<środowisko>/`.
+
+Na pulpicie `/saas` kafelek „Zgłoszenia” pokazuje liczbę spraw nowych i w trakcie. Właściciel odczytuje wątek, nadaje status (`open`, `in_progress`, `waiting`, `resolved`, `closed`) i odpowiada. Autor widzi odpowiedź na tej samej stronie pomocy. Odpowiedź użytkownika przy statusie oczekującym, rozwiązanym lub zamkniętym wraca na „Nowe”.
+
+| Metoda | Endpoint | Działanie |
+|---|---|---|
+| GET | `/api/support/meta` | Kategorie i statusy |
+| GET, POST | `/api/support/tickets` | Lista własnych zgłoszeń, nowe zgłoszenie (JWT firmy) |
+| GET | `/api/support/tickets/{uuid}` | Wątek autora |
+| POST | `/api/support/tickets/{uuid}/replies` | Dopisek autora |
+| GET | `/api/saas/support/summary` | Liczniki na kafelek |
+| GET | `/api/saas/support/tickets` | Skrzynka właściciela |
+| POST | `/api/saas/support/tickets/{uuid}/replies` | Odpowiedź, opcjonalnie ze statusem |
+| PATCH | `/api/saas/support/tickets/{uuid}/status` | Sama zmiana statusu |
+
+Migracja `Version20261117120000` tworzy tabele tylko tam, gdzie jest `saas_tenant`. Na bazach firm nie wykonuje zmian. Po wdrożeniu wystarczy migracja centralnej bazy i istniejące `app:saas:migrate-tenants --execute`. Nie ma nowych zmiennych środowiskowych.
+
 Backup obejmuje centralny rejestr, wszystkie bazy klientów i katalogi plików. Przywrócenie pojedynczego klienta wymaga zgodnych danych i plików, bez podmieniania UUID firmy. Ten etap nie wdraża płatności, abonamentów, samodzielnej rejestracji ani trwałego kasowania danych. Przed wystawieniem publicznym pozostaje konfiguracja produkcyjnego HTTPS, dozwolonych originów, sekretów oraz polityki backupu i monitorowania.

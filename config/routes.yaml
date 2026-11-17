@@ -50,3 +50,7 @@ app_api_kitchen:
 app_api_saas:
     resource: ../src/Module/Saas/Presentation/API/Controller/
     type: attribute
+
+app_api_support:
+    resource: ../src/Module/Support/Presentation/API/Controller/
+    type: attribute
