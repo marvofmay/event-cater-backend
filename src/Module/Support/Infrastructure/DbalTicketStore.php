@@ -103,6 +103,19 @@ final readonly class DbalTicketStore implements TicketStore
         return $counts;
     }
 
+    public function latestMessageAt(string $ticketUuid): ?string
+    {
+        $value = $this->call(fn (): mixed => $this->control->db()->fetchOne(
+            'SELECT MAX(created_at) FROM support_message WHERE ticket_uuid=?',
+            [$ticketUuid],
+        ));
+        if ($value instanceof \DateTimeInterface) {
+            return $value->format('Y-m-d H:i:s');
+        }
+
+        return is_string($value) && $value !== '' ? $value : null;
+    }
+
     public function addMessage(string $ticketUuid, array $message, string $status, string $updatedAt): void
     {
         $this->call(function () use ($ticketUuid, $message, $status, $updatedAt): void {

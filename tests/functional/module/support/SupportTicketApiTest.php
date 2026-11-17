@@ -74,6 +74,8 @@ final class SupportTicketApiTest extends FunctionalTestBase
 
         $answered = $this->json('POST', '/api/saas/support/tickets/'.$uuid.'/replies', ['message' => 'Poprawka jest już na środowisku. Daj znać, czy ekran wrócił.', 'status' => 'waiting']);
         self::assertSame('waiting', $answered['status']);
+        self::assertSame('user', $answered['messages'][0]['role']);
+        self::assertSame('operator', $answered['messages'][1]['role']);
         self::assertSame('Zespół EventCater', $answered['messages'][1]['author']);
 
         $this->client->setServerParameter('HTTP_Authorization', 'Bearer '.$this->userToken);

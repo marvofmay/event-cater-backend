@@ -54,7 +54,10 @@ final class SupportDeskTest extends TestCase
 
         $reopened = $desk->replyAsUser($author, $uuid, 'Nadal się powtarza.');
         self::assertSame(TicketStatus::Open->value, $reopened['status']);
-        self::assertSame('Zespół EventCater', $desk->replyAsOperator(new ReplyToTicket($uuid, 'Sprawdzamy logi.', 'operator-1', 'Zespół EventCater', 'operator', status: TicketStatus::InProgress->value))['messages'][2]['author']);
+        self::assertGreaterThan($reopened['messages'][0]['createdAt'], $reopened['messages'][1]['createdAt']);
+        $answered = $desk->replyAsOperator(new ReplyToTicket($uuid, 'Sprawdzamy logi.', 'operator-1', 'Zespół EventCater', 'operator', status: TicketStatus::InProgress->value));
+        self::assertSame('Zespół EventCater', $answered['messages'][2]['author']);
+        self::assertGreaterThan($answered['messages'][1]['createdAt'], $answered['messages'][2]['createdAt']);
 
         $this->expectException(PlanningResourceNotFound::class);
         $desk->getMine($this->reporter('00000000-0000-4000-8000-000000000099'), $uuid);
@@ -264,6 +267,22 @@ final class MemoryTickets implements TicketStore
         $this->messages[] = $message;
         $this->tickets[$ticketUuid]['status'] = $status;
         $this->tickets[$ticketUuid]['updated_at'] = $updatedAt;
+    }
+
+    public function latestMessageAt(string $ticketUuid): ?string
+    {
+        $times = [];
+        foreach ($this->messages as $message) {
+            if ($message['ticket_uuid'] === $ticketUuid) {
+                $times[] = (string) $message['created_at'];
+            }
+        }
+        if ($times === []) {
+            return null;
+        }
+        rsort($times);
+
+        return $times[0];
     }
 
     public function updateStatus(string $ticketUuid, string $status, string $updatedAt): void

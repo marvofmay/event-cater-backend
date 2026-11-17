@@ -26,6 +26,9 @@ interface TicketStore
     /** @return array<string, int> */
     public function summary(): array;
 
+    /** Latest message time, so the next reply can stay after it even in the same second. */
+    public function latestMessageAt(string $ticketUuid): ?string;
+
     /** @param array<string, mixed> $message */
     public function addMessage(string $ticketUuid, array $message, string $status, string $updatedAt): void;
 

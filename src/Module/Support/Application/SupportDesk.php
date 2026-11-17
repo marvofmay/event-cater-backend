@@ -100,7 +100,7 @@ final readonly class SupportDesk
             throw new PlanningResourceNotFound('Nie znaleziono zgłoszenia.');
         }
         $body = TicketPolicy::message($message, true);
-        $now = $this->now();
+        $now = $this->nextStamp($ticketUuid);
         $this->tickets->addMessage(
             $ticketUuid,
             $this->messageRow(Uuid::uuid4()->toString(), $ticketUuid, 'user', $reporter->userUuid, $reporter->name, $body, $now),
@@ -169,7 +169,7 @@ final readonly class SupportDesk
         $status = $command->status === null || $command->status === ''
             ? (string) $ticket['status']
             : TicketPolicy::assertStatus($command->status)->value;
-        $now = $this->now();
+        $now = $this->nextStamp($command->ticketUuid);
         $this->tickets->addMessage(
             $command->ticketUuid,
             $this->messageRow(Uuid::uuid4()->toString(), $command->ticketUuid, 'operator', $command->authorUuid, $command->authorLabel, TicketPolicy::message($command->message, true), $now),
@@ -306,6 +306,26 @@ final readonly class SupportDesk
     private function now(): string
     {
         return (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d H:i:s');
+    }
+
+    /**
+     * MySQL DATETIME stores whole seconds, and message ids are random.
+     * A reply that lands in the same second as the previous one is moved
+     * one second forward so the thread stays in the order it was written.
+     */
+    private function nextStamp(string $ticketUuid): string
+    {
+        $stamp = $this->now();
+        $latest = $this->tickets->latestMessageAt($ticketUuid);
+        if ($latest === null) {
+            return $stamp;
+        }
+        $latestSecond = substr($latest, 0, 19);
+        if ($latestSecond < $stamp) {
+            return $stamp;
+        }
+
+        return (new \DateTimeImmutable($latestSecond, new \DateTimeZone('UTC')))->modify('+1 second')->format('Y-m-d H:i:s');
     }
 
     private function iso(string $value): string
