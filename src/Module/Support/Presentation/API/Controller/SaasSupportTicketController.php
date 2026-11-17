@@ -48,6 +48,7 @@ final readonly class SaasSupportTicketController
             $this->query($request, 'status'),
             $this->query($request, 'category'),
             $this->query($request, 'q'),
+            $this->query($request, 'tenant'),
         )]);
     }
 

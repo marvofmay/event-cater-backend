@@ -79,9 +79,9 @@ Na pulpicie `/saas` kafelek „Zgłoszenia” pokazuje liczbę spraw nowych i w 
 | GET | `/api/support/meta` | Kategorie i statusy |
 | GET, POST | `/api/support/tickets` | Lista własnych zgłoszeń, nowe zgłoszenie (JWT firmy) |
 | GET | `/api/support/tickets/{uuid}` | Wątek autora |
-| POST | `/api/support/tickets/{uuid}/replies` | Dopisek autora |
+| POST | `/api/support/tickets/{uuid}/replies` | Kolejna wiadomość autora |
 | GET | `/api/saas/support/summary` | Liczniki na kafelek |
-| GET | `/api/saas/support/tickets` | Skrzynka właściciela |
+| GET | `/api/saas/support/tickets` | Skrzynka właściciela. Filtry: `status`, `category`, `tenant` (kod firmy), `q` |
 | POST | `/api/saas/support/tickets/{uuid}/replies` | Odpowiedź, opcjonalnie ze statusem |
 | PATCH | `/api/saas/support/tickets/{uuid}/status` | Sama zmiana statusu |
 

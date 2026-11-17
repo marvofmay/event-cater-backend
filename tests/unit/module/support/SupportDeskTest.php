@@ -63,6 +63,13 @@ final class SupportDeskTest extends TestCase
         $desk->getMine($this->reporter('00000000-0000-4000-8000-000000000099'), $uuid);
     }
 
+    public function testOperatorListRejectsACompanyNameThatIsNotASlug(): void
+    {
+        $desk = new SupportDesk(new MemoryTickets(), new MemoryFiles());
+        $this->expectException(BusinessRuleViolation::class);
+        $desk->listForOperator(null, null, null, 'Mapa Smaków');
+    }
+
     public function testHourlyLimitRejectsBeforeStoringFiles(): void
     {
         $files = new MemoryFiles();
@@ -247,7 +254,7 @@ final class MemoryTickets implements TicketStore
         return isset($this->tickets[$ticketUuid]) ? $this->hydrate($this->tickets[$ticketUuid]) : null;
     }
 
-    public function listForOperator(?string $status, ?string $category, ?string $search): array
+    public function listForOperator(?string $status, ?string $category, ?string $search, ?string $tenantSlug = null): array
     {
         return array_values(array_map($this->listRow(...), $this->tickets));
     }
