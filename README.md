@@ -13,6 +13,198 @@
 Komenda: `docker exec service-company php bin/console app:notify-event-deadlines`  
 (okno domyślne 24 h; flaga `--within-hours=`). W `docker-compose` działa usługa `worker-event-deadline-reminders` (co godzinę). Szczegóły: [docs/notification-settings.md](docs/notification-settings.md).
 
+## Odbiorcy zdarzeń z „Tytuły i treści”
+
+Zakładka **Tytuły i treści** w `/settings/notifications` ustala tytuł, treść i włączone kanały. Odbiorcy są wyliczani w chwili zdarzenia. Pusta lista odbiorców oznacza, że wiadomość nie wychodzi — system nie wysyła jej do administratorów firmy.
+
+### Kiedy wiadomość w ogóle dochodzi
+
+1. Zdarzenie jest włączone w ustawieniach firmy.
+2. Dla kanału (systemowy, e-mail, SMS) jest włączony szablon tego zdarzenia, a sam kanał jest włączony globalnie.
+3. Odbiorca ma konto użytkownika powiązane z kartą pracownika. Pracownik bez konta nic nie dostaje.
+4. Kanał systemowy dochodzi zawsze, gdy jest włączony w firmie. E-mail i SMS dochodzą, gdy odbiorca ich u siebie nie wyłączył. SMS wymaga też skonfigurowanego Brevo.
+5. Przy wiadomościach o konkretnym wydarzeniu cateringowym liczą się jeszcze kanały z panelu **Powiadomienia wydarzenia** na karcie tego wydarzenia. Wyłączenie wszystkich kanałów na wydarzeniu zatrzymuje te wiadomości.
+
+Jedna osoba pasująca do kilku ról dostaje daną wiadomość raz.
+
+### Dwie listy odbiorców
+
+**Wiadomość osobista** idzie do jednego wskazanego pracownika. Panel **Powiadomienia wydarzenia** jej nie przekierowuje: dopisanie albo wykluczenie kogoś na karcie wydarzenia tej wiadomości nie zmienia.
+
+**Wiadomość do ról** buduje listę z ról przy tym wydarzeniu, a potem stosuje panel **Powiadomienia wydarzenia**:
+
+| Rola | Kto to jest |
+| --- | --- |
+| Koordynator | pracownik ustawiony jako koordynator wydarzenia |
+| Obsada | każdy pracownik dopisany do obsady tego wydarzenia |
+| Kompletacja | pracownik wskazany jako odpowiedzialny za listę kompletacji |
+| Kuchnia | pracownik wskazany jako odpowiedzialny na ostatniej karcie kuchni tego wydarzenia |
+| Załadunek | osoby z obsady z funkcją kierowca albo logistyka |
+
+Osoba odznaczona na karcie wydarzenia wypada ze wszystkich wiadomości do ról. Osoba dopisana jako dodatkowy odbiorca wchodzi do wszystkich wiadomości do ról tego wydarzenia, także tych, których jej rola normalnie nie obejmuje.
+
+Część wiadomości do ról wychodzi tylko wtedy, gdy status wydarzenia to **zaplanowane**, **potwierdzone** albo **w trakcie**. Przy statusie **szkic**, **anulowane** albo **zakończone** te wiadomości są pomijane. Przy każdym zdarzeniu poniżej jest napisane, czy ten warunek obowiązuje.
+
+### Import firm
+
+**Kiedy:** po zakończeniu importu firm — zarówno gdy import się uda, jak i gdy zakończy się błędem. W treści jest status importu.
+
+**Odbiorca:** użytkownik, który ten import uruchomił. To wiadomość osobista, niezależna od wydarzeń cateringowych.
+
+### Import oddziałów / departamentów
+
+**Kiedy:** po zakończeniu importu oddziałów, przy sukcesie i przy błędzie.
+
+**Odbiorca:** użytkownik, który ten import uruchomił.
+
+### Import pracowników
+
+**Kiedy:** po zakończeniu importu pracowników, przy sukcesie i przy błędzie.
+
+**Odbiorca:** użytkownik, który ten import uruchomił.
+
+### Przypisanie do obsady wydarzenia
+
+**Kiedy:** w momencie pierwszego dopisania pracownika do obsady tego wydarzenia. Zapis zmian u osoby, która już jest w obsadzie (funkcje, godziny, notatka), tej wiadomości nie wysyła.
+
+**Odbiorca:** tylko ten nowo dopisany pracownik. Wiadomość osobista. W treści są jego funkcje na tym wydarzeniu.
+
+Wychodzi także przy wydarzeniu w szkicu. Kanały biorą się z panelu tego wydarzenia.
+
+### Usunięcie z obsady wydarzenia
+
+**Kiedy:** w momencie zdjęcia pracownika z obsady.
+
+**Odbiorca:** tylko zdjęty pracownik. Wiadomość osobista.
+
+### Wyznaczenie do kompletacji
+
+**Kiedy:** przy zapisie listy kompletacji, gdy pole odpowiedzialnego zmienia się na inną osobę. Zapis z tym samym odpowiedzialnym tej wiadomości nie wysyła. Wyczyszczenie odpowiedzialnego też jej nie wysyła.
+
+**Odbiorca:** tylko nowo wskazany odpowiedzialny za kompletację. Wiadomość osobista. Sam fakt wyznaczenia nie oznacza, że ta osoba jest w obsadzie wydarzenia.
+
+### Wyznaczenie odpowiedzialnego kuchni
+
+**Kiedy:** przy utworzeniu karty kuchni, jeśli od razu jest wskazany odpowiedzialny, oraz przy zapisie szkicu karty, gdy odpowiedzialny zmienia się na inną osobę. Zapis z tym samym odpowiedzialnym tej wiadomości nie wysyła.
+
+**Odbiorca:** tylko nowo wskazany odpowiedzialny kuchni. Wiadomość osobista.
+
+### Utworzenie wydarzenia
+
+**Kiedy:** zaraz po zapisaniu nowego wydarzenia. Nowe wydarzenie startuje jako szkic, a ta wiadomość i tak wychodzi (warunek statusu jej nie dotyczy).
+
+**Odbiorcy (wiadomość do ról):** koordynator, obsada, kompletacja i kuchnia. Przy samym utworzeniu zwykle istnieje tylko koordynator, jeśli został podany w formularzu. Obsady, odpowiedzialnego za kompletację i karty kuchni jeszcze nie ma, więc te role są puste.
+
+### Aktualizacja wydarzenia
+
+**Kiedy:** po zapisie edycji wydarzenia, gdy zmieni się co najmniej jedno z pól: data, strefa czasowa, godzina gotowości, start, koniec, miejsce, liczba gości, koordynator. Zmiana tytułu, opisu albo klienta tej wiadomości nie wysyła. Zapis bez zmiany tych pól też jej nie wysyła.
+
+**Odbiorcy:** koordynator, obsada, kompletacja i kuchnia.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
+### Zmiana statusu wydarzenia
+
+**Kiedy:** po każdej udanej zmianie statusu: na zaplanowane, potwierdzone, w trakcie, zakończone albo anulowane.
+
+**Odbiorcy:** koordynator i obsada. Kompletacja i kuchnia tej wiadomości nie dostają, chyba że są na liście dodatkowych odbiorców albo pełnią też rolę koordynatora lub osoby z obsady.
+
+**Status wydarzenia:** warunek „tylko aktywne” tu nie działa. Wejście w zakończone i anulowane też wysyła tę wiadomość do aktualnej obsady i koordynatora.
+
+### Zmiana menu wydarzenia
+
+**Kiedy:** po zapisie menu, gdy lista pozycji naprawdę się zmieni. Zapis identycznego menu tej wiadomości nie wysyła.
+
+**Odbiorcy:** obsada, kompletacja i kuchnia. Sam koordynator dostaje ją wtedy, gdy jest też w obsadzie, jest odpowiedzialny za kompletację albo kuchnię, albo jest dopisany jako dodatkowy odbiorca.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
+### Zmiana statusu kompletacji
+
+**Kiedy:** przy trzech krokach listy kompletacji:
+
+- zatwierdzenie listy (status: zatwierdzona),
+- rozpoczęcie kompletacji (status: w kompletacji),
+- potwierdzenie załadunku (status: załadowane).
+
+Osobny krok „lista złożona / gotowa do załadunku” wysyła inne zdarzenie, opisane niżej.
+
+**Odbiorcy:** obsada i kompletacja.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
+### Potwierdzenie złożenia listy kompletacji
+
+**Kiedy:** gdy odpowiedzialny oznacza listę jako złożoną (status listy przechodzi na gotową do załadunku) i wszystkie pozycje są skompletowane.
+
+**Odbiorcy:** koordynator oraz kierowca i logistyka z obsady. Osoba, która kompletowała listę, z tej wiadomości wypada, także wtedy, gdy jest jednocześnie koordynatorem.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
+### Wydanie karty kuchni
+
+**Kiedy:** w momencie wydania karty kuchni do produkcji (status karty: wydana). Start produkcji i anulowanie karty osobnej wiadomości nie wysyłają.
+
+**Odbiorcy:** odpowiedzialny kuchni i koordynator.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
+### Gotowość kuchni
+
+**Kiedy:** gdy karta kuchni zostaje oznaczona jako gotowa.
+
+**Odbiorca:** odpowiedzialny kuchni. Koordynator dostaje ją tylko jako dodatkowy odbiorca albo gdy sam jest odpowiedzialnym kuchni.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
+### Przekazanie produkcji kuchni
+
+**Kiedy:** gdy produkcja kuchni zostaje przekazana (status karty: przekazana).
+
+**Odbiorca:** odpowiedzialny kuchni, na tych samych zasadach co przy gotowości kuchni.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
+### Propozycja rewizji kuchni
+
+**Kiedy:** gdy ktoś zgłasza propozycję zmiany wydanej karty kuchni.
+
+**Odbiorcy:** koordynator i odpowiedzialny kuchni.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
+### Akceptacja rewizji kuchni
+
+**Kiedy:** gdy oczekująca propozycja rewizji zostaje przyjęta.
+
+**Odbiorcy:** koordynator i odpowiedzialny kuchni.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
+### Odrzucenie rewizji kuchni
+
+**Kiedy:** gdy oczekująca propozycja rewizji zostaje odrzucona.
+
+**Odbiorcy:** koordynator i odpowiedzialny kuchni.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
+### Przypomnienie o terminie kompletacji
+
+**Kiedy:** raz na listę, z komendy `app:notify-event-deadlines` (w docker-compose co godzinę, okno 24 h). Wychodzi, gdy termin kompletacji jest ustawiony, przypomnienie jeszcze nie poszło, lista nie jest załadowana, a termin mieści się w oknie od godziny wstecz do 24 godzin do przodu.
+
+**Odbiorcy:** kompletacja i koordynator.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie. Szkic, anulowane i zakończone są pomijane jeszcze przed wysyłką.
+
+### Przypomnienie o terminie kuchni
+
+**Kiedy:** raz na kartę kuchni, tą samą komendą co wyżej. Wychodzi, gdy karta ma termin gotowości, przypomnienie jeszcze nie poszło, karta nie jest przekazana ani anulowana, a termin mieści się w tym samym oknie (godzina wstecz do 24 godzin do przodu).
+
+**Odbiorcy:** odpowiedzialny kuchni i koordynator.
+
+**Status wydarzenia:** zaplanowane, potwierdzone albo w trakcie.
+
 ## Logowanie nowego pracownika
 
 Po utworzeniu pracownika (formularz lub import) powstaje konto użytkownika:
