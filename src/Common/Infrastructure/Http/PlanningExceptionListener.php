@@ -56,8 +56,11 @@ final class PlanningExceptionListener
 
     private function serverMessage(\Throwable $error): string
     {
-        if (str_contains($error->getMessage(), 'creation_notice_sent_at')) {
-            return 'Zapis wydarzenia nie przeszedł, bo w bazie firmy brakuje kolumny powiadomienia o utworzeniu. Uruchom migracje baz firm.';
+        if (str_contains($error->getMessage(), 'creation_notice_sent_at')
+            || str_contains($error->getMessage(), 'notification_channels')
+            || str_contains($error->getMessage(), 'event_notification_recipient_override')
+            || str_contains($error->getMessage(), 'due_reminder_sent_at')) {
+            return 'Wysłanie powiadomienia nie przeszło, bo w bazie firmy brakuje tabeli albo kolumny odbiorców. Uruchom migracje baz firm.';
         }
 
         return 'Unexpected server error.';
