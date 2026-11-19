@@ -165,6 +165,44 @@ final readonly class EventNotificationAudienceResolver
     }
 
     /**
+     * Dopisuje dodatkowych odbiorców. Osoba już na liście domyślnej jest pomijana.
+     * Wykluczona osoba nie jest po cichu przywracana.
+     *
+     * @param list<string> $employeeUuids
+     */
+    public function addExtras(CateringEvent $event, array $employeeUuids): void
+    {
+        if ($employeeUuids === []) {
+            return;
+        }
+        $defaults = $this->defaultAudience($event, [
+            self::SOURCE_COORDINATOR,
+            self::SOURCE_STAFF,
+            self::SOURCE_PACKER,
+            self::SOURCE_KITCHEN,
+            self::SOURCE_LOADING,
+        ]);
+        $overrides = $this->overrides($event->uuid());
+        $excluded = $overrides[EventNotificationRecipientOverride::KIND_EXCLUDED] ?? [];
+        $extra = $overrides[EventNotificationRecipientOverride::KIND_EXTRA] ?? [];
+        foreach ($employeeUuids as $employeeUuid) {
+            if (isset($excluded[$employeeUuid])) {
+                throw new \App\Common\Domain\Exception\BusinessRuleViolation('Wskazana osoba jest wykluczona z powiadomień tego wydarzenia.');
+            }
+            if (isset($defaults[$employeeUuid]) || isset($extra[$employeeUuid])) {
+                continue;
+            }
+            $this->em->persist(new EventNotificationRecipientOverride(
+                $event,
+                $employeeUuid,
+                EventNotificationRecipientOverride::KIND_EXTRA,
+            ));
+            $extra[$employeeUuid] = true;
+        }
+        $this->em->flush();
+    }
+
+    /**
      * @param list<string> $includeSources
      *
      * @return array<string, list<string>>

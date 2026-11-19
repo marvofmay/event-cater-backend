@@ -62,6 +62,9 @@ final readonly class EventAssignmentNotifier
     private function notify(string $eventName, string $employeeUuid, array $payload, ?string $eventUuid = null): void
     {
         try {
+            if (!$this->assignmentNoticesEnabled($eventUuid)) {
+                return;
+            }
             $user = $this->userForEmployee($employeeUuid);
             if ($user === null) {
                 return;
@@ -74,6 +77,20 @@ final readonly class EventAssignmentNotifier
                 'exception' => $e,
             ]);
         }
+    }
+
+    /**
+     * Osobiste powiadomienia o przypisaniu czekają, aż pójdzie jedno powiadomienie o utworzeniu.
+     * Dzięki temu ta sama osoba nie dostaje dwóch wiadomości przy pierwszym składaniu zespołu.
+     */
+    private function assignmentNoticesEnabled(?string $eventUuid): bool
+    {
+        if ($eventUuid === null || $eventUuid === '') {
+            return true;
+        }
+        $event = $this->em->find(CateringEvent::class, $eventUuid);
+
+        return $event instanceof CateringEvent && $event->creationNoticeSentAt() !== null;
     }
 
     /**

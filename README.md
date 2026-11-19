@@ -45,6 +45,8 @@ Osoba odznaczona na karcie wydarzenia wypada ze wszystkich wiadomości do ról. 
 
 Część wiadomości do ról wychodzi tylko wtedy, gdy status wydarzenia to **zaplanowane**, **potwierdzone** albo **w trakcie**. Przy statusie **szkic**, **anulowane** albo **zakończone** te wiadomości są pomijane. Przy każdym zdarzeniu poniżej jest napisane, czy ten warunek obowiązuje.
 
+**Utworzenie wydarzenia** nie wychodzi samo. Organizator wysyła je raz przełącznikiem „Wyślij powiadomienia”. Pozostałe zdarzenia z tej listy, w tym zmiana statusu i aktualizacja danych, wychodzą automatycznie w chwili zdarzenia.
+
 ### Import firm
 
 **Kiedy:** po zakończeniu importu firm — zarówno gdy import się uda, jak i gdy zakończy się błędem. W treści jest status importu.
@@ -65,39 +67,39 @@ Część wiadomości do ról wychodzi tylko wtedy, gdy status wydarzenia to **za
 
 ### Przypisanie do obsady wydarzenia
 
-**Kiedy:** w momencie pierwszego dopisania pracownika do obsady tego wydarzenia. Zapis zmian u osoby, która już jest w obsadzie (funkcje, godziny, notatka), tej wiadomości nie wysyła.
+**Kiedy:** w momencie pierwszego dopisania pracownika do obsady tego wydarzenia, ale dopiero po wysłaniu powiadomienia „Utworzenie wydarzenia”. Wcześniej ta wiadomość czeka, żeby ta sama osoba nie dostała jej razem z powiadomieniem o utworzeniu. Zapis zmian u osoby, która już jest w obsadzie (funkcje, godziny, notatka), tej wiadomości nie wysyła.
 
 **Odbiorca:** tylko ten nowo dopisany pracownik. Wiadomość osobista. W treści są jego funkcje na tym wydarzeniu.
 
-Wychodzi także przy wydarzeniu w szkicu. Kanały biorą się z panelu tego wydarzenia.
+Po wysłaniu powiadomienia o utworzeniu wychodzi także przy wydarzeniu w szkicu. Kanały biorą się z panelu tego wydarzenia.
 
 ### Usunięcie z obsady wydarzenia
 
-**Kiedy:** w momencie zdjęcia pracownika z obsady.
+**Kiedy:** w momencie zdjęcia pracownika z obsady, po wysłaniu powiadomienia „Utworzenie wydarzenia”. Zanim ono pójdzie, zdjęcie z obsady tej wiadomości nie wysyła.
 
 **Odbiorca:** tylko zdjęty pracownik. Wiadomość osobista.
 
 ### Wyznaczenie do kompletacji
 
-**Kiedy:** przy zapisie listy kompletacji, gdy pole odpowiedzialnego zmienia się na inną osobę. Zapis z tym samym odpowiedzialnym tej wiadomości nie wysyła. Wyczyszczenie odpowiedzialnego też jej nie wysyła.
+**Kiedy:** przy zapisie listy kompletacji, gdy pole odpowiedzialnego zmienia się na inną osobę, i dopiero po wysłaniu powiadomienia „Utworzenie wydarzenia”. Wcześniej ta wiadomość czeka. Zapis z tym samym odpowiedzialnym tej wiadomości nie wysyła. Wyczyszczenie odpowiedzialnego też jej nie wysyła.
 
 **Odbiorca:** tylko nowo wskazany odpowiedzialny za kompletację. Wiadomość osobista. Sam fakt wyznaczenia nie oznacza, że ta osoba jest w obsadzie wydarzenia.
 
 ### Wyznaczenie odpowiedzialnego kuchni
 
-**Kiedy:** przy utworzeniu karty kuchni, jeśli od razu jest wskazany odpowiedzialny, oraz przy zapisie szkicu karty, gdy odpowiedzialny zmienia się na inną osobę. Zapis z tym samym odpowiedzialnym tej wiadomości nie wysyła.
+**Kiedy:** przy utworzeniu karty kuchni, jeśli od razu jest wskazany odpowiedzialny, oraz przy zapisie szkicu karty, gdy odpowiedzialny zmienia się na inną osobę. Wychodzi dopiero po wysłaniu powiadomienia „Utworzenie wydarzenia”. Wcześniej czeka. Zapis z tym samym odpowiedzialnym tej wiadomości nie wysyła.
 
 **Odbiorca:** tylko nowo wskazany odpowiedzialny kuchni. Wiadomość osobista.
 
 ### Utworzenie wydarzenia
 
-**Kiedy:** zaraz po zapisaniu nowego wydarzenia. Nowe wydarzenie startuje jako szkic, a ta wiadomość i tak wychodzi (warunek statusu jej nie dotyczy).
+**Kiedy:** nie przy kliknięciu „Utwórz wydarzenie”. Organizator wysyła je ręcznie przełącznikiem „Wyślij powiadomienia” w zakładkach Zespół, Kompletacja albo Powiadomienia, gdy obsada i osoba kompletująca są już zapisane. Idzie raz. Drugie włączenie nic nie wysyła. Nowe wydarzenie jest szkicem, a ta wiadomość i tak może wyjść (warunek statusu jej nie dotyczy). Wydarzenia utworzone przed tą zmianą są oznaczone jako już wysłane.
 
-**Odbiorcy (wiadomość do ról):** koordynator, obsada, kompletacja i kuchnia. Przy samym utworzeniu zwykle istnieje tylko koordynator, jeśli został podany w formularzu. Obsady, odpowiedzialnego za kompletację i karty kuchni jeszcze nie ma, więc te role są puste.
+**Odbiorcy (wiadomość do ról):** koordynator, obsada, kompletacja i kuchnia oraz osoby wskazane dodatkowo przy tej wysyłce. Wskazana osoba zostaje dodatkowym odbiorcą wydarzenia.
 
 ### Aktualizacja wydarzenia
 
-**Kiedy:** po zapisie edycji wydarzenia, gdy zmieni się co najmniej jedno z pól: data, strefa czasowa, godzina gotowości, start, koniec, miejsce, liczba gości, koordynator. Zmiana tytułu, opisu albo klienta tej wiadomości nie wysyła. Zapis bez zmiany tych pól też jej nie wysyła.
+**Kiedy:** automatycznie po zapisie edycji wydarzenia, gdy zmieni się co najmniej jedno z pól: data, strefa czasowa, godzina gotowości, start, koniec, miejsce, liczba gości, koordynator. Zmiana tytułu, opisu albo klienta tej wiadomości nie wysyła. Zapis bez zmiany tych pól też jej nie wysyła.
 
 **Odbiorcy:** koordynator, obsada, kompletacja i kuchnia.
 
@@ -105,7 +107,7 @@ Wychodzi także przy wydarzeniu w szkicu. Kanały biorą się z panelu tego wyda
 
 ### Zmiana statusu wydarzenia
 
-**Kiedy:** po każdej udanej zmianie statusu: na zaplanowane, potwierdzone, w trakcie, zakończone albo anulowane.
+**Kiedy:** automatycznie po każdej udanej zmianie statusu: na zaplanowane, potwierdzone, w trakcie, zakończone albo anulowane.
 
 **Odbiorcy:** koordynator i obsada. Kompletacja i kuchnia tej wiadomości nie dostają, chyba że są na liście dodatkowych odbiorców albo pełnią też rolę koordynatora lub osoby z obsady.
 

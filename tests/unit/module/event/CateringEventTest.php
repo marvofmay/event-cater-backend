@@ -20,7 +20,17 @@ final class CateringEventTest extends TestCase
         $event = CateringEvent::create(Uuid::uuid4()->toString(), 'Spotkanie', new EventSchedule('2026-12-31'));
         self::assertSame('draft', $event->toArray()['status']);
         self::assertNull($event->toArray()['guestCount']);
+        self::assertNull($event->creationNoticeSentAt());
         self::assertFalse($event->schedule()->isComplete());
+    }
+
+    public function testCreationNoticeIsRecordedOnce(): void
+    {
+        $event = CateringEvent::create(Uuid::uuid4()->toString(), 'Spotkanie', new EventSchedule('2026-12-31'));
+        $event->markCreationNoticeSent(new \DateTimeImmutable('2026-11-19T12:00:00+00:00'));
+        self::assertSame('2026-11-19T12:00:00+00:00', $event->toArray()['creationNoticeSentAt']);
+        $this->expectException(BusinessRuleViolation::class);
+        $event->markCreationNoticeSent(new \DateTimeImmutable('2026-11-19T13:00:00+00:00'));
     }
 
     public function testOvernightEventAndMultipleContactsCanBeConfirmed(): void
