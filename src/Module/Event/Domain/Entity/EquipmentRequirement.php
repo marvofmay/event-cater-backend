@@ -23,8 +23,8 @@ class EquipmentRequirement
     private string $equipmentUuid;
     #[ORM\Column(length: 200)]
     private string $name;
-    #[ORM\Column(length: 50)]
-    private string $code;
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $code;
     #[ORM\Column(length: 10)]
     private string $unit;
     #[ORM\Column(type: 'integer')]
@@ -32,7 +32,7 @@ class EquipmentRequirement
     #[ORM\Column(type: 'text', nullable: true)]
     private ?string $notes;
 
-    public function __construct(CateringEvent $event, string $equipmentUuid, string $name, string $code, string $unit, int $quantity, ?string $notes)
+    public function __construct(CateringEvent $event, string $equipmentUuid, string $name, ?string $code, string $unit, int $quantity, ?string $notes)
     {
         $this->uuid = Uuid::uuid4()->toString();
         $this->event = $event;

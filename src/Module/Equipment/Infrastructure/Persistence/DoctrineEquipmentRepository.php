@@ -40,9 +40,13 @@ final readonly class DoctrineEquipmentRepository implements EquipmentRepository
         return $item;
     }
 
-    public function assertCodeAvailable(string $code, string $exceptUuid): void
+    public function assertCodeAvailable(?string $code, string $exceptUuid): void
     {
-        $count = $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM equipment_item WHERE code = ? AND uuid <> ?', [strtoupper(trim($code)), $exceptUuid]);
+        $code = $code === null ? '' : strtoupper(trim($code));
+        if ($code === '') {
+            return;
+        }
+        $count = $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM equipment_item WHERE code = ? AND uuid <> ?', [$code, $exceptUuid]);
         if ((int) $count > 0) {
             throw new PlanningConflict('Equipment code already exists.');
         }

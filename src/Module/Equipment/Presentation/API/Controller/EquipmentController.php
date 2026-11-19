@@ -37,7 +37,7 @@ final class EquipmentController extends PlanningController
         $this->denyAccessUnlessGranted(PermissionEnum::CREATE, AccessEnum::EQUIPMENT);
         $body = PlanningPayload::json($request);
         $uuid = Uuid::uuid4()->toString();
-        $this->execute(new CreateEquipmentItem($uuid, $body->text('code'), $body->text('name'), $body->text('category', false), $body->text('unit'), $body->text('description', false), $body->uuid('categoryUuid', false), $body->text('slangName', false), $body->integer('stockQuantity', false) ?? 0, $body->uuid('storageLocationUuid', false)));
+        $this->execute(new CreateEquipmentItem($uuid, $body->text('code', false), $body->text('name'), $body->text('category', false), $body->text('unit'), $body->text('description', false), $body->uuid('categoryUuid', false), $body->text('slangName', false), $body->integer('stockQuantity', false) ?? 0, $body->uuid('storageLocationUuid', false)));
         return $this->resource($this->ask(new GetEquipmentItem($uuid)), 201);
     }
 
@@ -74,7 +74,7 @@ final class EquipmentController extends PlanningController
         $this->denyAccessUnlessGranted(PermissionEnum::UPDATE, AccessEnum::EQUIPMENT);
         $uuid = PlanningPayload::identifier($uuid);
         $body = PlanningPayload::json($request);
-        $this->execute(new UpdateEquipmentItem($uuid, $body->version(), $body->text('code'), $body->text('name'), $body->text('category', false), $body->text('unit'), $body->text('description', false), $body->uuid('categoryUuid', false), $body->text('slangName', false), $body->integer('stockQuantity', false), $body->uuid('storageLocationUuid', false), $body->has('storageLocationUuid')));
+        $this->execute(new UpdateEquipmentItem($uuid, $body->version(), $body->text('code', false), $body->text('name'), $body->text('category', false), $body->text('unit'), $body->text('description', false), $body->uuid('categoryUuid', false), $body->text('slangName', false), $body->integer('stockQuantity', false), $body->uuid('storageLocationUuid', false), $body->has('storageLocationUuid')));
         return $this->resource($this->ask(new GetEquipmentItem($uuid)));
     }
 
