@@ -7,6 +7,7 @@ namespace App\Common\Infrastructure\Http;
 use App\Common\Application\Exception\PlanningResourceNotFound;
 use App\Common\Domain\Exception\BusinessRuleViolation;
 use App\Common\Domain\Exception\PlanningConflict;
+use Doctrine\DBAL\Exception\NotNullConstraintViolationException;
 use Doctrine\DBAL\Exception\RetryableException;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\OptimisticLockException;
@@ -40,6 +41,7 @@ final class PlanningExceptionListener
             $error instanceof PlanningResourceNotFound => [404, $error->getMessage()],
             $error instanceof PlanningConflict => [409, $error->getMessage()],
             $error instanceof UniqueConstraintViolationException => [409, 'A record with this unique identifier already exists.'],
+            $error instanceof NotNullConstraintViolationException => [422, $this->notNullMessage($error)],
             $error instanceof OptimisticLockException, $error instanceof RetryableException => [409, 'Concurrent change. Reload and retry.'],
             $error instanceof AccessDeniedException => $this->tokens->getToken()?->getUser() === null ? [401, 'JWT required.'] : [403, 'Access denied.'],
             $error instanceof HttpExceptionInterface => [$error->getStatusCode(), $error->getMessage()],
@@ -50,5 +52,14 @@ final class PlanningExceptionListener
         }
         $headers = $status === 401 ? ['WWW-Authenticate' => 'Bearer'] : [];
         $event->setResponse(new JsonResponse(['message' => $message], $status, $headers));
+    }
+
+    private function notNullMessage(NotNullConstraintViolationException $error): string
+    {
+        if (str_contains($error->getMessage(), "Column 'code'")) {
+            return 'Zapis bez kodu nie przeszedł, bo kolumna kodu w bazie firmy nadal jest wymagana. Wpisz kod albo uruchom migracje baz firm.';
+        }
+
+        return 'Zapis odrzucony, bo wymagane pole w bazie jest puste.';
     }
 }
