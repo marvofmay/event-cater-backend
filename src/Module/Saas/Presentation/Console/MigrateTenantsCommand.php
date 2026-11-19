@@ -37,10 +37,19 @@ final class MigrateTenantsCommand extends Command
             if ($input->getOption('tenant') && $tenant['slug'] !== $input->getOption('tenant')) {
                 continue;
             }
+            $database = (string) $tenant['database_name'];
+            if (!preg_match('/^ec_tenant_[a-f0-9]{32}$/D', $database)) {
+                throw new \RuntimeException('Invalid tenant database name for '.$tenant['slug'].'.');
+            }
             $params = $this->control->db()->getParams();
-            $params['dbname'] = $tenant['database_name'];
+            unset($params['url']);
+            $params['dbname'] = $database;
             $connection = DriverManager::getConnection($params);
             try {
+                $connection->executeStatement('USE '.$connection->getDatabasePlatform()->quoteSingleIdentifier($database));
+                if ($connection->fetchOne('SELECT DATABASE()') !== $database) {
+                    throw new \RuntimeException('Tenant migration for '.$tenant['slug'].' connected to the wrong database.');
+                }
                 $factory = DependencyFactory::fromConnection(new ConfigurationArray(['migrations_paths' => ['DoctrineMigrations' => $this->projectDirectory.'/migrations'], 'transactional' => false]), new ExistingConnection($connection));
                 $factory->getMetadataStorage()->ensureInitialized();
                 $plan = $factory->getMigrationPlanCalculator()->getPlanUntilVersion($factory->getVersionAliasResolver()->resolveVersionAlias('latest'));
