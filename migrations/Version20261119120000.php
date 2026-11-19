@@ -16,9 +16,9 @@ final class Version20261119120000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql('ALTER TABLE equipment_item CHANGE code code VARCHAR(50) DEFAULT NULL');
-        $this->addSql('ALTER TABLE event_equipment_requirement CHANGE code code VARCHAR(50) DEFAULT NULL');
-        $this->addSql('ALTER TABLE event_preparation_line CHANGE code code VARCHAR(50) DEFAULT NULL');
+        $this->addSql('ALTER TABLE equipment_item MODIFY code VARCHAR(50) NULL DEFAULT NULL');
+        $this->addSql('ALTER TABLE event_equipment_requirement MODIFY code VARCHAR(50) NULL DEFAULT NULL');
+        $this->addSql('ALTER TABLE event_preparation_line MODIFY code VARCHAR(50) NULL DEFAULT NULL');
     }
 
     public function down(Schema $schema): void
