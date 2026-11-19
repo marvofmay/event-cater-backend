@@ -13,6 +13,38 @@
 Komenda: `docker exec service-company php bin/console app:notify-event-deadlines`  
 (okno domyślne 24 h; flaga `--within-hours=`). W `docker-compose` działa usługa `worker-event-deadline-reminders` (co godzinę). Szczegóły: [docs/notification-settings.md](docs/notification-settings.md).
 
+## Odbiorcy zdarzeń z „Tytuły i treści”
+
+Zakładka **Tytuły i treści** w `/settings/notifications` ustala treść i kanały. Odbiorcę wybiera system w chwili zdarzenia. Wiadomość dostaje tylko osoba z kontem użytkownika. Kanał (systemowy, e-mail, SMS) musi być włączony dla firmy, dla tego zdarzenia i — poza kanałem systemowym — u odbiorcy.
+
+**Import firm, import oddziałów i import pracowników** dostaje osoba, która ten import uruchomiła.
+
+Wiadomości o konkretnym pracowniku idą tylko do niego:
+
+| Zdarzenie | Odbiorca |
+| --- | --- |
+| Przypisanie do obsady wydarzenia | pracownik właśnie dopisany do obsady |
+| Usunięcie z obsady wydarzenia | pracownik właśnie zdjęty z obsady |
+| Wyznaczenie do kompletacji | pracownik wskazany do skompletowania listy |
+| Wyznaczenie odpowiedzialnego kuchni | pracownik wskazany jako odpowiedzialny kuchni |
+
+Pozostałe wiadomości o wydarzeniu idą do ról przy tym wydarzeniu:
+
+| Zdarzenie | Odbiorcy |
+| --- | --- |
+| Utworzenie wydarzenia, aktualizacja wydarzenia | koordynator, obsada, osoba od kompletacji, odpowiedzialny kuchni |
+| Zmiana statusu wydarzenia | koordynator i obsada |
+| Zmiana menu wydarzenia | obsada, osoba od kompletacji, odpowiedzialny kuchni |
+| Zmiana statusu kompletacji | obsada i osoba od kompletacji |
+| Potwierdzenie złożenia listy kompletacji | koordynator oraz kierowca i logistyka z obsady |
+| Wydanie karty kuchni | odpowiedzialny kuchni i koordynator |
+| Gotowość kuchni, przekazanie produkcji kuchni | odpowiedzialny kuchni |
+| Propozycja, akceptacja i odrzucenie rewizji kuchni | koordynator i odpowiedzialny kuchni |
+| Przypomnienie o terminie kompletacji | osoba od kompletacji i koordynator |
+| Przypomnienie o terminie kuchni | odpowiedzialny kuchni i koordynator |
+
+Aktualizacja, zmiana menu, kompletacja, kuchnia i przypomnienia wychodzą tylko wtedy, gdy wydarzenie jest zaplanowane, potwierdzone albo w trakcie. Na karcie wydarzenia, w panelu **Powiadomienia wydarzenia**, można z tych szerszych list kogoś zdjąć albo kogoś dodać. Wiadomości o przypisaniu, zdjęciu z obsady i wyznaczeniu do kompletacji albo kuchni i tak idą do wskazanej osoby.
+
 ## Logowanie nowego pracownika
 
 Po utworzeniu pracownika (formularz lub import) powstaje konto użytkownika:
