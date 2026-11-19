@@ -24,11 +24,10 @@ final readonly class EventAssignmentNotifier
 
     public function staffAssigned(string $employeeUuid, string $eventTitle, string $eventDate, array $functionLabels, ?string $eventUuid = null): void
     {
-        $functions = $functionLabels === [] ? '' : ' Twoje funkcje: '.implode(', ', $functionLabels).'.';
         $this->notify('EventStaffAssigned', $employeeUuid, [
             'eventTitle' => $eventTitle,
             'eventDate' => $eventDate,
-            'functions' => $functions,
+            'functions' => $functionLabels === [] ? '—' : implode(', ', $functionLabels),
         ], $eventUuid);
     }
 
@@ -40,15 +39,12 @@ final readonly class EventAssignmentNotifier
         ], $eventUuid);
     }
 
-    public function packerAssigned(string $employeeUuid, string $eventTitle, string $eventDate, bool $alsoOnStaff, ?string $eventUuid = null): void
+    public function packerAssigned(string $employeeUuid, string $eventTitle, string $eventDate, ?string $eventUuid = null): void
     {
-        $staffNote = $alsoOnStaff
-            ? ' Jesteś też w obsadzie tego wydarzenia.'
-            : ' Nie jesteś w obsadzie wydarzenia - masz dostęp do listy kompletacji.';
         $this->notify('EventPackerAssigned', $employeeUuid, [
             'eventTitle' => $eventTitle,
             'eventDate' => $eventDate,
-            'staffNote' => $staffNote,
+            'staffNote' => '',
         ], $eventUuid);
     }
 

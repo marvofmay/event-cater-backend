@@ -34,7 +34,7 @@ final class NotificationDefaultContent
             ],
             'EventStaffAssigned' => [
                 'title' => 'Obsadzono Cię na wydarzeniu',
-                'content' => 'Zostałeś przypisany do obsady wydarzenia „{{eventTitle}}” ({{eventDate}}).{{functions}}',
+                'content' => 'Zostałeś przypisany do obsady wydarzenia „{{eventTitle}}” ({{eventDate}}). Twoje funkcje: {{functions}}.',
             ],
             'EventStaffRemoved' => [
                 'title' => 'Usunięto Cię z obsady',
@@ -42,7 +42,7 @@ final class NotificationDefaultContent
             ],
             'EventPackerAssigned' => [
                 'title' => 'Wyznaczono Cię do kompletacji',
-                'content' => 'Odpowiadasz za skompletowanie kateringu na wydarzenie „{{eventTitle}}” ({{eventDate}}).{{staffNote}}',
+                'content' => 'Odpowiadasz za skompletowanie kateringu na wydarzenie „{{eventTitle}}” ({{eventDate}}).',
             ],
             'KitchenResponsibleAssigned' => [
                 'title' => 'Wyznaczono Cię do kuchni',
@@ -116,7 +116,7 @@ final class NotificationDefaultContent
             'CompanyImportedEvent', 'DepartmentImportedEvent', 'EmployeeImportedEvent' => ['importKind', 'importStatus'],
             'EventStaffAssigned' => ['eventTitle', 'eventDate', 'functions'],
             'EventStaffRemoved' => ['eventTitle', 'eventDate'],
-            'EventPackerAssigned' => ['eventTitle', 'eventDate', 'staffNote'],
+            'EventPackerAssigned' => ['eventTitle', 'eventDate'],
             'KitchenResponsibleAssigned' => ['eventTitle', 'dueAt'],
             'EventCreated' => ['eventTitle', 'eventDate', 'location'],
             'EventUpdated' => ['eventTitle', 'eventDate', 'changedFields'],
