@@ -32,6 +32,18 @@ import:
   noData: "Brak danych do importu"
 errors:
   occurred: "Wystąpiły błędy"
+contact:
+  data:
+    max: "Kontakt może mieć najwyżej 100 znaków."
+address:
+  street:
+    max: "Ulica może mieć najwyżej 250 znaków."
+  postcode:
+    max: "Kod pocztowy może mieć najwyżej 10 znaków."
+  city:
+    max: "Miasto może mieć najwyżej 50 znaków."
+  country:
+    max: "Kraj może mieć najwyżej 255 znaków."
 invalidUUID: "Nieprawidłowy format UUID"
 notification:
   channel:

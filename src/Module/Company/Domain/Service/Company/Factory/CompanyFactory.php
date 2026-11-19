@@ -27,7 +27,7 @@ class CompanyFactory
     private function mapEventToCompany(Company $company, DomainEventInterface $event): void
     {
         $company->setFullName($event->fullName->getValue());
-        $company->setShortName($event->shortName->getValue());
+        $company->setShortName($event->shortName?->getValue());
         $company->setInternalCode($event->internalCode);
         $company->setNIP($event->nip->getValue());
         $company->setREGON($event->regon->getValue());

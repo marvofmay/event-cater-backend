@@ -4,26 +4,28 @@ declare(strict_types=1);
 
 namespace App\Module\Company\Domain\Aggregate\ValueObject;
 
+use App\Common\Shared\Utils\EmailValidator;
+use Symfony\Component\HttpFoundation\Response;
+
 final class Emails
 {
     public function __construct(private array $emails)
     {
+        $normalized = [];
         foreach ($emails as $email) {
-            if ($email === null || trim((string) $email) === '') {
+            if (!is_string($email) || trim($email) === '') {
                 continue;
             }
 
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                throw new \InvalidArgumentException(
-                    "Invalid email: $email"
-                );
+            $email = trim($email);
+            $error = EmailValidator::validate($email);
+            if (null !== $error) {
+                throw new \Exception($error, Response::HTTP_UNPROCESSABLE_ENTITY);
             }
+            $normalized[] = $email;
         }
 
-        $this->emails = array_values(array_filter(
-            $emails,
-            fn ($email) => is_string($email) && trim($email) !== ''
-        ));
+        $this->emails = $normalized;
     }
 
     public static function fromArray(array $emails): self

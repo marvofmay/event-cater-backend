@@ -89,7 +89,24 @@ final readonly class UnifiedApiExceptionListener
         $this->logError($channel, $message);
         $status = (int) $exception->getCode();
         $status = $status >= 400 && $status <= 599 ? $status : 500;
-        $event->setResponse(new JsonResponse(['message' => $status === 500 ? $this->translator->trans('errors.http') : $message], $status));
+        $event->setResponse(new JsonResponse(['message' => $this->clientMessage($message, $status)], $status));
+    }
+
+    private function clientMessage(string $message, int $status): string
+    {
+        if (500 !== $status) {
+            $translated = $this->translator->trans($message, [], 'validators');
+
+            return $translated !== $message ? $translated : $message;
+        }
+
+        if (str_contains($message, 'created_at_us') || str_contains($message, 'Unknown column')) {
+            return $this->translator->trans('errors.missingColumn');
+        }
+
+        $translated = $this->translator->trans('errors.http');
+
+        return 'errors.http' === $translated ? 'Wystąpił błąd serwera.' : $translated;
     }
 
     private function getControllerErrorChannel(ExceptionEvent $event): MonologChannelEnum

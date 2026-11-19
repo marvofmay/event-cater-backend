@@ -33,6 +33,10 @@ class CreateDTO implements DataTransferObjectInterface
         }
     }
 
+    #[MinMaxLength(min: 0, max: 50, message: [
+        'tooLong' => 'company.internalCode.maximumLength',
+        'domain' => 'companies',
+    ])]
     public ?string $internalCode = null {
         get {
             return $this->internalCode;
@@ -66,6 +70,10 @@ class CreateDTO implements DataTransferObjectInterface
         }
     }
 
+    #[NotBlank(message: [
+        'text' => 'company.nip.required',
+        'domain' => 'companies',
+    ])]
     #[MinMaxLength(min: 10, max: 10, message: [
         'tooShort' => 'company.nip.minimumLength',
         'tooLong' => 'company.nip.maximumLength',
@@ -78,6 +86,10 @@ class CreateDTO implements DataTransferObjectInterface
         }
     }
 
+    #[NotBlank(message: [
+        'text' => 'company.regon.required',
+        'domain' => 'companies',
+    ])]
     #[MinMaxLength(min: 9, max: 14, message: [
         'tooShort' => 'company.regon.minimumLength',
         'tooLong' => 'company.regon.maximumLength',
@@ -102,6 +114,7 @@ class CreateDTO implements DataTransferObjectInterface
 
     #[Assert\All([
         new Assert\Type(type: 'string'),
+        new Assert\Length(max: 100, maxMessage: 'contact.data.max'),
     ])]
     #[Assert\Type('array')]
     #[Assert\Count(
@@ -116,6 +129,8 @@ class CreateDTO implements DataTransferObjectInterface
 
     #[Assert\All([
         new Assert\Type(type: 'string'),
+        new Assert\Length(max: 100, maxMessage: 'contact.data.max'),
+        new Assert\Email(message: 'email.invalid'),
     ])]
     #[Assert\Type('array')]
     #[Assert\Count(
@@ -130,6 +145,8 @@ class CreateDTO implements DataTransferObjectInterface
 
     #[Assert\All([
         new Assert\Type(type: 'string'),
+        new Assert\Length(max: 100, maxMessage: 'contact.data.max'),
+        new Assert\Url(message: 'website.invalidProtocol', protocols: ['http', 'https']),
     ])]
     #[Assert\Type('array')]
     #[Assert\Count(
