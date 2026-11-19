@@ -18,6 +18,7 @@ company:
     expectedUniqueCompanyNameConstraint: "Oczekiwano unikalnej nazwy firmy."
   internalCode:
     alreadyExists: "Firma o podanym kodzie wewnętrznym \":internalCode\" już istnieje."
+    maximumLength: "Kod wewnętrzny może mieć najwyżej :qty znaków."
   nip:
     minimumLength: "Minimalnie znaków :qty"
     maximumLength: "Maksymalnie znaków :qty"

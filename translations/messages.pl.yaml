@@ -5,6 +5,9 @@ expectedPDFFile: "Oczekiwano pliku PDF."
 notAllowedTypeFile: "Niedozwolony typ pliku."
 unexpectedTypeFile: "Oczekiwano inny typ pliku."
 accessDenied: "Zabroniony dostęp - brak uprawnień."
+errors:
+  http: "Wystąpił błąd serwera."
+  missingColumn: "Zapis nie przeszedł, bo w bazie tej firmy brakuje kolumny z aktualnej wersji. Uruchom migracje baz firm."
 role:
   delete:
     multiple:
