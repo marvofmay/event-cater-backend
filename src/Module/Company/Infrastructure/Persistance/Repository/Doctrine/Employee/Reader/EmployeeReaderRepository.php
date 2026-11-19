@@ -72,8 +72,8 @@ final class EmployeeReaderRepository extends ServiceEntityRepository implements 
 
         $qb->select('u')
             ->from(User::class, 'u')
-            ->where('u.'.User::COLUMN_EMAIL.' = :email')
-            ->setParameter('email', $email);
+            ->where('LOWER(u.'.User::COLUMN_EMAIL.') = :email')
+            ->setParameter('email', strtolower(trim($email)));
 
         if (null !== $uuid) {
             $qb->andWhere('(u.'.User::COLUMN_EMPLOYEE_UUID.' IS NULL OR u.'.User::COLUMN_EMPLOYEE_UUID.' != :uuid)')
@@ -86,6 +86,23 @@ final class EmployeeReaderRepository extends ServiceEntityRepository implements 
     public function isEmployeeWithEmailExists(string $email, ?string $uuid = null): bool
     {
         return !is_null($this->getEmployeeByEmail($email, $uuid));
+    }
+
+    public function isEmployeeContactEmailTaken(string $email, ?string $uuid = null): bool
+    {
+        $qb = $this->createQueryBuilder('e')
+            ->innerJoin('e.contacts', 'c')
+            ->andWhere('c.type = :type AND LOWER(c.data) = :email')
+            ->setParameter('type', 'email')
+            ->setParameter('email', strtolower(trim($email)))
+            ->setMaxResults(1);
+
+        if (null !== $uuid) {
+            $qb->andWhere('e.uuid != :uuid')
+                ->setParameter('uuid', $uuid);
+        }
+
+        return null !== $qb->getQuery()->getOneOrNullResult();
     }
 
     public function isEmployeeWithPESELExists(string $pesel, ?string $uuid = null): bool

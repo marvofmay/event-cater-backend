@@ -25,6 +25,8 @@ interface EmployeeReaderInterface
 
     public function isEmployeeWithEmailExists(string $email, ?string $uuid = null): bool;
 
+    public function isEmployeeContactEmailTaken(string $email, ?string $uuid = null): bool;
+
     public function isEmployeeWithPESELExists(string $pesel, ?string $uuid = null): bool;
 
     public function isEmployeeAlreadyExistsWithEmailOrPESEL(string $pesel, string $email, ?string $uuid): bool;
