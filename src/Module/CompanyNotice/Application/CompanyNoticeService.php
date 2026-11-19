@@ -9,7 +9,9 @@ use App\Common\Domain\Exception\BusinessRuleViolation;
 use App\Module\CompanyNotice\Domain\Entity\CompanyNotice;
 use App\Module\CompanyNotice\Domain\Entity\CompanyNoticeImage;
 use App\Module\CompanyNotice\Infrastructure\Storage\CompanyNoticeMediaStorage;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 final readonly class CompanyNoticeService
@@ -25,27 +27,37 @@ final readonly class CompanyNoticeService
     }
 
     /** @return list<array<string, mixed>> */
-    public function list(): array
+    public function list(bool $manage, ?string $status): array
     {
-        $items = $this->em->createQueryBuilder()
+        $now = $this->now();
+        $filter = $manage ? ($status ?: 'all') : 'published';
+        $query = $this->em->createQueryBuilder()
             ->select('n', 'i')
             ->from(CompanyNotice::class, 'n')
-            ->leftJoin('n.images', 'i')
-            ->orderBy('n.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+            ->leftJoin('n.images', 'i');
+        $this->applyStatus($query, $filter, $now);
+        $query->orderBy('n.publishAt', $filter === 'scheduled' ? 'ASC' : 'DESC');
+        $items = $query->getQuery()->getResult();
 
         return array_map(static fn (CompanyNotice $notice) => $notice->toArray(), $items);
     }
 
-    public function get(string $uuid): array
+    public function get(string $uuid, bool $manage): array
     {
-        return $this->require($uuid)->toArray();
+        $notice = $this->require($uuid);
+        if (!$manage && $notice->status($this->now()) !== 'published') {
+            throw new PlanningResourceNotFound('Nie znaleziono ogłoszenia.');
+        }
+
+        return $notice->toArray();
     }
 
-    public function image(string $noticeUuid, string $imageUuid): CompanyNoticeImage
+    public function image(string $noticeUuid, string $imageUuid, bool $manage): CompanyNoticeImage
     {
         $notice = $this->require($noticeUuid);
+        if (!$manage && $notice->status($this->now()) !== 'published') {
+            throw new PlanningResourceNotFound('Nie znaleziono ogłoszenia.');
+        }
         foreach ($notice->images() as $image) {
             if ($image->uuid() === $imageUuid) {
                 return $image;
@@ -57,13 +69,13 @@ final readonly class CompanyNoticeService
     /**
      * @param list<UploadedFile> $gallery
      */
-    public function create(string $title, string $body, UploadedFile $cover, array $gallery, string $userUuid, string $userName): array
+    public function create(string $title, string $body, UploadedFile $cover, array $gallery, string $userUuid, string $userName, \DateTimeImmutable $publishAt): array
     {
         [$title, $body] = $this->validateText($title, $body);
         if (count($gallery) > self::MAX_GALLERY) {
             throw new BusinessRuleViolation('Możesz dodać maksymalnie '.self::MAX_GALLERY.' zdjęć dodatkowych.');
         }
-        $notice = new CompanyNotice($title, $body, $userUuid, $userName);
+        $notice = new CompanyNotice($title, $body, $userUuid, $userName, $publishAt);
         $coverMeta = $this->storage->store($cover);
         $notice->addImage(new CompanyNoticeImage(
             $notice,
@@ -97,11 +109,12 @@ final readonly class CompanyNoticeService
      * @param list<UploadedFile> $gallery
      * @param list<string> $removeImageUuids
      */
-    public function update(string $uuid, string $title, string $body, ?UploadedFile $cover, array $gallery, array $removeImageUuids): array
+    public function update(string $uuid, string $title, string $body, ?UploadedFile $cover, array $gallery, array $removeImageUuids, \DateTimeImmutable $publishAt, bool $active, bool $archived): array
     {
         [$title, $body] = $this->validateText($title, $body);
         $notice = $this->require($uuid);
         $notice->update($title, $body);
+        $notice->changePublication($publishAt, $active, $archived);
 
         foreach ($removeImageUuids as $imageUuid) {
             foreach ($notice->images() as $image) {
@@ -179,6 +192,25 @@ final readonly class CompanyNoticeService
         }
 
         return $notice;
+    }
+
+    private function now(): \DateTimeImmutable
+    {
+        return new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+    }
+
+    private function applyStatus(QueryBuilder $query, string $status, \DateTimeImmutable $now): void
+    {
+        if ($status === 'all') {
+            return;
+        }
+        match ($status) {
+            'published' => $query->andWhere('n.active = true AND n.archivedAt IS NULL AND n.publishAt <= :now')->setParameter('now', $now, Types::DATETIME_IMMUTABLE),
+            'scheduled' => $query->andWhere('n.active = true AND n.archivedAt IS NULL AND n.publishAt > :now')->setParameter('now', $now, Types::DATETIME_IMMUTABLE),
+            'archived' => $query->andWhere('n.archivedAt IS NOT NULL'),
+            'inactive' => $query->andWhere('n.active = false AND n.archivedAt IS NULL'),
+            default => throw new BusinessRuleViolation('Filtr statusu musi być: published, scheduled, archived, inactive albo all.'),
+        };
     }
 
     /** @return array{0: string, 1: string} */

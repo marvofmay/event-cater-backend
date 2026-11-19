@@ -13,6 +13,7 @@ use Ramsey\Uuid\Uuid;
 #[ORM\Entity]
 #[ORM\Table(name: 'company_notice')]
 #[ORM\Index(name: 'company_notice_created', columns: ['created_at'])]
+#[ORM\Index(name: 'company_notice_publication', columns: ['active', 'publish_at', 'archived_at'])]
 #[Gedmo\SoftDeleteable(fieldName: 'deletedAt', timeAware: false, hardDelete: true)]
 class CompanyNotice
 {
@@ -38,6 +39,15 @@ class CompanyNotice
     #[ORM\Column(type: 'datetime_immutable')]
     private \DateTimeImmutable $updatedAt;
 
+    #[ORM\Column(type: 'datetime_immutable')]
+    private \DateTimeImmutable $publishAt;
+
+    #[ORM\Column(type: 'boolean')]
+    private bool $active = true;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $archivedAt = null;
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     private ?\DateTimeImmutable $deletedAt = null;
 
@@ -46,7 +56,7 @@ class CompanyNotice
     #[ORM\OrderBy(['sortOrder' => 'ASC'])]
     private Collection $images;
 
-    public function __construct(string $title, string $body, string $createdByUserUuid, string $createdByName)
+    public function __construct(string $title, string $body, string $createdByUserUuid, string $createdByName, ?\DateTimeImmutable $publishAt = null)
     {
         $this->uuid = Uuid::uuid4()->toString();
         $this->title = $title;
@@ -56,6 +66,9 @@ class CompanyNotice
         $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $this->createdAt = $now;
         $this->updatedAt = $now;
+        $this->publishAt = ($publishAt ?? $now)->setTimezone(new \DateTimeZone('UTC'));
+        $this->active = true;
+        $this->archivedAt = null;
         $this->images = new ArrayCollection();
     }
 
@@ -69,6 +82,49 @@ class CompanyNotice
         $this->title = $title;
         $this->body = $body;
         $this->touch();
+    }
+
+    public function changePublication(\DateTimeImmutable $publishAt, bool $active, bool $archived): void
+    {
+        $this->publishAt = $publishAt->setTimezone(new \DateTimeZone('UTC'));
+        $this->active = $active;
+        if ($archived && $this->archivedAt === null) {
+            $this->archivedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        }
+        if (!$archived) {
+            $this->archivedAt = null;
+        }
+        $this->touch();
+    }
+
+    public function publishAt(): \DateTimeImmutable
+    {
+        return $this->publishAt;
+    }
+
+    public function isActive(): bool
+    {
+        return $this->active;
+    }
+
+    public function isArchived(): bool
+    {
+        return $this->archivedAt !== null;
+    }
+
+    public function status(\DateTimeImmutable $now): string
+    {
+        if ($this->archivedAt !== null) {
+            return 'archived';
+        }
+        if (!$this->active) {
+            return 'inactive';
+        }
+        if ($this->publishAt > $now) {
+            return 'scheduled';
+        }
+
+        return 'published';
     }
 
     public function touch(): void
@@ -115,6 +171,8 @@ class CompanyNotice
     {
         $cover = $this->cover();
 
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+
         return [
             'uuid' => $this->uuid,
             'title' => $this->title,
@@ -122,6 +180,10 @@ class CompanyNotice
             'createdByName' => $this->createdByName,
             'createdAt' => $this->createdAt->format(\DATE_ATOM),
             'updatedAt' => $this->updatedAt->format(\DATE_ATOM),
+            'publishAt' => $this->publishAt->format(\DATE_ATOM),
+            'active' => $this->active,
+            'archivedAt' => $this->archivedAt?->format(\DATE_ATOM),
+            'status' => $this->status($now),
             'cover' => $cover?->toArray(),
             'gallery' => array_map(static fn (CompanyNoticeImage $image) => $image->toArray(), $this->gallery()),
         ];

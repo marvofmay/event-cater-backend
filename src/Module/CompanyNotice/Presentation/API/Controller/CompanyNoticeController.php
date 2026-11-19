@@ -55,13 +55,21 @@ final class CompanyNoticeController extends PlanningController
         $this->denyAccessUnlessGranted('IS_AUTHENTICATED_FULLY');
     }
 
-    #[Route('', methods: ['GET'])]
-    public function list(CompanyNoticeService $notices): JsonResponse
+    private function canManage(): bool
     {
-        // Tablica /info: każdy zalogowany użytkownik tenanta może czytać ogłoszenia.
-        $this->requireLogin();
+        return $this->isGranted(PermissionEnum::CREATE, AccessEnum::COMPANY_NOTICES)
+            || $this->isGranted(PermissionEnum::UPDATE, AccessEnum::COMPANY_NOTICES)
+            || $this->isGranted(PermissionEnum::DELETE, AccessEnum::COMPANY_NOTICES);
+    }
 
-        return $this->resource(['items' => $notices->list()]);
+    #[Route('', methods: ['GET'])]
+    public function list(Request $request, CompanyNoticeService $notices): JsonResponse
+    {
+        // Tablica /info: każdy zalogowany użytkownik tenanta widzi opublikowane ogłoszenia.
+        $this->requireLogin();
+        $manage = $this->canManage();
+
+        return $this->resource(['items' => $notices->list($manage, $manage ? $request->query->getString('status') : 'published')]);
     }
 
     #[Route('/{uuid}', methods: ['GET'])]
@@ -69,14 +77,14 @@ final class CompanyNoticeController extends PlanningController
     {
         $this->requireLogin();
 
-        return $this->resource($notices->get(PlanningPayload::identifier($uuid)));
+        return $this->resource($notices->get(PlanningPayload::identifier($uuid), $this->canManage()));
     }
 
     #[Route('/{uuid}/images/{imageUuid}', methods: ['GET'])]
     public function image(string $uuid, string $imageUuid, CompanyNoticeService $notices, CompanyNoticeMediaStorage $storage): BinaryFileResponse
     {
         $this->requireLogin();
-        $image = $notices->image(PlanningPayload::identifier($uuid), PlanningPayload::identifier($imageUuid));
+        $image = $notices->image(PlanningPayload::identifier($uuid), PlanningPayload::identifier($imageUuid), $this->canManage());
         $response = new BinaryFileResponse($storage->path($image->storedName()));
         $response->headers->set('Content-Type', $image->mimeType());
         $response->headers->set('X-Content-Type-Options', 'nosniff');
@@ -111,6 +119,7 @@ final class CompanyNoticeController extends PlanningController
             $gallery,
             $user->getUUID()->toString(),
             $this->actorName($user),
+            $this->publishAt($request, true),
         ), 201);
     }
 
@@ -136,14 +145,54 @@ final class CompanyNoticeController extends PlanningController
         }
         $remove = array_values(array_filter(array_map(static fn ($value) => is_string($value) ? $value : '', $remove)));
 
+        $uuid = PlanningPayload::identifier($uuid);
+        $current = $notices->get($uuid, true);
+
         return $this->resource($notices->update(
-            PlanningPayload::identifier($uuid),
+            $uuid,
             (string) $request->request->get('title', ''),
             (string) $request->request->get('body', ''),
             $coverFile,
             $gallery,
             $remove,
+            $request->request->has('publishNow') || $request->request->has('publishAt')
+                ? $this->publishAt($request, false)
+                : new \DateTimeImmutable($current['publishAt']),
+            $request->request->has('active') ? $this->flag($request, 'active') : (bool) $current['active'],
+            $request->request->has('archived') ? $this->flag($request, 'archived') : $current['archivedAt'] !== null,
         ));
+    }
+
+    private function publishAt(Request $request, bool $defaultImmediate): \DateTimeImmutable
+    {
+        $immediate = $this->flag($request, 'publishNow', $defaultImmediate);
+        if ($immediate) {
+            return new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        }
+        $raw = trim((string) $request->request->get('publishAt', ''));
+        if ($raw === '') {
+            throw new BusinessRuleViolation('Podaj datę i godzinę publikacji.');
+        }
+        try {
+            return (new \DateTimeImmutable($raw))->setTimezone(new \DateTimeZone('UTC'));
+        } catch (\Exception) {
+            throw new BusinessRuleViolation('Data publikacji jest niepoprawna.');
+        }
+    }
+
+    private function flag(Request $request, string $key, bool $default = false): bool
+    {
+        if (!$request->request->has($key)) {
+            return $default;
+        }
+        $value = strtolower(trim((string) $request->request->get($key)));
+        if (in_array($value, ['1', 'true', 'yes', 'on'], true)) {
+            return true;
+        }
+        if (in_array($value, ['0', 'false', 'no', 'off', ''], true)) {
+            return false;
+        }
+        throw new BusinessRuleViolation('Pole '.$key.' musi mieć wartość tak albo nie.');
     }
 
     #[Route('/{uuid}', methods: ['DELETE'])]
