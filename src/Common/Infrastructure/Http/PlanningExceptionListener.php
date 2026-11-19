@@ -45,13 +45,25 @@ final class PlanningExceptionListener
             $error instanceof OptimisticLockException, $error instanceof RetryableException => [409, 'Concurrent change. Reload and retry.'],
             $error instanceof AccessDeniedException => $this->tokens->getToken()?->getUser() === null ? [401, 'JWT required.'] : [403, 'Access denied.'],
             $error instanceof HttpExceptionInterface => [$error->getStatusCode(), $error->getMessage()],
-            default => [500, 'Unexpected server error.'],
+            default => [500, $this->serverMessage($error)],
         };
         if ($status === 500) {
             $this->logger->error('Planning API failed.', ['exception' => $error]);
         }
         $headers = $status === 401 ? ['WWW-Authenticate' => 'Bearer'] : [];
         $event->setResponse(new JsonResponse(['message' => $message], $status, $headers));
+    }
+
+    private function serverMessage(\Throwable $error): string
+    {
+        if (str_contains($error->getMessage(), 'creation_notice_sent_at')
+            || str_contains($error->getMessage(), 'notification_channels')
+            || str_contains($error->getMessage(), 'event_notification_recipient_override')
+            || str_contains($error->getMessage(), 'due_reminder_sent_at')) {
+            return 'Wysłanie powiadomienia nie przeszło, bo w bazie firmy brakuje tabeli albo kolumny odbiorców. Uruchom migracje baz firm.';
+        }
+
+        return 'Unexpected server error.';
     }
 
     private function notNullMessage(NotNullConstraintViolationException $error): string
