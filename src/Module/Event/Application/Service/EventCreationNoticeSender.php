@@ -9,7 +9,7 @@ use App\Common\Domain\Exception\BusinessRuleViolation;
 use App\Module\Event\Application\Port\EmployeeDirectory;
 use App\Module\Event\Domain\Entity\CateringEvent;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\LockMode;
+use Doctrine\DBAL\LockMode;
 
 /**
  * Jednorazowe powiadomienie „Utworzenie wydarzenia” po uzupełnieniu obsady.
