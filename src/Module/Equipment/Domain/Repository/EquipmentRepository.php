@@ -11,5 +11,5 @@ interface EquipmentRepository
     public function add(EquipmentItem $item): void;
     public function remove(EquipmentItem $item): void;
     public function getForUpdate(string $uuid, int $expectedVersion): EquipmentItem;
-    public function assertCodeAvailable(string $code, string $exceptUuid): void;
+    public function assertCodeAvailable(?string $code, string $exceptUuid): void;
 }

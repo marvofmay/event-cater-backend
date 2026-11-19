@@ -170,4 +170,31 @@ final class EquipmentCatalogApiTest extends FunctionalTestBase
         $this->client->setServerParameter('HTTP_Authorization', '');
         $this->api('GET', '/api/equipment-categories', [], 401);
     }
+
+    public function testCodeAndOwnedQuantityAreOptional(): void
+    {
+        $this->getAuthenticatedClient();
+        $category = $this->api('POST', '/api/equipment-categories', ['name' => 'Zastawa'], 201);
+        $base = ['categoryUuid' => $category['uuid'], 'unit' => 'piece'];
+        $first = $this->api('POST', '/api/equipment', $base + ['name' => 'Miska'], 201);
+        self::assertNull($first['code']);
+        self::assertSame(0, $first['stockQuantity']);
+        $second = $this->api('POST', '/api/equipment', $base + ['name' => 'Talerz', 'code' => '   ', 'stockQuantity' => null], 201);
+        self::assertNull($second['code']);
+        self::assertSame(0, $second['stockQuantity']);
+        $this->api('POST', '/api/equipment', $base + ['name' => 'Widelec', 'code' => 'bad code'], 422);
+        $coded = $this->api('POST', '/api/equipment', $base + ['name' => 'Łyżka', 'code' => 'lyzka-1'], 201);
+        self::assertSame('LYZKA-1', $coded['code']);
+        self::assertSame(0, $coded['stockQuantity']);
+        $this->api('POST', '/api/equipment', $base + ['name' => 'Łyżka 2', 'code' => 'LYZKA-1'], 409);
+        $cleared = $this->api('PUT', '/api/equipment/'.$coded['uuid'], $base + [
+            'version' => $coded['version'], 'code' => null, 'name' => 'Łyżka',
+        ]);
+        self::assertNull($cleared['code']);
+        $event = $this->api('POST', '/api/events', ['title' => 'Bankiet', 'date' => '2026-12-31'], 201);
+        $this->api('PUT', '/api/events/'.$event['uuid'].'/equipment/'.$first['uuid'], ['version' => $event['version'], 'quantity' => 2]);
+        $loaded = $this->api('GET', '/api/events/'.$event['uuid']);
+        self::assertNull($loaded['equipment'][0]['code']);
+        self::assertSame('Miska', $loaded['equipment'][0]['name']);
+    }
 }

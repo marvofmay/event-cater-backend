@@ -16,8 +16,8 @@ class EquipmentItem
     #[ORM\Id]
     #[ORM\Column(length: 36)]
     private string $uuid;
-    #[ORM\Column(length: 50, unique: true)]
-    private string $code;
+    #[ORM\Column(length: 50, unique: true, nullable: true)]
+    private ?string $code = null;
     #[ORM\Column(length: 200)]
     private string $name;
     #[ORM\ManyToOne(targetEntity: EquipmentCategory::class)]
@@ -46,7 +46,7 @@ class EquipmentItem
     {
     }
 
-    public static function create(string $uuid, string $code, string $name, EquipmentCategory $category, string $unit, ?string $description, ?string $slangName = null, int $stockQuantity = 0): self
+    public static function create(string $uuid, ?string $code, string $name, EquipmentCategory $category, string $unit, ?string $description, ?string $slangName = null, int $stockQuantity = 0): self
     {
         $self = new self();
         $self->uuid = Uuid::fromString($uuid)->toString();
@@ -54,10 +54,12 @@ class EquipmentItem
         return $self;
     }
 
-    public function replaceDetails(string $code, string $name, EquipmentCategory $category, string $unit, ?string $description, ?string $slangName = null, ?int $stockQuantity = null): void
+    public function replaceDetails(?string $code, string $name, EquipmentCategory $category, string $unit, ?string $description, ?string $slangName = null, ?int $stockQuantity = null): void
     {
-        $code = strtoupper(trim($code));
-        if (!preg_match('/^[A-Z0-9][A-Z0-9_-]{0,49}$/D', $code)) {
+        $code = $code === null ? '' : strtoupper(trim($code));
+        if ($code === '') {
+            $code = null;
+        } elseif (!preg_match('/^[A-Z0-9][A-Z0-9_-]{0,49}$/D', $code)) {
             throw new BusinessRuleViolation('Equipment code must contain 1..50 letters, digits, underscores or hyphens.');
         }
         if (trim($name) === '' || mb_strlen($name) > 200) {

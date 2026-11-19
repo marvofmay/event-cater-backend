@@ -30,8 +30,8 @@ class PreparationLine
     private ?string $requiredQuantity = null;
     #[ORM\Column(length: 200)]
     private string $name;
-    #[ORM\Column(length: 50)]
-    private string $code;
+    #[ORM\Column(length: 50, nullable: true)]
+    private ?string $code;
     #[ORM\Column(length: 10)]
     private string $unit;
     #[ORM\Column(type: 'decimal', precision: 10, scale: 3)]
@@ -61,7 +61,7 @@ class PreparationLine
     #[ORM\Column(type: 'integer', nullable: true)]
     private ?int $sourceTemplateVersion = null;
 
-    private function __construct(EventPreparationList $list, string $name, string $code, string $unit)
+    private function __construct(EventPreparationList $list, string $name, ?string $code, string $unit)
     {
         $this->uuid = Uuid::uuid4()->toString();
         $this->list = $list;
