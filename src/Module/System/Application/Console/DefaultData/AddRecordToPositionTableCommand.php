@@ -19,7 +19,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 class AddRecordToPositionTableCommand extends Command
 {
     private const string DESCRIPTION           = 'Add missing records to Position table';
-    private const string HELP                  = 'This command ensures that all TechnologyPositionEnum values exist in the Position table';
+    private const string HELP                  = 'This command ensures that the default catering positions exist in the Position table';
     private const string SUCCESS_MESSAGE       = 'Position table has been updated successfully!';
     private const string INFO_ADDED_MESSAGE    = 'Added missing positions';
     private const string INFO_NO_ADDED_MESSAGE = 'No new positions to add';
