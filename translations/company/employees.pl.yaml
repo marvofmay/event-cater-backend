@@ -20,7 +20,8 @@ employee:
     notExists: "Pracownik o podanym PESEL :pesel nie istnieje lub został usunięty."
     required: "PESEL pracownika jest wymagany."
   email:
-    alreadyExists: "Pracownik o podanym emailu :email już istnieje."
+    alreadyExists: "Adres e-mail :email jest już przypisany do innego pracownika."
+    usedByCompanyAccount: "Adres e-mail :email jest już używany przez konto tej firmy. PESEL jest wolny. Podaj inny e-mail pracownika."
     required: "Email pracownika jest wymagany."
   firstName:
     required: "Imię pracownika jest wymagane."

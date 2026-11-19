@@ -7,6 +7,7 @@ namespace App\Module\Company\Application\Validator\Employee;
 use App\Common\Domain\Interface\CommandInterface;
 use App\Common\Domain\Interface\QueryInterface;
 use App\Common\Domain\Interface\ValidatorInterface;
+use App\Module\Company\Domain\Entity\User;
 use App\Module\Company\Domain\Interface\Employee\EmployeeReaderInterface;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\HttpFoundation\Response;
@@ -32,11 +33,27 @@ final readonly class EmployeeAlreadyExistsValidator implements ValidatorInterfac
         }
 
         $employeeUUID = $data->employeeUUID ?? null;
-        $pesel = $data->pesel;
-        $email = $data->email ?? '';
-        $employeeExists = $this->employeeReaderRepository->isEmployeeAlreadyExistsWithEmailOrPESEL($pesel, $email, $employeeUUID);
-        if ($employeeExists || ('' !== $email && $this->employeeReaderRepository->isEmployeeWithEmailExists($email, $employeeUUID))) {
-            throw new \Exception($this->translator->trans('employee.alreadyExistsWithEmailsOrPESEL', [':pesel' => $pesel, ':email' => $email], 'employees'), Response::HTTP_CONFLICT);
+        $pesel = trim((string) $data->pesel);
+        $email = strtolower(trim((string) ($data->email ?? '')));
+
+        if ($this->employeeReaderRepository->isEmployeeWithPESELExists($pesel, $employeeUUID)) {
+            throw new \Exception($this->translator->trans('employee.pesel.alreadyExists', [':pesel' => $pesel], 'employees'), Response::HTTP_CONFLICT);
+        }
+
+        if ('' === $email) {
+            return;
+        }
+
+        $account = $this->employeeReaderRepository->getEmployeeByEmail($email, $employeeUUID);
+        if ($account instanceof User) {
+            $key = null === $account->getEmployee()
+                ? 'employee.email.usedByCompanyAccount'
+                : 'employee.email.alreadyExists';
+            throw new \Exception($this->translator->trans($key, [':email' => $email], 'employees'), Response::HTTP_CONFLICT);
+        }
+
+        if ($this->employeeReaderRepository->isEmployeeContactEmailTaken($email, $employeeUUID)) {
+            throw new \Exception($this->translator->trans('employee.email.alreadyExists', [':email' => $email], 'employees'), Response::HTTP_CONFLICT);
         }
     }
 }
