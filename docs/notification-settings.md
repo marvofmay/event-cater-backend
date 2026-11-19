@@ -26,6 +26,8 @@ Osobiste (bez listy wydarzenia): `EventStaffAssigned`, `EventPackerAssigned`, `K
 
 Fan-out (z extra/excluded na karcie wydarzenia): `EventCreated`, `EventUpdated`, `EventStatusChanged`, `EventMenuChanged`, `PreparationStatusChanged`, `KitchenOrderReleased`, `KitchenOrderReady`, `KitchenOrderHandedOver`.
 
+`EventCreated` nie idzie przy zapisie podstawowych danych. Na karcie wydarzenia, w zakładkach Zespół, Kompletacja i Powiadomienia, przełącznik „Wyślij powiadomienia” wysyła je raz (`POST /api/events/{uuid}/creation-notice`) do koordynatora, obsady, osoby kompletującej, kuchni i dodatkowo wskazanych osób. Drugie wywołanie nic nie wysyła. Dopóki to powiadomienie nie pójdzie, osobiste komunikaty o przypisaniu też czekają, żeby nie zdublować wiadomości. Po wysłaniu nowa obsada dostaje już tylko swoje powiadomienie o przypisaniu. Wydarzenia utworzone wcześniej są oznaczone jako wysłane.
+
 Na karcie wydarzenia zakładka **Powiadomienia** pozwala:
 - odznaczyć osoby z listy domyślnej i dodać dodatkowych odbiorców,
 - nadpisać kanały (SMS / e-mail / systemowe) dla tego wydarzenia albo dziedziczyć ustawienia firmowe typu zdarzenia.

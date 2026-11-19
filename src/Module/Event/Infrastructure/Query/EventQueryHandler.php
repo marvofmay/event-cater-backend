@@ -243,6 +243,7 @@ final readonly class EventQueryHandler
             'coordinatorName' => $r['coordinator_name'],
             'customerName' => $r['customer_name'], 'customerUuid' => $r['customer_uuid'], 'contacts' => json_decode($r['contacts'], true, flags: JSON_THROW_ON_ERROR),
             'menu' => json_decode($r['menu'], true, flags: JSON_THROW_ON_ERROR), 'version' => (int) $r['version'],
+            'creationNoticeSentAt' => self::dateTime($r['creation_notice_sent_at'] ?? null),
             'createdAt' => self::dateTime($r['created_at']), 'updatedAt' => self::dateTime($r['updated_at'])];
     }
 

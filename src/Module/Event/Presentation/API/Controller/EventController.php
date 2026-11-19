@@ -23,6 +23,7 @@ use App\Module\Event\Application\Query\GetEventHistory;
 use App\Module\Event\Application\Query\GetEventMedia;
 use App\Module\Event\Application\Query\ListEvents;
 use App\Module\Event\Application\Query\SearchEventEmployees;
+use App\Module\Event\Application\Service\EventCreationNoticeSender;
 use App\Module\Event\Application\Service\EventNotificationAudienceResolver;
 use App\Module\Event\Domain\Entity\CateringEvent;
 use App\Module\Event\Domain\Enum\EventFunction;
@@ -227,6 +228,22 @@ final class EventController extends PlanningController
         $audience->replaceOverrides($event, $excluded, $extra, $channels);
 
         return $this->resource($audience->describe($event));
+    }
+
+    #[Route('/{uuid}/creation-notice', methods: ['POST'])]
+    public function creationNotice(string $uuid, Request $request, EventCreationNoticeSender $sender): JsonResponse
+    {
+        $this->allowChange(PermissionEnum::UPDATE);
+        $uuid = PlanningPayload::identifier($uuid);
+        $body = PlanningPayload::json($request);
+        $extra = $body->has('extraEmployeeUuids')
+            ? array_map(
+                static fn (mixed $value): string => PlanningPayload::identifier(is_string($value) ? $value : ''),
+                $body->list('extraEmployeeUuids', 200),
+            )
+            : [];
+
+        return $this->resource($sender->send($uuid, $extra));
     }
 
     #[Route('/{uuid}/menu', methods: ['PUT'])]

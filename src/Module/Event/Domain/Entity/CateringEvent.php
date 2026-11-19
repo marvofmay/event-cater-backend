@@ -84,6 +84,9 @@ class CateringEvent
     #[ORM\Column(type: 'json', nullable: true)]
     private ?array $notificationChannels = null;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    private ?\DateTimeImmutable $creationNoticeSentAt = null;
+
     private function __construct()
     {
     }
@@ -221,6 +224,20 @@ class CateringEvent
         return $this->notificationChannels;
     }
 
+    public function creationNoticeSentAt(): ?\DateTimeImmutable
+    {
+        return $this->creationNoticeSentAt;
+    }
+
+    public function markCreationNoticeSent(\DateTimeImmutable $at): void
+    {
+        if ($this->creationNoticeSentAt !== null) {
+            throw new BusinessRuleViolation('Powiadomienie o utworzeniu wydarzenia zostało już wysłane.');
+        }
+        $this->creationNoticeSentAt = $at;
+        $this->touch();
+    }
+
     /**
      * @param array<string, bool>|null $channels
      */
@@ -263,6 +280,7 @@ class CateringEvent
             'guestCount' => $this->guestCount, 'coordinatorUuid' => $this->coordinatorUuid,
             'customerName' => $this->customerName, 'customerUuid' => $this->customerUuid, 'contacts' => $this->contacts, 'menu' => $this->menu,
             'notificationChannels' => $this->notificationChannels,
+            'creationNoticeSentAt' => $this->creationNoticeSentAt?->format(DATE_ATOM),
             'version' => $this->version, 'createdAt' => $this->createdAt->format(DATE_ATOM),
             'updatedAt' => $this->updatedAt->format(DATE_ATOM),
         ];

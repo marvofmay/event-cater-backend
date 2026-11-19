@@ -7,7 +7,6 @@ namespace App\Module\Event\Application\CommandHandler;
 use App\Module\Event\Application\Command\CreateEvent;
 use App\Module\Event\Application\Port\EmployeeDirectory;
 use App\Module\Event\Application\Service\EventCustomerDirectory;
-use App\Module\Event\Application\Service\EventFanOutNotifier;
 use App\Module\Event\Domain\Entity\CateringEvent;
 use App\Module\Event\Domain\Entity\EventHistoryEntry;
 use App\Module\Event\Domain\Entity\EventPreparationList;
@@ -23,7 +22,6 @@ final readonly class CreateEventHandler
         private EmployeeDirectory $employees,
         private EntityManagerInterface $em,
         private EventCustomerDirectory $customers,
-        private EventFanOutNotifier $notifier,
     ) {
     }
 
@@ -40,6 +38,5 @@ final readonly class CreateEventHandler
         $this->em->persist(new EventPreparationList($event));
         $this->em->persist(new EventHistoryEntry($event, $command->actorUuid, 'created', $event->toArray()));
         $this->em->flush();
-        $this->notifier->eventCreated($command->uuid);
     }
 }
