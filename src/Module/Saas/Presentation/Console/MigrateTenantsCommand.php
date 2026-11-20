@@ -27,11 +27,16 @@ final class MigrateTenantsCommand extends Command
 
     protected function configure(): void
     {
-        $this->addOption('execute', null, InputOption::VALUE_NONE, 'Apply changes (take tenant backups first)')->addOption('tenant', null, InputOption::VALUE_REQUIRED, 'Limit to one tenant slug');
+        $this
+            ->addOption('execute', null, InputOption::VALUE_NONE, 'Apply changes (take tenant backups first)')
+            ->addOption('tenant', null, InputOption::VALUE_REQUIRED, 'Limit to one tenant slug')
+            ->addOption('continue-on-error', null, InputOption::VALUE_NONE, 'Continue with remaining tenants after a failure');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $continueOnError = (bool) $input->getOption('continue-on-error');
+        $failures = [];
         $tenants = $this->control->db()->fetchAllAssociative("SELECT slug,database_name FROM saas_tenant WHERE provisioning='ready' AND slug<>'default' AND status<>'deleted' ORDER BY slug");
         foreach ($tenants as $tenant) {
             if ($input->getOption('tenant') && $tenant['slug'] !== $input->getOption('tenant')) {
@@ -58,12 +63,24 @@ final class MigrateTenantsCommand extends Command
                     $factory->getMigrator()->migrate($plan, new MigratorConfiguration());
                 }
             } catch (\Throwable $error) {
-                $output->writeln('<error>Migration failed for '.$tenant['slug'].' ('.get_class($error).'). Stopping.</error>');
+                $message = $error->getMessage();
+                $output->writeln('<error>Migration failed for '.$tenant['slug'].' ('.get_class($error).'): '.$message.'</error>');
+                $failures[] = (string) $tenant['slug'];
+                if (!$continueOnError) {
+                    $output->writeln('<error>Stopping.</error>');
 
-                return Command::FAILURE;
+                    return Command::FAILURE;
+                }
+                $output->writeln('<comment>Continuing with remaining tenants.</comment>');
             } finally {
                 $connection->close();
             }
+        }
+
+        if ($failures !== []) {
+            $output->writeln('<error>Tenant migration failures: '.implode(', ', $failures).'</error>');
+
+            return Command::FAILURE;
         }
 
         return Command::SUCCESS;
