@@ -16,6 +16,10 @@ final class Version20261112170000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
+        if (!$this->connection->createSchemaManager()->tablesExist(['saas_tenant'])) {
+            return;
+        }
+
         $this->addSql('ALTER TABLE saas_tenant ADD paid_until DATETIME DEFAULT NULL');
         $this->addSql("CREATE TABLE saas_payment (
             uuid CHAR(36) NOT NULL,
@@ -36,6 +40,10 @@ final class Version20261112170000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        if (!$this->connection->createSchemaManager()->tablesExist(['saas_tenant'])) {
+            return;
+        }
+
         $this->addSql('DROP TABLE saas_payment');
         $this->addSql('ALTER TABLE saas_tenant DROP paid_until');
     }

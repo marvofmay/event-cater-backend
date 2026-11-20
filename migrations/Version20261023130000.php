@@ -9,6 +9,13 @@ final class Version20261023130000 extends AbstractMigration
     public function getDescription(): string { return 'SaaS control plane, tenant lifecycle, administrator sessions and audit trail'; }
     public function up(Schema $schema): void
     {
+        $database = $this->connection->getDatabase();
+        if (is_string($database) && preg_match('/^ec_tenant_[a-f0-9]{32}$/D', $database) === 1) {
+            return;
+        }
+        if ($this->connection->createSchemaManager()->tablesExist(['saas_tenant'])) {
+            return;
+        }
         $this->addSql("CREATE TABLE saas_tenant (uuid CHAR(36) PRIMARY KEY, slug VARCHAR(63) NOT NULL UNIQUE, name VARCHAR(200) NOT NULL, contact_email VARCHAR(180) NOT NULL, database_name VARCHAR(64) NOT NULL UNIQUE, status VARCHAR(16) NOT NULL, provisioning VARCHAR(16) NOT NULL, version INT NOT NULL DEFAULT 1, created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
         $this->addSql("INSERT INTO saas_tenant VALUES ('00000000-0000-4000-8000-000000000001','default','Firma domyślna','',DATABASE(),'active','ready',1,NOW(),NOW())");
         $this->addSql('CREATE TABLE saas_administrator (uuid CHAR(36) PRIMARY KEY, email VARCHAR(180) NOT NULL UNIQUE, password VARCHAR(255) NOT NULL, active BOOLEAN NOT NULL DEFAULT 1) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');

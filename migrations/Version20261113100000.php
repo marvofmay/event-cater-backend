@@ -16,11 +16,19 @@ final class Version20261113100000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
+        if (!$this->connection->createSchemaManager()->tablesExist(['saas_tenant'])) {
+            return;
+        }
+
         $this->addSql('ALTER TABLE saas_tenant ADD paid_reminded_at DATETIME DEFAULT NULL');
     }
 
     public function down(Schema $schema): void
     {
+        if (!$this->connection->createSchemaManager()->tablesExist(['saas_tenant'])) {
+            return;
+        }
+
         $this->addSql('ALTER TABLE saas_tenant DROP paid_reminded_at');
     }
 }

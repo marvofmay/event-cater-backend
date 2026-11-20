@@ -16,6 +16,10 @@ final class Version20261109150000 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
+        if (!$this->connection->createSchemaManager()->tablesExist(['saas_tenant'])) {
+            return;
+        }
+
         $this->addSql("ALTER TABLE saas_tenant ADD plan VARCHAR(16) NOT NULL DEFAULT 'paid'");
         $this->addSql('ALTER TABLE saas_tenant ADD trial_ends_at DATETIME DEFAULT NULL');
         $this->addSql('ALTER TABLE saas_tenant ADD trial_reminded_5d_at DATETIME DEFAULT NULL');
@@ -26,6 +30,10 @@ final class Version20261109150000 extends AbstractMigration
 
     public function down(Schema $schema): void
     {
+        if (!$this->connection->createSchemaManager()->tablesExist(['saas_tenant'])) {
+            return;
+        }
+
         $this->addSql('DROP INDEX saas_tenant_trial_ends ON saas_tenant');
         $this->addSql('ALTER TABLE saas_tenant DROP plan, DROP trial_ends_at, DROP trial_reminded_5d_at, DROP trial_reminded_3d_at, DROP trial_reminded_24h_at');
     }
