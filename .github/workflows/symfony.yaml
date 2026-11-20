@@ -67,3 +67,22 @@ jobs:
 
       - name: Run PHPUnit tests
         run: docker compose exec -T service-company bash -lc 'if command -v stdbuf >/dev/null; then exec stdbuf -oL -eL php -d memory_limit=2G -d output_buffering=0 -d implicit_flush=1 bin/phpunit --testdox --stop-on-failure --stop-on-error; else exec php -d memory_limit=2G -d output_buffering=0 -d implicit_flush=1 bin/phpunit --testdox --stop-on-failure --stop-on-error; fi'
+
+  deploy:
+    needs: tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: eventcater-production
+      cancel-in-progress: false
+    steps:
+      - name: Deploy to DigitalOcean droplet
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script_stop: true
+          command_timeout: 30m
+          script: |
+            bash /home/marcin/apps/eventcater/frontend/deploy/scripts/deploy.sh
